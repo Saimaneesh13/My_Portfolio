@@ -51,3 +51,4 @@ export const MonoBadge: React.FC<MonoBadgeProps> = ({
 };
 
 export default MonoBadge;
+

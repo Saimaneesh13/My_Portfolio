@@ -61,3 +61,4 @@ export const GoldButton: React.FC<GoldButtonProps> = ({
 };
 
 export default GoldButton;
+

@@ -1,104 +1,50 @@
-import { create } from 'zustand';
-import { SectionId, CAMERA_PRESETS } from '../lib/constants';
-import { Project, PORTFOLIO_DATA } from '../lib/portfolio-data';
+import { create } from 'zustand'
 
-export type FlowState = 'idle' | 'transitioning' | 'inspecting' | 'simulating';
+export type FlowState = 'greet' | 'morph' | 'about' | 'home' | 'projects' | 'case-study' | 'expertise' | 'contact'
 
 export interface SceneStore {
-  // Core Scene Flow
-  flowState: FlowState;
-  uProgress: number;
-  activeSection: SectionId;
-  inspectMode: boolean;
-
-  // Interactivity & Telemetry
-  audioReactivity: number;
-  audioListening: boolean;
-  selectedProject: Project | null;
-  activeSimulator: 'disaster' | 'face' | 'agro' | null;
-  commandPaletteOpen: boolean;
-  greetModalOpen: boolean;
-  fps: number;
-
-  // Actions
-  setFlowState: (state: FlowState) => void;
-  setUProgress: (progress: number) => void;
-  setActiveSection: (section: SectionId) => void;
-  setInspectMode: (inspect: boolean) => void;
-  toggleInspectMode: () => void;
-  setAudioReactivity: (reactivity: number) => void;
-  setAudioListening: (listening: boolean) => void;
-  setSelectedProject: (project: Project | null) => void;
-  setActiveSimulator: (sim: 'disaster' | 'face' | 'agro' | null) => void;
-  setCommandPaletteOpen: (open: boolean) => void;
-  toggleCommandPalette: () => void;
-  setGreetModalOpen: (open: boolean) => void;
-  setFps: (fps: number) => void;
+  flowState: FlowState
+  targetProgress: number
+  manualProgress: number | null
+  activeCaseStudyId: string
+  isCanvasDimmed: boolean
+  customImageSrc: string | null
+  setFlowState: (state: FlowState) => void
+  setTargetProgress: (val: number) => void
+  setManualProgress: (val: number | null) => void
+  setActiveCaseStudy: (id: string) => void
+  toggleInspect3D: () => void
+  setCustomImage: (src: string | null) => void
 }
 
 export const useSceneStore = create<SceneStore>((set) => ({
-  flowState: 'idle',
-  uProgress: 0.0,
-  activeSection: 'home',
-  inspectMode: false,
+  flowState: 'greet',
+  targetProgress: 0.0,
+  manualProgress: null,
+  activeCaseStudyId: 'disaster-nlp',
+  isCanvasDimmed: false,
+  customImageSrc: null,
 
-  audioReactivity: 0.0,
-  audioListening: false,
-  selectedProject: PORTFOLIO_DATA.projects[0],
-  activeSimulator: null,
-  commandPaletteOpen: false,
-  greetModalOpen: false,
-  fps: 60,
-
-  setFlowState: (flowState) => set({ flowState }),
-
-  setUProgress: (uProgress) => set({ uProgress }),
-
-  setActiveSection: (activeSection) => {
-    const targetProgress = CAMERA_PRESETS[activeSection]?.uProgressTarget ?? 0;
-    set({
-      activeSection,
-      flowState: 'transitioning',
-      uProgress: targetProgress,
-    });
-    // Return to idle after transition delay
-    setTimeout(() => {
-      set({ flowState: 'idle' });
-    }, 600);
-  },
-
-  setInspectMode: (inspectMode) =>
-    set({
-      inspectMode,
-      flowState: inspectMode ? 'inspecting' : 'idle',
+  setFlowState: (flowState) =>
+    set((state) => {
+      let targetProgress = state.targetProgress
+      if (flowState === 'about' || flowState === 'morph') {
+        targetProgress = 1.0
+      } else if (flowState === 'greet' || flowState === 'home') {
+        targetProgress = 0.0
+      }
+      return { flowState, targetProgress }
     }),
 
-  toggleInspectMode: () =>
-    set((state) => ({
-      inspectMode: !state.inspectMode,
-      flowState: !state.inspectMode ? 'inspecting' : 'idle',
-    })),
+  setTargetProgress: (targetProgress) => set({ targetProgress }),
 
-  setAudioReactivity: (audioReactivity) => set({ audioReactivity }),
+  setManualProgress: (manualProgress) => set({ manualProgress }),
 
-  setAudioListening: (audioListening) => set({ audioListening }),
+  setActiveCaseStudy: (activeCaseStudyId) => set({ activeCaseStudyId }),
 
-  setSelectedProject: (selectedProject) => set({ selectedProject }),
+  toggleInspect3D: () => set((state) => ({ isCanvasDimmed: !state.isCanvasDimmed })),
 
-  setActiveSimulator: (activeSimulator) =>
-    set({
-      activeSimulator,
-      flowState: activeSimulator ? 'simulating' : 'idle',
-    }),
+  setCustomImage: (customImageSrc) => set({ customImageSrc }),
+}))
 
-  setCommandPaletteOpen: (commandPaletteOpen) => set({ commandPaletteOpen }),
-
-  toggleCommandPalette: () =>
-    set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
-
-  setGreetModalOpen: (greetModalOpen) => set({ greetModalOpen }),
-
-  setFps: (fps) => set({ fps }),
-}));
-
-export default useSceneStore;
+export default useSceneStore

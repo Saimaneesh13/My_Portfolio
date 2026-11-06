@@ -19,3 +19,4 @@ Place the web-optimized project screenshots and preview banners here:
    - Target URL: `/images/projects/agrodetect-cnn.webp`
    - Project: AgroDetect AI (CNN-based plant disease detection and FastAPI)
    - Recommended aspect ratio: 16:9
+

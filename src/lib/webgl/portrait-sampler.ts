@@ -1,173 +1,372 @@
-/**
- * Portrait Sampler & Synthetic Fallback Generator
- * Samples luminance data from 2D portrait images into 3D point cloud arrays.
- * Includes procedural synthetic neural silhouette fallback if the image is missing.
- */
+import * as THREE from 'three'
+import { CORE_COLOR, createCoreGeometry } from './core-geometry'
 
-export interface SamplerResult {
-  positions: Float32Array;
-  brightness: Float32Array;
-  count: number;
+export interface MorphSystemData {
+  lineGeo: THREE.BufferGeometry
+  nodeGeo: THREE.BufferGeometry
+  featureCount: number
+  totalNodes: number
 }
 
-/**
- * Creates a synthetic procedural head/neural silhouette onto an offscreen canvas
- */
-export function createSyntheticPortraitCanvas(width = 256, height = 256): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
+export function createDefaultPortraitCanvas(): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  const w = (canvas.width = 360)
+  const h = (canvas.height = 440)
+  const ctx = canvas.getContext('2d')!
 
-  if (!ctx) return canvas;
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(0, 0, w, h)
 
-  // Background
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, width, height);
+  const cx = w * 0.5
+  const cy = h * 0.43
 
-  const cx = width / 2;
-  const cy = height * 0.45;
+  const bgGrad = ctx.createRadialGradient(cx, cy, 20, cx, cy, 175)
+  bgGrad.addColorStop(0, 'rgba(65, 65, 65, 0.35)')
+  bgGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+  ctx.fillStyle = bgGrad
+  ctx.fillRect(0, 0, w, h)
 
-  // Head oval glow
-  const grad = ctx.createRadialGradient(cx, cy, 20, cx, cy, 80);
-  grad.addColorStop(0, '#FFFFFF');
-  grad.addColorStop(0.6, '#B0B0B0');
-  grad.addColorStop(1, '#000000');
-  ctx.fillStyle = grad;
+  // Suit & Lapels
+  ctx.save()
+  ctx.beginPath()
+  ctx.moveTo(cx - 145, h)
+  ctx.quadraticCurveTo(cx - 125, cy + 125, cx - 42, cy + 102)
+  ctx.lineTo(cx + 42, cy + 102)
+  ctx.quadraticCurveTo(cx + 125, cy + 125, cx + 145, h)
+  ctx.closePath()
+  const suitGrad = ctx.createLinearGradient(cx - 140, cy + 100, cx + 140, h)
+  suitGrad.addColorStop(0, '#5a5a5a')
+  suitGrad.addColorStop(0.5, '#8c8c8c')
+  suitGrad.addColorStop(1, '#454545')
+  ctx.fillStyle = suitGrad
+  ctx.fill()
+  ctx.lineWidth = 3
+  ctx.strokeStyle = '#d8d8d8'
+  ctx.stroke()
 
-  ctx.beginPath();
-  ctx.ellipse(cx, cy, 55, 75, 0, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.beginPath()
+  ctx.moveTo(cx - 42, cy + 100)
+  ctx.lineTo(cx, cy + 185)
+  ctx.lineTo(cx + 42, cy + 100)
+  ctx.closePath()
+  ctx.fillStyle = '#e8e8e8'
+  ctx.fill()
+  ctx.restore()
 
-  // Neck and shoulders
-  ctx.fillStyle = '#666666';
-  ctx.beginPath();
-  ctx.ellipse(cx, height * 0.85, 70, 35, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Neck
+  ctx.save()
+  ctx.fillStyle = '#8c8c8c'
+  ctx.fillRect(cx - 28, cy + 68, 56, 44)
+  ctx.restore()
 
-  // Synthetic neural nodes
-  ctx.fillStyle = '#FFFFFF';
-  for (let i = 0; i < 35; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const r = Math.random() * 65;
-    ctx.beginPath();
-    ctx.arc(cx + Math.cos(angle) * r, cy + Math.sin(angle) * (r * 1.2), 3, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  // Head contour
+  ctx.save()
+  ctx.beginPath()
+  ctx.moveTo(cx - 68, cy - 25)
+  ctx.quadraticCurveTo(cx - 70, cy + 45, cx - 38, cy + 76)
+  ctx.quadraticCurveTo(cx, cy + 98, cx + 38, cy + 76)
+  ctx.quadraticCurveTo(cx + 70, cy + 45, cx + 68, cy - 25)
+  ctx.quadraticCurveTo(cx + 66, cy - 92, cx, cy - 95)
+  ctx.quadraticCurveTo(cx - 66, cy - 92, cx - 68, cy - 25)
+  ctx.closePath()
+  const faceGrad = ctx.createRadialGradient(cx - 10, cy - 10, 12, cx, cy, 90)
+  faceGrad.addColorStop(0, '#fcfcfc')
+  faceGrad.addColorStop(0.55, '#c6c6c6')
+  faceGrad.addColorStop(1, '#3b3b3b')
+  ctx.fillStyle = faceGrad
+  ctx.fill()
+  ctx.lineWidth = 2.5
+  ctx.strokeStyle = '#efefef'
+  ctx.stroke()
+  ctx.restore()
 
-  return canvas;
+  // Hair & Facial features
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 3
+  ctx.beginPath()
+  ctx.moveTo(cx - 46, cy - 16)
+  ctx.quadraticCurveTo(cx - 28, cy - 24, cx - 13, cy - 17)
+  ctx.moveTo(cx + 13, cy - 17)
+  ctx.quadraticCurveTo(cx + 28, cy - 24, cx + 46, cy - 16)
+  ctx.moveTo(cx, cy - 15)
+  ctx.lineTo(cx - 2, cy + 22)
+  ctx.lineTo(cx + 8, cy + 26)
+  ctx.moveTo(cx - 22, cy + 48)
+  ctx.quadraticCurveTo(cx, cy + 55, cx + 22, cy + 48)
+  ctx.stroke()
+
+  return canvas
 }
 
-/**
- * Samples pixel data from an HTMLCanvasElement into normalized 3D positions
- */
-export function sampleCanvasToPoints(
-  canvas: HTMLCanvasElement,
-  targetCount = 1600,
-  threshold = 40
-): SamplerResult {
-  const ctx = canvas.getContext('2d');
-  const positions: number[] = [];
-  const brightness: number[] = [];
+export function samplePortraitAndCore(
+  imageSource: HTMLImageElement | HTMLCanvasElement,
+  sampleStep = 2,
+  threshold = 0.16
+): MorphSystemData | null {
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
 
-  if (!ctx) {
-    return {
-      positions: new Float32Array(targetCount * 3),
-      brightness: new Float32Array(targetCount),
-      count: targetCount,
-    };
+  const srcW = (imageSource as HTMLImageElement).naturalWidth || imageSource.width || 360
+  const srcH = (imageSource as HTMLImageElement).naturalHeight || imageSource.height || 440
+
+  const targetMaxDim = 175
+  const maxDim = Math.max(srcW, srcH)
+  const effectiveStep = Math.max(1, maxDim / targetMaxDim) * (sampleStep / 2)
+
+  const width = (canvas.width = Math.max(64, Math.floor(srcW / effectiveStep)))
+  const height = (canvas.height = Math.max(64, Math.floor(srcH / effectiveStep)))
+
+  ctx.drawImage(imageSource, 0, 0, width, height)
+  const imgData = ctx.getImageData(0, 0, width, height).data
+
+  const aspect = width / height
+  const scale = 4.75
+
+  interface PortraitFeature {
+    x: number
+    y: number
+    z: number
+    strength: number
+    gridX: number
+    gridY: number
   }
 
-  const { width, height } = canvas;
-  const imgData = ctx.getImageData(0, 0, width, height).data;
+  const portraitFeatures: PortraitFeature[] = []
+  const pixelGrid = new Int32Array(width * height).fill(-1)
+  const lumGrid = new Float32Array(width * height)
 
-  const validPixels: { x: number; y: number; lum: number }[] = [];
+  let minLum = 1.0
+  let maxLum = 0.0
 
-  for (let y = 0; y < height; y += 2) {
-    for (let x = 0; x < width; x += 2) {
-      const idx = (y * width + x) * 4;
-      const r = imgData[idx];
-      const g = imgData[idx + 1];
-      const b = imgData[idx + 2];
-      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const idx = (y * width + x) * 4
+      const a = imgData[idx + 3] / 255
+      const r = (imgData[idx] / 255) * a
+      const g = (imgData[idx + 1] / 255) * a
+      const b = (imgData[idx + 2] / 255) * a
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b
+      lumGrid[y * width + x] = lum
+      if (lum < minLum) minLum = lum
+      if (lum > maxLum) maxLum = lum
+    }
+  }
 
-      if (lum > threshold) {
-        validPixels.push({ x, y, lum });
+  const lumRange = Math.max(0.05, maxLum - minLum)
+
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const rawLum = lumGrid[y * width + x]
+      const normLum = (rawLum - minLum) / lumRange
+
+      const gx = lumGrid[y * width + (x + 1)] - lumGrid[y * width + (x - 1)]
+      const gy = lumGrid[(y + 1) * width + x] - lumGrid[(y - 1) * width + x]
+      const edge = Math.min(1.0, Math.sqrt(gx * gx + gy * gy) * 2.6)
+      const combinedStrength = Math.min(1.35, normLum * 0.78 + edge * 0.65)
+
+      if (combinedStrength > threshold) {
+        const px = (x / width - 0.5) * scale * aspect
+        const py = (0.5 - y / height) * scale
+        const pz = (normLum - 0.35) * 0.55 + edge * 0.18
+
+        const featureIndex = portraitFeatures.length
+        portraitFeatures.push({
+          x: px,
+          y: py,
+          z: pz,
+          strength: Math.max(0.25, combinedStrength),
+          gridX: x,
+          gridY: y,
+        })
+        pixelGrid[y * width + x] = featureIndex
       }
     }
   }
 
-  // Subsample to targetCount
-  const step = Math.max(1, Math.floor(validPixels.length / targetCount));
-  for (let i = 0; i < validPixels.length && positions.length / 3 < targetCount; i += step) {
-    const p = validPixels[i];
-    // Map to normalized 3D coordinates [-1.5, 1.5]
-    const nx = (p.x / width - 0.5) * 3.0;
-    const ny = -(p.y / height - 0.5) * 3.0;
-    const nz = (p.lum / 255 - 0.5) * 0.8;
+  if (portraitFeatures.length === 0) return null
 
-    positions.push(nx, ny, nz);
-    brightness.push(p.lum / 255);
-  }
+  const BUCKET_RES = 24
+  const buckets: number[][] = Array.from({ length: BUCKET_RES * BUCKET_RES }, () => [])
 
-  // Pad if needed
-  while (positions.length / 3 < targetCount) {
-    positions.push(
-      (Math.random() - 0.5) * 2.5,
-      (Math.random() - 0.5) * 2.5,
-      (Math.random() - 0.5) * 0.5
-    );
-    brightness.push(0.5);
-  }
+  portraitFeatures.forEach((feat, idx) => {
+    const bx = Math.min(BUCKET_RES - 1, Math.max(0, Math.floor((feat.gridX / width) * BUCKET_RES)))
+    const by = Math.min(BUCKET_RES - 1, Math.max(0, Math.floor((feat.gridY / height) * BUCKET_RES)))
+    buckets[by * BUCKET_RES + bx].push(idx)
+  })
 
-  return {
-    positions: new Float32Array(positions),
-    brightness: new Float32Array(brightness),
-    count: targetCount,
-  };
-}
+  function findNearestFeature(u: number, v: number, hashSeed: number): PortraitFeature {
+    const targetBx = Math.min(BUCKET_RES - 1, Math.max(0, Math.floor(u * BUCKET_RES)))
+    const targetBy = Math.min(BUCKET_RES - 1, Math.max(0, Math.floor(v * BUCKET_RES)))
 
-/**
- * Loads an image or falls back to synthetic portrait, then returns sampled points
- */
-export async function samplePortraitAsync(
-  imageUrl: string,
-  targetCount = 1600
-): Promise<SamplerResult> {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined') {
-      const fallbackCanvas = createSyntheticPortraitCanvas();
-      resolve(sampleCanvasToPoints(fallbackCanvas, targetCount));
-      return;
-    }
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(img, 0, 0, 256, 256);
-        resolve(sampleCanvasToPoints(canvas, targetCount));
-      } else {
-        const fallbackCanvas = createSyntheticPortraitCanvas();
-        resolve(sampleCanvasToPoints(fallbackCanvas, targetCount));
+    for (let radius = 0; radius <= BUCKET_RES; radius++) {
+      const candidates: number[] = []
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) continue
+          const nx = targetBx + dx
+          const ny = targetBy + dy
+          if (nx >= 0 && nx < BUCKET_RES && ny >= 0 && ny < BUCKET_RES) {
+            const cell = buckets[ny * BUCKET_RES + nx]
+            for (let k = 0; k < cell.length; k++) candidates.push(cell[k])
+          }
+        }
       }
-    };
+      if (candidates.length > 0) {
+        return portraitFeatures[candidates[Math.abs(hashSeed) % candidates.length]]
+      }
+    }
+    return portraitFeatures[Math.abs(hashSeed) % portraitFeatures.length]
+  }
 
-    img.onerror = () => {
-      console.info(`Portrait at '${imageUrl}' not found. Using procedural synthetic fallback.`);
-      const fallbackCanvas = createSyntheticPortraitCanvas();
-      resolve(sampleCanvasToPoints(fallbackCanvas, targetCount));
-    };
+  const coreGeo = createCoreGeometry()
+  const linePositions: number[] = []
+  const lineColors: number[] = []
+  const lineTargets: number[] = []
+  const lineDelays: number[] = []
+  const lineStrengths: number[] = []
+  const lineSizes: number[] = []
+  const coreRadius = 2.25
 
-    img.src = imageUrl;
-  });
+  ;[coreGeo.surface, coreGeo.circuitry, coreGeo.lattice].forEach((geo) => {
+    const pos = geo.attributes.position.array as Float32Array
+    const col = geo.attributes.color.array as Float32Array
+    const segCount = pos.length / 6
+
+    for (let s = 0; s < segCount; s++) {
+      const i6 = s * 6
+      const ax = pos[i6], ay = pos[i6 + 1], az = pos[i6 + 2]
+      const bx = pos[i6 + 3], by = pos[i6 + 4], bz = pos[i6 + 5]
+
+      const mx = (ax + bx) * 0.5
+      const my = (ay + by) * 0.5
+
+      const u = THREE.MathUtils.clamp((mx / coreRadius) * 0.5 + 0.5, 0, 1)
+      const v = THREE.MathUtils.clamp(0.5 - (my / coreRadius) * 0.5, 0, 1)
+      const feat = findNearestFeature(u, v, s * 31 + 17)
+
+      let dx = (bx - ax) * 0.18
+      let dy = (by - ay) * 0.18
+      let dz = (bz - az) * 0.12
+      const segLen = Math.hypot(dx, dy, dz)
+      if (segLen > 0.11) {
+        const clampScale = 0.11 / segLen
+        dx *= clampScale
+        dy *= clampScale
+        dz *= clampScale
+      }
+
+      linePositions.push(ax, ay, az, bx, by, bz)
+      lineColors.push(col[i6], col[i6 + 1], col[i6 + 2], col[i6 + 3], col[i6 + 4], col[i6 + 5])
+      lineTargets.push(
+        feat.x - dx * 0.5, feat.y - dy * 0.5, feat.z - dz * 0.5,
+        feat.x + dx * 0.5, feat.y + dy * 0.5, feat.z + dz * 0.5
+      )
+
+      const delay = THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (s % 13) * 0.012, 0, 0.65)
+      lineDelays.push(delay, delay)
+      lineStrengths.push(feat.strength * 0.85, feat.strength * 0.85)
+      lineSizes.push(1.0, 1.0)
+    }
+  })
+
+  const gold = new THREE.Color(CORE_COLOR)
+  const goldenRatio = (1 + Math.sqrt(5)) / 2
+  const featCount = portraitFeatures.length
+
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const idxA = pixelGrid[y * width + x]
+      if (idxA === -1) continue
+      const featA = portraitFeatures[idxA]
+      const idxRight = pixelGrid[y * width + (x + 1)]
+      const idxDown = pixelGrid[(y + 1) * width + x]
+
+      const connectNeighbor = (idxB: number, intensityBoost: number) => {
+        const featB = portraitFeatures[idxB]
+        if (Math.hypot(featB.x - featA.x, featB.y - featA.y) > 0.14) return
+
+        const theta = (2 * Math.PI * idxA) / goldenRatio
+        const phi = Math.acos(1 - (2 * (idxA + 0.5)) / featCount)
+        const r = 2.04 + (idxA % 3) * 0.095
+
+        const sx = r * Math.sin(phi) * Math.cos(theta)
+        const sy = r * Math.cos(phi)
+        const sz = r * Math.sin(phi) * Math.sin(theta)
+
+        linePositions.push(sx, sy, sz, sx + (featB.x - featA.x) * 0.25, sy + (featB.y - featA.y) * 0.25, sz)
+        const colIntensity = (0.38 + (featA.strength + featB.strength) * 0.35) * intensityBoost
+        lineColors.push(
+          gold.r * colIntensity, gold.g * colIntensity, gold.b * colIntensity,
+          gold.r * colIntensity, gold.g * colIntensity, gold.b * colIntensity
+        )
+        lineTargets.push(featA.x, featA.y, featA.z, featB.x, featB.y, featB.z)
+
+        const delay = THREE.MathUtils.clamp((featA.y / scale + 0.5) * 0.42 + (idxA % 11) * 0.014, 0, 0.65)
+        lineDelays.push(delay, delay)
+        lineStrengths.push(featA.strength, featB.strength)
+        lineSizes.push(1.0, 1.0)
+      }
+
+      if (idxRight !== -1 && (x + y) % 2 === 0) connectNeighbor(idxRight, 0.95)
+      if (idxDown !== -1 && featA.strength > 0.48 && (x * 3 + y) % 3 === 0) connectNeighbor(idxDown, 0.85)
+    }
+  }
+
+  const lineGeo = new THREE.BufferGeometry()
+  lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3))
+  lineGeo.setAttribute('color', new THREE.Float32BufferAttribute(lineColors, 3))
+  lineGeo.setAttribute('aTarget', new THREE.Float32BufferAttribute(lineTargets, 3))
+  lineGeo.setAttribute('aDelay', new THREE.Float32BufferAttribute(lineDelays, 1))
+  lineGeo.setAttribute('aStrength', new THREE.Float32BufferAttribute(lineStrengths, 1))
+  lineGeo.setAttribute('aSize', new THREE.Float32BufferAttribute(lineSizes, 1))
+
+  const nodePositions: number[] = []
+  const nodeSizes: number[] = []
+  const nodeStrengths: number[] = []
+  const nodeTargets: number[] = []
+  const nodeDelays: number[] = []
+  const nodeColors: number[] = []
+
+  const rawNodePos = coreGeo.nodes.attributes.position.array as Float32Array
+  const rawNodeSize = coreGeo.nodes.attributes.aSize.array as Float32Array
+  const rawNodeStrength = coreGeo.nodes.attributes.aStrength.array as Float32Array
+  const coreNodeCount = rawNodePos.length / 3
+
+  for (let i = 0; i < coreNodeCount; i++) {
+    const nx = rawNodePos[i * 3], ny = rawNodePos[i * 3 + 1], nz = rawNodePos[i * 3 + 2]
+    const u = THREE.MathUtils.clamp((nx / coreRadius) * 0.5 + 0.5, 0, 1)
+    const v = THREE.MathUtils.clamp(0.5 - (ny / coreRadius) * 0.5, 0, 1)
+    const feat = findNearestFeature(u, v, i * 47 + 13)
+
+    nodePositions.push(nx, ny, nz)
+    nodeSizes.push(rawNodeSize[i])
+    nodeStrengths.push(rawNodeStrength[i] * (0.55 + feat.strength * 0.6))
+    nodeTargets.push(feat.x, feat.y, feat.z)
+    nodeDelays.push(THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (i % 17) * 0.01, 0, 0.65))
+    nodeColors.push(gold.r, gold.g, gold.b)
+  }
+
+  for (let i = 0; i < featCount; i++) {
+    const feat = portraitFeatures[i]
+    const theta = (2 * Math.PI * i) / goldenRatio
+    const phi = Math.acos(1 - (2 * (i + 0.5)) / featCount)
+    const r = 2.04 + (i % 3) * 0.095
+
+    nodePositions.push(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta))
+    nodeSizes.push(0.65 + feat.strength * 1.35)
+    nodeStrengths.push(feat.strength)
+    nodeTargets.push(feat.x, feat.y, feat.z)
+    nodeDelays.push(THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (i % 19) * 0.01, 0, 0.65))
+    nodeColors.push(gold.r, gold.g, gold.b)
+  }
+
+  const nodeGeo = new THREE.BufferGeometry()
+  nodeGeo.setAttribute('position', new THREE.Float32BufferAttribute(nodePositions, 3))
+  nodeGeo.setAttribute('color', new THREE.Float32BufferAttribute(nodeColors, 3))
+  nodeGeo.setAttribute('aSize', new THREE.Float32BufferAttribute(nodeSizes, 1))
+  nodeGeo.setAttribute('aStrength', new THREE.Float32BufferAttribute(nodeStrengths, 1))
+  nodeGeo.setAttribute('aTarget', new THREE.Float32BufferAttribute(nodeTargets, 3))
+  nodeGeo.setAttribute('aDelay', new THREE.Float32BufferAttribute(nodeDelays, 1))
+
+  return { lineGeo, nodeGeo, featureCount: featCount, totalNodes: nodePositions.length / 3 }
 }
-
-// Backward-compatibility aliases
-export const createDefaultPortraitCanvas = createSyntheticPortraitCanvas;
-export const samplePortraitAndCore = samplePortraitAsync;

@@ -12,3 +12,4 @@ Please place your high-resolution profile and reference images here:
    - Location: `/public/images/core-reference.png`
    - Target URL: `/images/core-reference.png`
    - Purpose: Reference core morphology texture / architectural diagram.
+
