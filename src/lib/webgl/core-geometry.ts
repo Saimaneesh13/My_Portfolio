@@ -239,13 +239,21 @@ export const morphFragmentShader = `
 
   void main() {
     float dist = length(gl_PointCoord - 0.5);
-    float core = 1.0 - smoothstep(0.04, 0.22, dist);
-    float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.8);
-    float alpha = (core * 0.82 + glow * 0.58) * mix(0.75, 0.95, vEase);
+    float core = 1.0 - smoothstep(0.03, 0.20, dist);
+    float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.6);
+    float alpha = (core * 0.9 + glow * 0.62) * mix(0.78, 0.98, vEase);
 
     if (alpha < 0.02) discard;
 
-    vec3 finalColor = uColor * (0.85 + core * 1.35) * clamp(vStrength, 0.25, 1.45);
+    // 3-Tier Thermal Luxury Palette: Deep Bronze -> Golden Core -> Hot Champagne White
+    vec3 bronzeShadow = vec3(0.54, 0.35, 0.14);
+    vec3 champagnePeak = vec3(1.0, 0.95, 0.82);
+
+    float normS = clamp((vStrength - 0.25) / 1.15, 0.0, 1.0);
+    vec3 thermalColor = mix(bronzeShadow, uColor, smoothstep(0.0, 0.55, normS));
+    thermalColor = mix(thermalColor, champagnePeak, smoothstep(0.55, 1.0, normS) * 0.75);
+
+    vec3 finalColor = thermalColor * (0.9 + core * 1.45);
     gl_FragColor = vec4(finalColor, alpha);
   }
 `
@@ -257,9 +265,14 @@ export const morphLineFragmentShader = `
   varying float vEase;
 
   void main() {
-    // Fade structural sphere wires down in portrait mode so facial dot-matrix stays razor-sharp
-    float lineAlpha = mix(0.34, 0.15, vEase) * clamp(vStrength, 0.25, 1.1);
-    vec3 lineCol = mix(vColor, uColor * (0.45 + vStrength * 0.55), vEase * 0.6);
-    gl_FragColor = vec4(lineCol, lineAlpha);
+    vec3 champagnePeak = vec3(1.0, 0.94, 0.78);
+    float highlight = smoothstep(0.75, 1.35, vStrength);
+
+    // Keep contour wires vibrant so the portrait looks like an interconnected neural mesh
+    float lineAlpha = mix(0.34, 0.32, vEase) * clamp(vStrength, 0.28, 1.25);
+    vec3 baseWire = mix(vColor, uColor * (0.55 + vStrength * 0.6), vEase * 0.7);
+    vec3 finalWire = mix(baseWire, champagnePeak, highlight * vEase * 0.5);
+
+    gl_FragColor = vec4(finalWire, lineAlpha);
   }
 `

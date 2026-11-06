@@ -146,8 +146,9 @@ function NeuralCoreMesh() {
       orbitGroup.current.rotation.y = -elapsed * 0.05
       orbitGroup.current.rotation.z = elapsed * 0.02
     }
-    if (outerOrbitMat.current) outerOrbitMat.current.opacity = 0.55 * spherePresence
-    if (innerOrbitMat.current) innerOrbitMat.current.opacity = 0.8 * spherePresence
+    // Keep a subtle 14% golden orbital halo framing the portrait even when fully morphed
+    if (outerOrbitMat.current) outerOrbitMat.current.opacity = Math.max(0.14, 0.55 * spherePresence)
+    if (innerOrbitMat.current) innerOrbitMat.current.opacity = Math.max(0.08, 0.8 * spherePresence)
     if (icoInnerMat.current) icoInnerMat.current.opacity = 0.9 * spherePresence
     if (icoOuterMat.current) icoOuterMat.current.opacity = 0.65 * spherePresence
 
