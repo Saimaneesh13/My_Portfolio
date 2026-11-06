@@ -27,7 +27,9 @@ export const useSceneStore = create<SceneStore>((set) => ({
 
   setFlowState: (flowState) =>
     set(() => {
-      const isPortraitView = flowState === 'about' || flowState === 'morph'
+      // Keep the 3D portrait morphed (1) on 'morph', 'home', and 'about'
+      const isPortraitView = flowState === 'morph' || flowState === 'home' || flowState === 'about'
+      // Keep 'greet', 'morph', and 'home' unblurred; dim background only on text-heavy subpages
       const shouldDim = ['about', 'projects', 'case-study', 'expertise', 'contact'].includes(flowState)
       return {
         flowState,

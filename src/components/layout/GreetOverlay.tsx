@@ -35,8 +35,8 @@ export default function GreetOverlay() {
     setFlowState('morph')
     setTargetProgress(1)
     setTimeout(() => {
-      window.location.hash = '#about'
-      setFlowState('about')
+      window.location.hash = '#home'
+      setFlowState('home')
     }, 3000)
   }
 
