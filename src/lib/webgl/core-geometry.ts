@@ -227,8 +227,8 @@ export const morphVertexShader = `
     vec4 viewPosition = modelViewMatrix * vec4(blendedPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
 
-    float pSize = mix(aSize, aSize * 1.25, ease);
-    gl_PointSize = clamp(pSize * (22.0 / -viewPosition.z), 1.0, 18.0);
+    float pSize = mix(aSize, aSize * 0.92, ease);
+    gl_PointSize = clamp(pSize * (17.5 / -viewPosition.z), 1.0, 11.0);
   }
 `
 
@@ -257,8 +257,9 @@ export const morphLineFragmentShader = `
   varying float vEase;
 
   void main() {
-    float lineAlpha = mix(0.32, 0.44, vEase) * clamp(vStrength, 0.3, 1.25);
-    vec3 lineCol = mix(vColor, uColor * (0.55 + vStrength * 0.65), vEase * 0.65);
+    // Fade structural sphere wires down in portrait mode so facial dot-matrix stays razor-sharp
+    float lineAlpha = mix(0.34, 0.15, vEase) * clamp(vStrength, 0.25, 1.1);
+    vec3 lineCol = mix(vColor, uColor * (0.45 + vStrength * 0.55), vEase * 0.6);
     gl_FragColor = vec4(lineCol, lineAlpha);
   }
 `

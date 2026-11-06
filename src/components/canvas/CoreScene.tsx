@@ -114,12 +114,11 @@ function NeuralCoreMesh() {
     const p = uniforms.uProgress.value
     const spherePresence = Math.max(0, 1.0 - p * 1.12)
 
-    // Position the core/portrait cleanly in the right-hand Hero column on desktop
     const isDesktop = size.width >= 1024
     const isHome = flowState === 'home'
-    const targetX = isHome && isDesktop ? 2.35 : 0
-    const targetY = isHome && isDesktop ? 0.18 : 0
-    const targetScale = isHome && isDesktop ? 0.88 : 1.0
+    const targetX = isHome && isDesktop ? 2.15 : 0
+    const targetY = isHome && isDesktop ? 0.12 : 0
+    const targetScale = isHome && isDesktop ? 0.96 : 1.0
 
     if (rootGroup.current) {
       rootGroup.current.position.x = THREE.MathUtils.lerp(rootGroup.current.position.x, targetX, 0.06)
@@ -134,7 +133,10 @@ function NeuralCoreMesh() {
     }
 
     if (morphGroup.current) {
-      const baseRotY = elapsed * 0.16 * spherePresence + dragRef.current.rotY
+      // Angle the portrait inward (-0.26 rad) when positioned on the right side of the Home screen
+      // so the face points directly at the viewer
+      const portraitFacingOffset = isHome && isDesktop ? -0.26 * (1.0 - spherePresence) : 0
+      const baseRotY = elapsed * 0.16 * spherePresence + portraitFacingOffset + dragRef.current.rotY
       const baseRotX = Math.sin(elapsed * 0.25) * 0.1 * spherePresence + dragRef.current.rotX
       morphGroup.current.rotation.y = THREE.MathUtils.lerp(morphGroup.current.rotation.y, baseRotY, 0.12)
       morphGroup.current.rotation.x = THREE.MathUtils.lerp(morphGroup.current.rotation.x, baseRotX, 0.12)
@@ -246,7 +248,7 @@ function NeuralCoreMesh() {
       </group>
 
       <EffectComposer multisampling={0}>
-        <Bloom intensity={1.15} luminanceThreshold={0.6} luminanceSmoothing={0.65} mipmapBlur />
+        <Bloom intensity={0.82} luminanceThreshold={0.68} luminanceSmoothing={0.75} mipmapBlur />
       </EffectComposer>
     </>
   )

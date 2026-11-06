@@ -101,7 +101,7 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
 export function samplePortraitAndCore(
   imageSource: HTMLImageElement | HTMLCanvasElement,
   sampleStep = 2,
-  threshold = 0.16
+  threshold = 0.14
 ): MorphSystemData | null {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!
@@ -109,24 +109,26 @@ export function samplePortraitAndCore(
   const srcW = (imageSource as HTMLImageElement).naturalWidth || imageSource.width || 360
   const srcH = (imageSource as HTMLImageElement).naturalHeight || imageSource.height || 440
 
-  const targetMaxDim = 175
+  // 1. Higher resolution sampling for sharp facial features (eyes, nose, collar, hair)
+  const targetMaxDim = 260
   const maxDim = Math.max(srcW, srcH)
-  const effectiveStep = Math.max(1, maxDim / targetMaxDim) * (sampleStep / 2)
+  const effectiveStep = Math.max(1, (maxDim / targetMaxDim) * (sampleStep / 2))
 
-  const width = (canvas.width = Math.max(64, Math.floor(srcW / effectiveStep)))
-  const height = (canvas.height = Math.max(64, Math.floor(srcH / effectiveStep)))
+  const width = (canvas.width = Math.max(96, Math.floor(srcW / effectiveStep)))
+  const height = (canvas.height = Math.max(96, Math.floor(srcH / effectiveStep)))
 
   ctx.drawImage(imageSource, 0, 0, width, height)
   const imgData = ctx.getImageData(0, 0, width, height).data
 
   const aspect = width / height
-  const scale = 4.75
+  const scale = 4.65
 
   interface PortraitFeature {
     x: number
     y: number
     z: number
     strength: number
+    edge: number
     gridX: number
     gridY: number
   }
@@ -159,41 +161,46 @@ export function samplePortraitAndCore(
       const u = x / width
       const v = y / height
 
-      // 1. Head & Hair ellipse (centered at u=0.52, v=0.36)
-      const headDx = (u - 0.52) / 0.24
-      const headDy = (v - 0.36) / 0.26
-      const headDist = Math.sqrt(headDx * headDx + headDy * headDy)
+      // 2. Generous natural portrait mask: keeps full head, hair, shoulders & arms,
+      // while softly stripping the upper-left wall/window background artifact
+      const dx = (u - 0.53) / 0.36
+      const dy = (v - 0.54) / 0.46
+      const radialDist = Math.sqrt(dx * dx + dy * dy)
 
-      // 2. Shoulders & Torso ellipse (centered at u=0.53, v=0.72)
-      const torsoDx = (u - 0.53) / 0.28
-      const torsoDy = (v - 0.72) / 0.32
-      const torsoDist = Math.sqrt(torsoDx * torsoDx + torsoDy * torsoDy)
+      // Specifically attenuate the top-left background wall (u < 0.36, v < 0.52)
+      const topLeftWallPenalty = u < 0.36 && v < 0.52 ? Math.max(0, (0.36 - u) * 3.2) : 0
+      const vignetteMask = THREE.MathUtils.clamp(
+        1.28 - Math.pow(radialDist, 2.8) * 0.85 - topLeftWallPenalty,
+        0,
+        1
+      )
 
-      // Combine both ellipses so only the person's silhouette is sampled (strips left wall/window frame)
-      const minDist = Math.min(headDist, torsoDist)
-      const vignetteMask = THREE.MathUtils.clamp(1.18 - Math.pow(minDist, 2.4) * 0.95, 0, 1)
-
-      if (vignetteMask <= 0.08) continue
+      if (vignetteMask <= 0.1) continue
 
       const rawLum = lumGrid[y * width + x]
-      const normLum = ((rawLum - minLum) / lumRange) * vignetteMask
+      // Gamma contrast curve (0.85) so midtones on the face and shirt pop cleanly
+      const normLum = Math.pow((rawLum - minLum) / lumRange, 0.85) * vignetteMask
 
       const gx = (lumGrid[y * width + (x + 1)] - lumGrid[y * width + (x - 1)]) * vignetteMask
       const gy = (lumGrid[(y + 1) * width + x] - lumGrid[(y - 1) * width + x]) * vignetteMask
-      const edge = Math.min(1.0, Math.sqrt(gx * gx + gy * gy) * 2.6)
-      const combinedStrength = Math.min(1.35, normLum * 0.78 + edge * 0.65)
+      const edge = Math.min(1.0, Math.sqrt(gx * gx + gy * gy) * 3.2)
+
+      // Boost edges so facial features, eyes, and collar lines are sharply defined
+      const combinedStrength = Math.min(1.4, normLum * 0.72 + edge * 0.85)
 
       if (combinedStrength > threshold) {
-        const px = (x / width - 0.5) * scale * aspect
-        const py = (0.5 - y / height) * scale
-        const pz = (normLum - 0.35) * 0.55 + edge * 0.18
+        const px = (u - 0.5) * scale * aspect
+        const py = (0.5 - v) * scale
+        // 3. Keep Z-relief subtle (0.14 max) so off-center camera angles never smear facial features
+        const pz = (normLum - 0.4) * 0.14 + edge * 0.06
 
         const featureIndex = portraitFeatures.length
         portraitFeatures.push({
           x: px,
           y: py,
           z: pz,
-          strength: Math.max(0.25, combinedStrength),
+          strength: Math.max(0.28, combinedStrength),
+          edge,
           gridX: x,
           gridY: y,
         })
@@ -204,7 +211,7 @@ export function samplePortraitAndCore(
 
   if (portraitFeatures.length === 0) return null
 
-  const BUCKET_RES = 24
+  const BUCKET_RES = 28
   const buckets: number[][] = Array.from({ length: BUCKET_RES * BUCKET_RES }, () => [])
 
   portraitFeatures.forEach((feat, idx) => {
@@ -263,12 +270,13 @@ export function samplePortraitAndCore(
       const v = THREE.MathUtils.clamp(0.5 - (my / coreRadius) * 0.5, 0, 1)
       const feat = findNearestFeature(u, v, s * 31 + 17)
 
-      let dx = (bx - ax) * 0.18
-      let dy = (by - ay) * 0.18
-      let dz = (bz - az) * 0.12
+      // 4. Tighter segment clamping (0.045 max) so sphere wires don't scribble over the face
+      let dx = (bx - ax) * 0.08
+      let dy = (by - ay) * 0.08
+      let dz = (bz - az) * 0.04
       const segLen = Math.hypot(dx, dy, dz)
-      if (segLen > 0.11) {
-        const clampScale = 0.11 / segLen
+      if (segLen > 0.045) {
+        const clampScale = 0.045 / segLen
         dx *= clampScale
         dy *= clampScale
         dz *= clampScale
@@ -283,53 +291,11 @@ export function samplePortraitAndCore(
 
       const delay = THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (s % 13) * 0.012, 0, 0.65)
       lineDelays.push(delay, delay)
-      lineStrengths.push(feat.strength * 0.85, feat.strength * 0.85)
+      // Lower wire intensity when morphed so point-cloud facial details dominate
+      lineStrengths.push(feat.strength * 0.42, feat.strength * 0.42)
       lineSizes.push(1.0, 1.0)
     }
   })
-
-  const gold = new THREE.Color(CORE_COLOR)
-  const goldenRatio = (1 + Math.sqrt(5)) / 2
-  const featCount = portraitFeatures.length
-
-  for (let y = 1; y < height - 1; y++) {
-    for (let x = 1; x < width - 1; x++) {
-      const idxA = pixelGrid[y * width + x]
-      if (idxA === -1) continue
-      const featA = portraitFeatures[idxA]
-      const idxRight = pixelGrid[y * width + (x + 1)]
-      const idxDown = pixelGrid[(y + 1) * width + x]
-
-      const connectNeighbor = (idxB: number, intensityBoost: number) => {
-        const featB = portraitFeatures[idxB]
-        if (Math.hypot(featB.x - featA.x, featB.y - featA.y) > 0.14) return
-
-        const theta = (2 * Math.PI * idxA) / goldenRatio
-        const phi = Math.acos(1 - (2 * (idxA + 0.5)) / featCount)
-        const r = 2.04 + (idxA % 3) * 0.095
-
-        const sx = r * Math.sin(phi) * Math.cos(theta)
-        const sy = r * Math.cos(phi)
-        const sz = r * Math.sin(phi) * Math.sin(theta)
-
-        linePositions.push(sx, sy, sz, sx + (featB.x - featA.x) * 0.25, sy + (featB.y - featA.y) * 0.25, sz)
-        const colIntensity = (0.38 + (featA.strength + featB.strength) * 0.35) * intensityBoost
-        lineColors.push(
-          gold.r * colIntensity, gold.g * colIntensity, gold.b * colIntensity,
-          gold.r * colIntensity, gold.g * colIntensity, gold.b * colIntensity
-        )
-        lineTargets.push(featA.x, featA.y, featA.z, featB.x, featB.y, featB.z)
-
-        const delay = THREE.MathUtils.clamp((featA.y / scale + 0.5) * 0.42 + (idxA % 11) * 0.014, 0, 0.65)
-        lineDelays.push(delay, delay)
-        lineStrengths.push(featA.strength, featB.strength)
-        lineSizes.push(1.0, 1.0)
-      }
-
-      if (idxRight !== -1 && (x + y) % 2 === 0) connectNeighbor(idxRight, 0.95)
-      if (idxDown !== -1 && featA.strength > 0.48 && (x * 3 + y) % 3 === 0) connectNeighbor(idxDown, 0.85)
-    }
-  }
 
   const lineGeo = new THREE.BufferGeometry()
   lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePositions, 3))
@@ -338,6 +304,10 @@ export function samplePortraitAndCore(
   lineGeo.setAttribute('aDelay', new THREE.Float32BufferAttribute(lineDelays, 1))
   lineGeo.setAttribute('aStrength', new THREE.Float32BufferAttribute(lineStrengths, 1))
   lineGeo.setAttribute('aSize', new THREE.Float32BufferAttribute(lineSizes, 1))
+
+  const gold = new THREE.Color(CORE_COLOR)
+  const goldenRatio = (1 + Math.sqrt(5)) / 2
+  const featCount = portraitFeatures.length
 
   const nodePositions: number[] = []
   const nodeSizes: number[] = []
@@ -358,8 +328,8 @@ export function samplePortraitAndCore(
     const feat = findNearestFeature(u, v, i * 47 + 13)
 
     nodePositions.push(nx, ny, nz)
-    nodeSizes.push(rawNodeSize[i])
-    nodeStrengths.push(rawNodeStrength[i] * (0.55 + feat.strength * 0.6))
+    nodeSizes.push(rawNodeSize[i] * 0.75)
+    nodeStrengths.push(rawNodeStrength[i] * (0.45 + feat.strength * 0.55))
     nodeTargets.push(feat.x, feat.y, feat.z)
     nodeDelays.push(THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (i % 17) * 0.01, 0, 0.65))
     nodeColors.push(gold.r, gold.g, gold.b)
@@ -372,7 +342,8 @@ export function samplePortraitAndCore(
     const r = 2.04 + (i % 3) * 0.095
 
     nodePositions.push(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta))
-    nodeSizes.push(0.65 + feat.strength * 1.35)
+    // Crisp, fine point size (0.55 to 1.25) so high-res pixels form a clear photograph-like hologram
+    nodeSizes.push(0.52 + feat.strength * 0.68 + feat.edge * 0.35)
     nodeStrengths.push(feat.strength)
     nodeTargets.push(feat.x, feat.y, feat.z)
     nodeDelays.push(THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (i % 19) * 0.01, 0, 0.65))
