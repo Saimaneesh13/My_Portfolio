@@ -17,8 +17,8 @@ export default function HomeView() {
         }}
       />
 
-      {/* STAGE 1: Full-Viewport Split Hero (Unobstructed 3D on the Right) */}
-      <section className="min-h-[90vh] pt-24 flex items-center">
+      {/* STAGE 1: Full-Viewport Split Hero (100vh so below-the-fold content never peeks/clips) */}
+      <section className="relative min-h-screen pt-20 pb-12 flex items-center">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-6 max-w-[540px] space-y-6 pointer-events-auto">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-obsidian/60 border border-gold/25">
@@ -81,10 +81,21 @@ export default function HomeView() {
           {/* Right 6 columns intentionally left open as a clean stage for the 3D Hologram */}
           <div className="hidden lg:block lg:col-span-6 h-[520px]" />
         </div>
+
+        {/* Subtle Bottom-Center Scroll Prompt */}
+        <button
+          onClick={() => window.scrollTo({ top: window.innerHeight * 0.9, behavior: 'smooth' })}
+          className="absolute bottom-7 left-1/2 -translate-x-1/2 pointer-events-auto hidden md:flex flex-col items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity"
+        >
+          <span className="font-mono text-[9px] uppercase tracking-[3px] text-gold-champagne">
+            Scroll to Explore
+          </span>
+          <span className="w-[1px] h-6 bg-gradient-to-b from-gold to-transparent" />
+        </button>
       </section>
 
-      {/* STAGE 2: Selected Work Section (Sits cleanly below the hero fold) */}
-      <section className="pt-8 space-y-6 pointer-events-auto">
+      {/* STAGE 2: Selected Work Section (Now sits cleanly below 100vh) */}
+      <section className="pt-16 space-y-8 pointer-events-auto">
         <div className="flex items-end justify-between border-b border-gold/15 pb-4">
           <div>
             <div className="mono-label">01 // Featured Engineering</div>

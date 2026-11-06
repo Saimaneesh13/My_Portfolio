@@ -156,13 +156,24 @@ export function samplePortraitAndCore(
 
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
-      // Soft elliptical mask centered on the subject's head & torso to strip room background clutter
-      const normX = (x / width - 0.5) / 0.44
-      const normY = (y / height - 0.52) / 0.48
-      const radialDist = Math.sqrt(normX * normX + normY * normY)
-      const vignetteMask = THREE.MathUtils.clamp(1.25 - Math.pow(radialDist, 2.2) * 0.85, 0, 1)
+      const u = x / width
+      const v = y / height
 
-      if (vignetteMask <= 0.05) continue
+      // 1. Head & Hair ellipse (centered at u=0.52, v=0.36)
+      const headDx = (u - 0.52) / 0.24
+      const headDy = (v - 0.36) / 0.26
+      const headDist = Math.sqrt(headDx * headDx + headDy * headDy)
+
+      // 2. Shoulders & Torso ellipse (centered at u=0.53, v=0.72)
+      const torsoDx = (u - 0.53) / 0.28
+      const torsoDy = (v - 0.72) / 0.32
+      const torsoDist = Math.sqrt(torsoDx * torsoDx + torsoDy * torsoDy)
+
+      // Combine both ellipses so only the person's silhouette is sampled (strips left wall/window frame)
+      const minDist = Math.min(headDist, torsoDist)
+      const vignetteMask = THREE.MathUtils.clamp(1.18 - Math.pow(minDist, 2.4) * 0.95, 0, 1)
+
+      if (vignetteMask <= 0.08) continue
 
       const rawLum = lumGrid[y * width + x]
       const normLum = ((rawLum - minLum) / lumRange) * vignetteMask
