@@ -51,15 +51,45 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
   ctx.closePath()
   ctx.fillStyle = '#e8e8e8'
   ctx.fill()
+
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2.5
+  ctx.beginPath()
+  ctx.moveTo(cx - 44, cy + 102)
+  ctx.lineTo(cx - 64, cy + 150)
+  ctx.lineTo(cx - 18, cy + 215)
+  ctx.moveTo(cx + 44, cy + 102)
+  ctx.lineTo(cx + 64, cy + 150)
+  ctx.lineTo(cx + 18, cy + 215)
+  ctx.stroke()
   ctx.restore()
 
   // Neck
   ctx.save()
-  ctx.fillStyle = '#8c8c8c'
-  ctx.fillRect(cx - 28, cy + 68, 56, 44)
+  ctx.beginPath()
+  ctx.rect(cx - 28, cy + 68, 56, 44)
+  const neckGrad = ctx.createLinearGradient(cx - 28, cy + 68, cx + 28, cy + 68)
+  neckGrad.addColorStop(0, '#626262')
+  neckGrad.addColorStop(0.5, '#b8b8b8')
+  neckGrad.addColorStop(1, '#585858')
+  ctx.fillStyle = neckGrad
+  ctx.fill()
   ctx.restore()
 
-  // Head contour
+  // Ears
+  ctx.fillStyle = '#969696'
+  ctx.strokeStyle = '#d4d4d4'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.ellipse(cx - 72, cy + 4, 10, 22, -0.1, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.beginPath()
+  ctx.ellipse(cx + 72, cy + 4, 10, 22, 0.1, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+
+  // Face Contour
   ctx.save()
   ctx.beginPath()
   ctx.moveTo(cx - 68, cy - 25)
@@ -72,6 +102,7 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
   const faceGrad = ctx.createRadialGradient(cx - 10, cy - 10, 12, cx, cy, 90)
   faceGrad.addColorStop(0, '#fcfcfc')
   faceGrad.addColorStop(0.55, '#c6c6c6')
+  faceGrad.addColorStop(0.88, '#6e6e6e')
   faceGrad.addColorStop(1, '#3b3b3b')
   ctx.fillStyle = faceGrad
   ctx.fill()
@@ -80,19 +111,104 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
   ctx.stroke()
   ctx.restore()
 
-  // Hair & Facial features
+  // Hair
+  ctx.save()
+  ctx.beginPath()
+  ctx.moveTo(cx - 70, cy - 12)
+  ctx.quadraticCurveTo(cx - 82, cy - 75, cx - 38, cy - 104)
+  ctx.quadraticCurveTo(cx, cy - 122, cx + 48, cy - 102)
+  ctx.quadraticCurveTo(cx + 82, cy - 75, cx + 70, cy - 12)
+  ctx.quadraticCurveTo(cx + 58, cy - 52, cx + 24, cy - 64)
+  ctx.quadraticCurveTo(cx - 15, cy - 72, cx - 52, cy - 52)
+  ctx.closePath()
+  ctx.fillStyle = '#4a4a4a'
+  ctx.fill()
+  ctx.strokeStyle = '#d8d8d8'
+  ctx.lineWidth = 2
+  ctx.stroke()
+  ctx.strokeStyle = '#bababa'
+  ctx.lineWidth = 1.6
+  for (let i = -3; i <= 3; i++) {
+    ctx.beginPath()
+    ctx.moveTo(cx + i * 16, cy - 66)
+    ctx.quadraticCurveTo(cx + i * 20 - 8, cy - 92, cx + i * 12 + 10, cy - 108)
+    ctx.stroke()
+  }
+  ctx.restore()
+
+  // Eyebrows
   ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 3
+  ctx.lineWidth = 3.5
+  ctx.lineCap = 'round'
   ctx.beginPath()
   ctx.moveTo(cx - 46, cy - 16)
   ctx.quadraticCurveTo(cx - 28, cy - 24, cx - 13, cy - 17)
   ctx.moveTo(cx + 13, cy - 17)
   ctx.quadraticCurveTo(cx + 28, cy - 24, cx + 46, cy - 16)
+  ctx.stroke()
+
+  // Eyes
+  const drawEye = (ex: number, ey: number) => {
+    ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(ex - 15, ey)
+    ctx.quadraticCurveTo(ex, ey - 9, ex + 15, ey)
+    ctx.quadraticCurveTo(ex, ey + 8, ex - 15, ey)
+    ctx.closePath()
+    ctx.fillStyle = '#222222'
+    ctx.fill()
+    ctx.lineWidth = 2
+    ctx.strokeStyle = '#ffffff'
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(ex, ey, 4.5, 0, Math.PI * 2)
+    ctx.fillStyle = '#ffffff'
+    ctx.fill()
+    ctx.restore()
+  }
+  drawEye(cx - 29, cy - 3)
+  drawEye(cx + 29, cy - 3)
+
+  // Nose
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2.4
+  ctx.beginPath()
   ctx.moveTo(cx, cy - 15)
   ctx.lineTo(cx - 2, cy + 22)
-  ctx.lineTo(cx + 8, cy + 26)
+  ctx.lineTo(cx - 10, cy + 27)
+  ctx.moveTo(cx - 2, cy + 22)
+  ctx.lineTo(cx + 9, cy + 27)
+  ctx.stroke()
+
+  // Cheeks
+  ctx.strokeStyle = 'rgba(255,255,255,0.65)'
+  ctx.lineWidth = 1.6
+  ctx.beginPath()
+  ctx.moveTo(cx - 56, cy + 12)
+  ctx.quadraticCurveTo(cx - 44, cy + 36, cx - 28, cy + 46)
+  ctx.moveTo(cx + 56, cy + 12)
+  ctx.quadraticCurveTo(cx + 44, cy + 36, cx + 28, cy + 46)
+  ctx.stroke()
+
+  // Lips
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2.6
+  ctx.beginPath()
   ctx.moveTo(cx - 22, cy + 48)
   ctx.quadraticCurveTo(cx, cy + 55, cx + 22, cy + 48)
+  ctx.stroke()
+
+  ctx.lineWidth = 1.8
+  ctx.beginPath()
+  ctx.moveTo(cx - 14, cy + 56)
+  ctx.quadraticCurveTo(cx, cy + 61, cx + 14, cy + 56)
+  ctx.stroke()
+
+  // Chin
+  ctx.beginPath()
+  ctx.arc(cx, cy + 72, 9, 0.2 * Math.PI, 0.8 * Math.PI)
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 2
   ctx.stroke()
 
   return canvas
@@ -101,7 +217,7 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
 export function samplePortraitAndCore(
   imageSource: HTMLImageElement | HTMLCanvasElement,
   sampleStep = 2,
-  threshold = 0.11
+  threshold = 0.16
 ): MorphSystemData | null {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!
@@ -109,36 +225,36 @@ export function samplePortraitAndCore(
   const srcW = (imageSource as HTMLImageElement).naturalWidth || imageSource.width || 360
   const srcH = (imageSource as HTMLImageElement).naturalHeight || imageSource.height || 440
 
-  const targetMaxDim = 240
+  const targetMaxDim = 175
   const maxDim = Math.max(srcW, srcH)
   const effectiveStep = Math.max(1, (maxDim / targetMaxDim) * (sampleStep / 2))
 
-  const width = (canvas.width = Math.max(96, Math.floor(srcW / effectiveStep)))
-  const height = (canvas.height = Math.max(96, Math.floor(srcH / effectiveStep)))
+  const width = (canvas.width = Math.max(64, Math.floor(srcW / effectiveStep)))
+  const height = (canvas.height = Math.max(64, Math.floor(srcH / effectiveStep)))
 
   ctx.drawImage(imageSource, 0, 0, width, height)
   const imgData = ctx.getImageData(0, 0, width, height).data
 
   const aspect = width / height
-  const scale = 4.65
+  const scale = 4.75
 
   interface PortraitFeature {
     x: number
     y: number
     z: number
+    gx: number
+    gy: number
     strength: number
-    edge: number
     gridX: number
     gridY: number
   }
 
   const portraitFeatures: PortraitFeature[] = []
   const pixelGrid = new Int32Array(width * height).fill(-1)
-  const lumGrid = new Float32Array(width * height)
 
+  const lumGrid = new Float32Array(width * height)
   let minLum = 1.0
   let maxLum = 0.0
-
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * 4
@@ -146,8 +262,7 @@ export function samplePortraitAndCore(
       const r = (imgData[idx] / 255) * a
       const g = (imgData[idx + 1] / 255) * a
       const b = (imgData[idx + 2] / 255) * a
-      // Boost red/warm channel slightly so skin tones & facial planes register brightly
-      const lum = (0.38 * r + 0.50 * g + 0.12 * b)
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b
       lumGrid[y * width + x] = lum
       if (lum < minLum) minLum = lum
       if (lum > maxLum) maxLum = lum
@@ -156,65 +271,30 @@ export function samplePortraitAndCore(
 
   const lumRange = Math.max(0.05, maxLum - minLum)
 
-  for (let y = 2; y < height - 2; y++) {
-    for (let x = 2; x < width - 2; x++) {
-      const u = x / width
-      const v = y / height
-
-      // Elliptical subject mask + top-left wall suppression
-      const dx = (u - 0.52) / 0.37
-      const dy = (v - 0.53) / 0.46
-      const radialDist = Math.sqrt(dx * dx + dy * dy)
-      const topLeftWallPenalty = u < 0.36 && v < 0.52 ? Math.max(0, (0.36 - u) * 3.4) : 0
-      const vignetteMask = THREE.MathUtils.clamp(
-        1.28 - Math.pow(radialDist, 2.6) * 0.85 - topLeftWallPenalty,
-        0,
-        1
-      )
-
-      if (vignetteMask <= 0.08) continue
-
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
       const rawLum = lumGrid[y * width + x]
-      // Stronger gamma lift (0.68) so shadowed facial features and hair texture fill in
-      const normLum = Math.pow(Math.max(0, (rawLum - minLum) / lumRange), 0.68) * vignetteMask
+      const normLum = (rawLum - minLum) / lumRange
 
-      // Local 5x5 neighborhood average to extract facial features (eyes, nose, lips, curls)
-      let localSum = 0
-      for (let ky = -2; ky <= 2; ky++) {
-        for (let kx = -2; kx <= 2; kx++) {
-          localSum += lumGrid[(y + ky) * width + (x + kx)]
-        }
-      }
-      const localAvg = localSum / 25
-      const localContrast = Math.max(0, (rawLum - localAvg) * 3.2) * vignetteMask
+      const gx = lumGrid[y * width + (x + 1)] - lumGrid[y * width + (x - 1)]
+      const gy = lumGrid[(y + 1) * width + x] - lumGrid[(y - 1) * width + x]
+      const edge = Math.min(1.0, Math.sqrt(gx * gx + gy * gy) * 2.6)
 
-      // Sobel edge gradient
-      const gx = (lumGrid[y * width + (x + 1)] - lumGrid[y * width + (x - 1)]) * vignetteMask
-      const gy = (lumGrid[(y + 1) * width + x] - lumGrid[(y - 1) * width + x]) * vignetteMask
-      const edge = Math.min(1.0, Math.sqrt(gx * gx + gy * gy) * 3.6)
-
-      // Face region boost (centered around head u=0.48, v=0.36) so the face is the brightest focal point
-      const faceDist = Math.hypot((u - 0.48) / 0.16, (v - 0.36) / 0.18)
-      const faceSpotlight = faceDist < 1.0 ? (1.0 - faceDist) * 0.28 : 0.0
-
-      const combinedStrength = Math.min(
-        1.55,
-        normLum * 0.68 + edge * 0.92 + localContrast * 0.75 + faceSpotlight
-      )
+      const combinedStrength = Math.min(1.35, normLum * 0.78 + edge * 0.65)
 
       if (combinedStrength > threshold) {
-        const px = (u - 0.5) * scale * aspect
-        const py = (0.5 - v) * scale
-        // Subtle 3D relief that pushes the face slightly forward
-        const pz = (normLum - 0.35) * 0.18 + edge * 0.08 + faceSpotlight * 0.15
+        const px = (x / width - 0.5) * scale * aspect
+        const py = (0.5 - y / height) * scale
+        const pz = (normLum - 0.35) * 0.55 + edge * 0.18
 
         const featureIndex = portraitFeatures.length
         portraitFeatures.push({
           x: px,
           y: py,
           z: pz,
-          strength: Math.max(0.28, combinedStrength),
-          edge,
+          gx,
+          gy,
+          strength: Math.max(0.25, combinedStrength),
           gridX: x,
           gridY: y,
         })
@@ -225,7 +305,7 @@ export function samplePortraitAndCore(
 
   if (portraitFeatures.length === 0) return null
 
-  const BUCKET_RES = 28
+  const BUCKET_RES = 24
   const buckets: number[][] = Array.from({ length: BUCKET_RES * BUCKET_RES }, () => [])
 
   portraitFeatures.forEach((feat, idx) => {
@@ -247,27 +327,31 @@ export function samplePortraitAndCore(
           const ny = targetBy + dy
           if (nx >= 0 && nx < BUCKET_RES && ny >= 0 && ny < BUCKET_RES) {
             const cell = buckets[ny * BUCKET_RES + nx]
-            for (let k = 0; k < cell.length; k++) candidates.push(cell[k])
+            if (cell.length > 0) {
+              for (let k = 0; k < cell.length; k++) candidates.push(cell[k])
+            }
           }
         }
       }
       if (candidates.length > 0) {
-        return portraitFeatures[candidates[Math.abs(hashSeed) % candidates.length]]
+        const chosenIdx = candidates[Math.abs(hashSeed) % candidates.length]
+        return portraitFeatures[chosenIdx]
       }
     }
     return portraitFeatures[Math.abs(hashSeed) % portraitFeatures.length]
   }
 
   const coreGeo = createCoreGeometry()
+
   const linePositions: number[] = []
   const lineColors: number[] = []
   const lineTargets: number[] = []
   const lineDelays: number[] = []
   const lineStrengths: number[] = []
   const lineSizes: number[] = []
+
   const coreRadius = 2.25
 
-  // 1. Map Core Sphere Geometry Segments
   ;[coreGeo.surface, coreGeo.circuitry, coreGeo.lattice].forEach((geo) => {
     const pos = geo.attributes.position.array as Float32Array
     const col = geo.attributes.color.array as Float32Array
@@ -283,14 +367,15 @@ export function samplePortraitAndCore(
 
       const u = THREE.MathUtils.clamp((mx / coreRadius) * 0.5 + 0.5, 0, 1)
       const v = THREE.MathUtils.clamp(0.5 - (my / coreRadius) * 0.5, 0, 1)
+
       const feat = findNearestFeature(u, v, s * 31 + 17)
 
-      let dx = (bx - ax) * 0.09
-      let dy = (by - ay) * 0.09
-      let dz = (bz - az) * 0.04
+      let dx = (bx - ax) * 0.18
+      let dy = (by - ay) * 0.18
+      let dz = (bz - az) * 0.12
       const segLen = Math.hypot(dx, dy, dz)
-      if (segLen > 0.055) {
-        const clampScale = 0.055 / segLen
+      if (segLen > 0.11) {
+        const clampScale = 0.11 / segLen
         dx *= clampScale
         dy *= clampScale
         dz *= clampScale
@@ -298,6 +383,7 @@ export function samplePortraitAndCore(
 
       linePositions.push(ax, ay, az, bx, by, bz)
       lineColors.push(col[i6], col[i6 + 1], col[i6 + 2], col[i6 + 3], col[i6 + 4], col[i6 + 5])
+
       lineTargets.push(
         feat.x - dx * 0.5, feat.y - dy * 0.5, feat.z - dz * 0.5,
         feat.x + dx * 0.5, feat.y + dy * 0.5, feat.z + dz * 0.5
@@ -305,12 +391,11 @@ export function samplePortraitAndCore(
 
       const delay = THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (s % 13) * 0.012, 0, 0.65)
       lineDelays.push(delay, delay)
-      lineStrengths.push(feat.strength * 0.65, feat.strength * 0.65)
+      lineStrengths.push(feat.strength * 0.85, feat.strength * 0.85)
       lineSizes.push(1.0, 1.0)
     }
   })
 
-  // 2. RESTORED: Connect Neighboring Portrait Features into Intricate Golden Wire Traces
   const gold = new THREE.Color(CORE_COLOR)
   const goldenRatio = (1 + Math.sqrt(5)) / 2
   const featCount = portraitFeatures.length
@@ -323,11 +408,11 @@ export function samplePortraitAndCore(
 
       const idxRight = pixelGrid[y * width + (x + 1)]
       const idxDown = pixelGrid[(y + 1) * width + x]
-      const idxDiag = pixelGrid[(y + 1) * width + (x + 1)]
 
       const connectNeighbor = (idxB: number, intensityBoost: number) => {
         const featB = portraitFeatures[idxB]
-        if (Math.hypot(featB.x - featA.x, featB.y - featA.y) > 0.12) return
+        const dist = Math.hypot(featB.x - featA.x, featB.y - featA.y)
+        if (dist > 0.14) return
 
         const theta = (2 * Math.PI * idxA) / goldenRatio
         const phi = Math.acos(1 - (2 * (idxA + 0.5)) / featCount)
@@ -337,23 +422,33 @@ export function samplePortraitAndCore(
         const sy = r * Math.cos(phi)
         const sz = r * Math.sin(phi) * Math.sin(theta)
 
-        linePositions.push(sx, sy, sz, sx + (featB.x - featA.x) * 0.25, sy + (featB.y - featA.y) * 0.25, sz)
-        const colIntensity = (0.45 + (featA.strength + featB.strength) * 0.42) * intensityBoost
+        linePositions.push(
+          sx, sy, sz,
+          sx + (featB.x - featA.x) * 0.25,
+          sy + (featB.y - featA.y) * 0.25,
+          sz
+        )
+
+        const colIntensity = (0.38 + (featA.strength + featB.strength) * 0.35) * intensityBoost
         lineColors.push(
           gold.r * colIntensity, gold.g * colIntensity, gold.b * colIntensity,
           gold.r * colIntensity, gold.g * colIntensity, gold.b * colIntensity
         )
+
         lineTargets.push(featA.x, featA.y, featA.z, featB.x, featB.y, featB.z)
 
         const delay = THREE.MathUtils.clamp((featA.y / scale + 0.5) * 0.42 + (idxA % 11) * 0.014, 0, 0.65)
         lineDelays.push(delay, delay)
-        lineStrengths.push(featA.strength * 1.15, featB.strength * 1.15)
+        lineStrengths.push(featA.strength, featB.strength)
         lineSizes.push(1.0, 1.0)
       }
 
-      if (idxRight !== -1) connectNeighbor(idxRight, 1.05)
-      if (idxDown !== -1 && (featA.edge > 0.18 || (x + y) % 2 === 0)) connectNeighbor(idxDown, 0.95)
-      if (idxDiag !== -1 && featA.edge > 0.28) connectNeighbor(idxDiag, 0.85)
+      if (idxRight !== -1 && (x + y) % 2 === 0) {
+        connectNeighbor(idxRight, 0.95)
+      }
+      if (idxDown !== -1 && featA.strength > 0.48 && (x * 3 + y) % 3 === 0) {
+        connectNeighbor(idxDown, 0.85)
+      }
     }
   }
 
@@ -384,8 +479,8 @@ export function samplePortraitAndCore(
     const feat = findNearestFeature(u, v, i * 47 + 13)
 
     nodePositions.push(nx, ny, nz)
-    nodeSizes.push(rawNodeSize[i] * 0.85)
-    nodeStrengths.push(rawNodeStrength[i] * (0.5 + feat.strength * 0.6))
+    nodeSizes.push(rawNodeSize[i])
+    nodeStrengths.push(rawNodeStrength[i] * (0.55 + feat.strength * 0.6))
     nodeTargets.push(feat.x, feat.y, feat.z)
     nodeDelays.push(THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (i % 17) * 0.01, 0, 0.65))
     nodeColors.push(gold.r, gold.g, gold.b)
@@ -397,8 +492,12 @@ export function samplePortraitAndCore(
     const phi = Math.acos(1 - (2 * (i + 0.5)) / featCount)
     const r = 2.04 + (i % 3) * 0.095
 
-    nodePositions.push(r * Math.sin(phi) * Math.cos(theta), r * Math.cos(phi), r * Math.sin(phi) * Math.sin(theta))
-    nodeSizes.push(0.62 + feat.strength * 0.85 + feat.edge * 0.45)
+    const sx = r * Math.sin(phi) * Math.cos(theta)
+    const sy = r * Math.cos(phi)
+    const sz = r * Math.sin(phi) * Math.sin(theta)
+
+    nodePositions.push(sx, sy, sz)
+    nodeSizes.push(0.65 + feat.strength * 1.35)
     nodeStrengths.push(feat.strength)
     nodeTargets.push(feat.x, feat.y, feat.z)
     nodeDelays.push(THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (i % 19) * 0.01, 0, 0.65))
@@ -413,5 +512,10 @@ export function samplePortraitAndCore(
   nodeGeo.setAttribute('aTarget', new THREE.Float32BufferAttribute(nodeTargets, 3))
   nodeGeo.setAttribute('aDelay', new THREE.Float32BufferAttribute(nodeDelays, 1))
 
-  return { lineGeo, nodeGeo, featureCount: featCount, totalNodes: nodePositions.length / 3 }
+  return {
+    lineGeo,
+    nodeGeo,
+    featureCount: featCount,
+    totalNodes: nodePositions.length / 3,
+  }
 }

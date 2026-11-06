@@ -75,7 +75,7 @@ function NeuralCoreMesh() {
 
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
-      if ((e.target as HTMLElement).closest('button, input, a, .glass-panel')) return
+      if ((e.target as HTMLElement).closest('button, input, a, .glass-panel, form')) return
       dragRef.current.active = true
       dragRef.current.prevX = e.clientX
       dragRef.current.prevY = e.clientY
@@ -114,17 +114,26 @@ function NeuralCoreMesh() {
     const p = uniforms.uProgress.value
     const spherePresence = Math.max(0, 1.0 - p * 1.12)
 
+    // Position the core/portrait on desktop based on current route
     const isDesktop = size.width >= 1024
-    const isHome = flowState === 'home'
-    const targetX = isHome && isDesktop ? 2.15 : 0
-    const targetY = isHome && isDesktop ? 0.12 : 0
-    const targetScale = isHome && isDesktop ? 0.96 : 1.0
+    let targetX = 0
+    let targetY = 0
+    if (isDesktop) {
+      if (flowState === 'home') {
+        targetX = 1.85
+        targetY = 0.05
+      } else if (flowState === 'about') {
+        targetX = 0
+        targetY = 0.55
+      } else if (['projects', 'case-study', 'expertise', 'contact'].includes(flowState)) {
+        targetX = 1.4
+        targetY = 0
+      }
+    }
 
     if (rootGroup.current) {
       rootGroup.current.position.x = THREE.MathUtils.lerp(rootGroup.current.position.x, targetX, 0.06)
       rootGroup.current.position.y = THREE.MathUtils.lerp(rootGroup.current.position.y, targetY, 0.06)
-      const currentScale = THREE.MathUtils.lerp(rootGroup.current.scale.x, targetScale, 0.06)
-      rootGroup.current.scale.setScalar(currentScale)
     }
 
     if (!dragRef.current.active) {
@@ -133,10 +142,7 @@ function NeuralCoreMesh() {
     }
 
     if (morphGroup.current) {
-      // Angle the portrait inward (-0.26 rad) when positioned on the right side of the Home screen
-      // so the face points directly at the viewer
-      const portraitFacingOffset = isHome && isDesktop ? -0.26 * (1.0 - spherePresence) : 0
-      const baseRotY = elapsed * 0.16 * spherePresence + portraitFacingOffset + dragRef.current.rotY
+      const baseRotY = elapsed * 0.16 * spherePresence + dragRef.current.rotY
       const baseRotX = Math.sin(elapsed * 0.25) * 0.1 * spherePresence + dragRef.current.rotX
       morphGroup.current.rotation.y = THREE.MathUtils.lerp(morphGroup.current.rotation.y, baseRotY, 0.12)
       morphGroup.current.rotation.x = THREE.MathUtils.lerp(morphGroup.current.rotation.x, baseRotX, 0.12)
@@ -146,9 +152,8 @@ function NeuralCoreMesh() {
       orbitGroup.current.rotation.y = -elapsed * 0.05
       orbitGroup.current.rotation.z = elapsed * 0.02
     }
-    // Keep a subtle 14% golden orbital halo framing the portrait even when fully morphed
-    if (outerOrbitMat.current) outerOrbitMat.current.opacity = Math.max(0.14, 0.55 * spherePresence)
-    if (innerOrbitMat.current) innerOrbitMat.current.opacity = Math.max(0.08, 0.8 * spherePresence)
+    if (outerOrbitMat.current) outerOrbitMat.current.opacity = 0.55 * spherePresence
+    if (innerOrbitMat.current) innerOrbitMat.current.opacity = 0.8 * spherePresence
     if (icoInnerMat.current) icoInnerMat.current.opacity = 0.9 * spherePresence
     if (icoOuterMat.current) icoOuterMat.current.opacity = 0.65 * spherePresence
 
@@ -249,7 +254,7 @@ function NeuralCoreMesh() {
       </group>
 
       <EffectComposer multisampling={0}>
-        <Bloom intensity={0.82} luminanceThreshold={0.68} luminanceSmoothing={0.75} mipmapBlur />
+        <Bloom intensity={1.15} luminanceThreshold={0.65} luminanceSmoothing={0.6} mipmapBlur />
       </EffectComposer>
     </>
   )

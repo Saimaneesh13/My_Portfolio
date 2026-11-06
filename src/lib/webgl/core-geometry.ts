@@ -58,6 +58,7 @@ export function createCoreGeometry() {
     strengths.push(strength)
   }
 
+  // 1. SURFACE LAYERS
   for (let layer = 0; layer < 3; layer++) {
     const radius = 2.04 + layer * 0.095
     for (let band = -10; band <= 10; band++) {
@@ -86,6 +87,7 @@ export function createCoreGeometry() {
     }
   }
 
+  // 2. CIRCUITRY PATHS
   for (let path = 0; path < 310; path++) {
     const radius = 1.94 + random() * 0.31
     let longitude = random() * Math.PI * 2
@@ -112,6 +114,7 @@ export function createCoreGeometry() {
     }
   }
 
+  // 3. INTERNAL LATTICE
   const interior = Array.from({ length: 180 }, () => {
     const point = spherePoint(0.5 + random() * 1.22, random() * Math.PI * 2, Math.asin(random() * 2 - 1))
     node(point, 0.5 + random(), 0.65)
@@ -227,8 +230,8 @@ export const morphVertexShader = `
     vec4 viewPosition = modelViewMatrix * vec4(blendedPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
 
-    float pSize = mix(aSize, aSize * 0.92, ease);
-    gl_PointSize = clamp(pSize * (17.5 / -viewPosition.z), 1.0, 11.0);
+    float pSize = mix(aSize, aSize * 1.25, ease);
+    gl_PointSize = clamp(pSize * (22.0 / -viewPosition.z), 1.0, 18.0);
   }
 `
 
@@ -239,21 +242,13 @@ export const morphFragmentShader = `
 
   void main() {
     float dist = length(gl_PointCoord - 0.5);
-    float core = 1.0 - smoothstep(0.03, 0.20, dist);
-    float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.6);
-    float alpha = (core * 0.9 + glow * 0.62) * mix(0.78, 0.98, vEase);
+    float core = 1.0 - smoothstep(0.04, 0.22, dist);
+    float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.8);
+    float alpha = (core * 0.82 + glow * 0.58) * mix(0.75, 0.95, vEase);
 
     if (alpha < 0.02) discard;
 
-    // 3-Tier Thermal Luxury Palette: Deep Bronze -> Golden Core -> Hot Champagne White
-    vec3 bronzeShadow = vec3(0.54, 0.35, 0.14);
-    vec3 champagnePeak = vec3(1.0, 0.95, 0.82);
-
-    float normS = clamp((vStrength - 0.25) / 1.15, 0.0, 1.0);
-    vec3 thermalColor = mix(bronzeShadow, uColor, smoothstep(0.0, 0.55, normS));
-    thermalColor = mix(thermalColor, champagnePeak, smoothstep(0.55, 1.0, normS) * 0.75);
-
-    vec3 finalColor = thermalColor * (0.9 + core * 1.45);
+    vec3 finalColor = uColor * (0.85 + core * 1.35) * clamp(vStrength, 0.25, 1.45);
     gl_FragColor = vec4(finalColor, alpha);
   }
 `
@@ -265,14 +260,8 @@ export const morphLineFragmentShader = `
   varying float vEase;
 
   void main() {
-    vec3 champagnePeak = vec3(1.0, 0.94, 0.78);
-    float highlight = smoothstep(0.75, 1.35, vStrength);
-
-    // Keep contour wires vibrant so the portrait looks like an interconnected neural mesh
-    float lineAlpha = mix(0.34, 0.32, vEase) * clamp(vStrength, 0.28, 1.25);
-    vec3 baseWire = mix(vColor, uColor * (0.55 + vStrength * 0.6), vEase * 0.7);
-    vec3 finalWire = mix(baseWire, champagnePeak, highlight * vEase * 0.5);
-
-    gl_FragColor = vec4(finalWire, lineAlpha);
+    float lineAlpha = mix(0.32, 0.44, vEase) * clamp(vStrength, 0.3, 1.25);
+    vec3 lineCol = mix(vColor, uColor * (0.55 + vStrength * 0.65), vEase * 0.65);
+    gl_FragColor = vec4(lineCol, lineAlpha);
   }
 `
