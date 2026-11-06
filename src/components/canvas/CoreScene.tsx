@@ -114,11 +114,18 @@ function NeuralCoreMesh() {
     const p = uniforms.uProgress.value
     const spherePresence = Math.max(0, 1.0 - p * 1.12)
 
-    // Position the core on the right split-screen on desktop Home view
+    // Position the core/portrait cleanly in the right-hand Hero column on desktop
     const isDesktop = size.width >= 1024
-    const targetX = flowState === 'home' && isDesktop && manualProgress === null ? 1.85 : 0
+    const isHome = flowState === 'home'
+    const targetX = isHome && isDesktop ? 2.35 : 0
+    const targetY = isHome && isDesktop ? 0.18 : 0
+    const targetScale = isHome && isDesktop ? 0.88 : 1.0
+
     if (rootGroup.current) {
       rootGroup.current.position.x = THREE.MathUtils.lerp(rootGroup.current.position.x, targetX, 0.06)
+      rootGroup.current.position.y = THREE.MathUtils.lerp(rootGroup.current.position.y, targetY, 0.06)
+      const currentScale = THREE.MathUtils.lerp(rootGroup.current.scale.x, targetScale, 0.06)
+      rootGroup.current.scale.setScalar(currentScale)
     }
 
     if (!dragRef.current.active) {

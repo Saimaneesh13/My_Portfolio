@@ -9,8 +9,8 @@ export default function TelemetryHud() {
 
   return (
     <>
-      <div className="fixed top-6 left-6 z-20 pointer-events-none hidden xl:block">
-        <div className="font-mono text-[10px] tracking-[2px] text-gold/70 uppercase">
+      <div className="fixed bottom-6 left-6 z-20 pointer-events-none hidden lg:block">
+        <div className="font-mono text-[10px] tracking-[2px] text-gold/60 uppercase">
           SYS // NEURAL_CORE_GLSL · STATE: {flowState.toUpperCase()}
         </div>
       </div>

@@ -5,7 +5,9 @@
 @tailwind utilities;
 
 @layer base {
-  html, body {
+
+  html,
+  body {
     @apply bg-space text-pure font-sans antialiased selection:bg-gold/30 selection:text-pure overflow-x-hidden;
   }
 }
@@ -46,13 +48,16 @@
 ::-webkit-scrollbar {
   width: 5px;
 }
+
 ::-webkit-scrollbar-track {
   background: #070B13;
 }
+
 ::-webkit-scrollbar-thumb {
   background: rgba(234, 183, 103, 0.28);
   border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(234, 183, 103, 0.6);
 }

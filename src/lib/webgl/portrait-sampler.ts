@@ -156,11 +156,19 @@ export function samplePortraitAndCore(
 
   for (let y = 1; y < height - 1; y++) {
     for (let x = 1; x < width - 1; x++) {
-      const rawLum = lumGrid[y * width + x]
-      const normLum = (rawLum - minLum) / lumRange
+      // Soft elliptical mask centered on the subject's head & torso to strip room background clutter
+      const normX = (x / width - 0.5) / 0.44
+      const normY = (y / height - 0.52) / 0.48
+      const radialDist = Math.sqrt(normX * normX + normY * normY)
+      const vignetteMask = THREE.MathUtils.clamp(1.25 - Math.pow(radialDist, 2.2) * 0.85, 0, 1)
 
-      const gx = lumGrid[y * width + (x + 1)] - lumGrid[y * width + (x - 1)]
-      const gy = lumGrid[(y + 1) * width + x] - lumGrid[(y - 1) * width + x]
+      if (vignetteMask <= 0.05) continue
+
+      const rawLum = lumGrid[y * width + x]
+      const normLum = ((rawLum - minLum) / lumRange) * vignetteMask
+
+      const gx = (lumGrid[y * width + (x + 1)] - lumGrid[y * width + (x - 1)]) * vignetteMask
+      const gy = (lumGrid[(y + 1) * width + x] - lumGrid[(y - 1) * width + x]) * vignetteMask
       const edge = Math.min(1.0, Math.sqrt(gx * gx + gy * gy) * 2.6)
       const combinedStrength = Math.min(1.35, normLum * 0.78 + edge * 0.65)
 
