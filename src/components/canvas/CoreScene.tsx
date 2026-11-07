@@ -32,6 +32,8 @@ function NeuralCoreMesh() {
   const icoInnerMat = useRef<THREE.MeshBasicMaterial>(null)
   const icoOuterMat = useRef<THREE.MeshBasicMaterial>(null)
   const bloomRef = useRef<any>(null)
+  // Smoothly interpolated frustum offset so switching from Home -> Projects -> Case Studies never snaps!
+  const smoothViewOffsetRef = useRef(0)
 
   const [morphData, setMorphData] = useState<MorphSystemData | null>(null)
 
@@ -110,24 +112,34 @@ function NeuralCoreMesh() {
     const elapsed = state.clock.elapsedTime
     uniforms.uTime.value = elapsed
 
+    // 1. Smoothly damp uProgress (0 = Golden Core Sphere, 1 = 3D Portrait)
     const desiredProgress = manualProgress !== null ? manualProgress : targetProgress
-    uniforms.uProgress.value += (desiredProgress - uniforms.uProgress.value) * 0.045
+    uniforms.uProgress.value = THREE.MathUtils.damp(uniforms.uProgress.value, desiredProgress, 3.2, dt)
     const p = uniforms.uProgress.value
     const spherePresence = Math.max(0.0, 1.0 - p * 1.12)
 
-    // Dynamically tune Bloom: fiery 1.35 glow on Sphere (p=0), crisp 0.78 on Portrait (p=1) for clear facial detail
+    // 2. Smoothly transition Bloom intensity: rich glow on Sphere, crisp detail on Portrait
     if (bloomRef.current) {
-      bloomRef.current.intensity = THREE.MathUtils.lerp(1.35, 0.78, p)
+      const targetBloom = THREE.MathUtils.lerp(1.25, 0.72, p)
+      bloomRef.current.intensity = THREE.MathUtils.damp(bloomRef.current.intensity, targetBloom, 4.0, dt)
     }
 
     const isDesktop = size.width >= 1024
 
-    // Use frustum viewOffset on Home so the portrait sits on the right with ZERO 3D angle distortion
-    if (flowState === 'home' && isDesktop) {
+    // 3. Smoothly interpolate camera frustum offset (eliminates the sudden snap when leaving Home!)
+    const targetViewOffsetX = flowState === 'home' && isDesktop ? -size.width * 0.21 : 0
+    smoothViewOffsetRef.current = THREE.MathUtils.damp(
+      smoothViewOffsetRef.current,
+      targetViewOffsetX,
+      3.8,
+      dt
+    )
+
+    if (Math.abs(smoothViewOffsetRef.current) > 0.5) {
       state.camera.setViewOffset(
         size.width,
         size.height,
-        -size.width * 0.22, // Shifts rendered center 22% to the right of the screen
+        smoothViewOffsetRef.current,
         0,
         size.width,
         size.height
@@ -136,26 +148,49 @@ function NeuralCoreMesh() {
       state.camera.clearViewOffset()
     }
 
-    // Position the Core per page:
-    // - Home: centered in its shifted frustum (0, 0)
-    // - Case Study: pushed to the top-right (x: 3.35, y: 1.35, scale: 1.22) so half the glowing horizon peeks in!
+    // 4. Per-Page Smooth 3D Core Choreography (Position & Scale)
     let targetX = 0
     let targetY = 0
+    let targetZ = 0
     let targetScale = 1.0
 
-    if (flowState === 'case-study' && isDesktop) {
-      targetX = 3.35
-      targetY = 1.35
-      targetScale = 1.22
-    } else if (['projects', 'expertise', 'contact'].includes(flowState)) {
-      targetScale = 0.68
+    if (flowState === 'home' && isDesktop) {
+      targetX = 0
+      targetY = 0.04
+      targetScale = 0.96
+    } else if (flowState === 'projects') {
+      targetX = 0
+      targetY = 0.05
+      targetZ = -1.2
+      targetScale = 0.72
+    } else if (flowState === 'case-study' && isDesktop) {
+      // Positioned on the upper-right horizon like a rising planet, tucked cleanly behind the card edge
+      targetX = 3.85
+      targetY = 0.95
+      targetZ = -1.4
+      targetScale = 0.92
+    } else if (flowState === 'expertise' && isDesktop) {
+      targetX = 0
+      targetY = 0.05
+      targetZ = -0.8
+      targetScale = 0.78
+    } else if (flowState === 'about' && isDesktop) {
+      targetX = 2.2
+      targetY = 0
+      targetScale = 0.88
+    } else if (flowState === 'contact') {
+      targetX = 0
+      targetY = 0
+      targetZ = -1.5
+      targetScale = 0.62
     }
 
     if (rootGroup.current) {
-      rootGroup.current.position.x = THREE.MathUtils.lerp(rootGroup.current.position.x, targetX, 0.06)
-      rootGroup.current.position.y = THREE.MathUtils.lerp(rootGroup.current.position.y, targetY, 0.06)
-      const s = THREE.MathUtils.lerp(rootGroup.current.scale.x, targetScale, 0.06)
-      rootGroup.current.scale.setScalar(s)
+      rootGroup.current.position.x = THREE.MathUtils.damp(rootGroup.current.position.x, targetX, 3.6, dt)
+      rootGroup.current.position.y = THREE.MathUtils.damp(rootGroup.current.position.y, targetY, 3.6, dt)
+      rootGroup.current.position.z = THREE.MathUtils.damp(rootGroup.current.position.z, targetZ, 3.6, dt)
+      const nextScale = THREE.MathUtils.damp(rootGroup.current.scale.x, targetScale, 3.6, dt)
+      rootGroup.current.scale.setScalar(nextScale)
     }
 
     if (!dragRef.current.active) {
@@ -166,8 +201,8 @@ function NeuralCoreMesh() {
     if (morphGroup.current) {
       const baseRotY = elapsed * 0.16 * spherePresence + dragRef.current.rotY
       const baseRotX = Math.sin(elapsed * 0.25) * 0.1 * spherePresence + dragRef.current.rotX
-      morphGroup.current.rotation.y = THREE.MathUtils.lerp(morphGroup.current.rotation.y, baseRotY, 0.12)
-      morphGroup.current.rotation.x = THREE.MathUtils.lerp(morphGroup.current.rotation.x, baseRotX, 0.12)
+      morphGroup.current.rotation.y = THREE.MathUtils.damp(morphGroup.current.rotation.y, baseRotY, 6.0, dt)
+      morphGroup.current.rotation.x = THREE.MathUtils.damp(morphGroup.current.rotation.x, baseRotX, 6.0, dt)
     }
 
     if (orbitGroup.current) {
