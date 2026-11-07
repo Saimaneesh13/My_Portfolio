@@ -323,7 +323,8 @@ export function samplePortraitAndCore(
 
         const delay = THREE.MathUtils.clamp((featA.y / scale + 0.5) * 0.42 + (idxA % 11) * 0.014, 0, 0.65)
         lineDelays.push(delay, delay)
-        lineStrengths.push(featA.strength, featB.strength)
+        // Negative sign tells the shader this wire belongs ONLY to the portrait, keeping the sphere 100% pure circuitry
+        lineStrengths.push(-featA.strength, -featB.strength)
         lineSizes.push(1.0, 1.0)
       }
 
@@ -385,7 +386,8 @@ export function samplePortraitAndCore(
 
     nodePositions.push(sx, sy, sz)
     nodeSizes.push(0.65 + feat.strength * 1.35)
-    nodeStrengths.push(feat.strength)
+    // Negative sign tells the shader this Fibonacci node belongs ONLY to the portrait, keeping the sphere free of dot clutter
+    nodeStrengths.push(-feat.strength)
     nodeTargets.push(feat.x, feat.y, feat.z)
     nodeDelays.push(THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (i % 19) * 0.01, 0, 0.65))
     nodeColors.push(gold.r, gold.g, gold.b)

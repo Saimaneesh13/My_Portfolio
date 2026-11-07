@@ -181,6 +181,7 @@ function NeuralCoreMesh() {
                   vertexColors
                   transparent
                   depthWrite={false}
+                  toneMapped={false}
                   blending={THREE.AdditiveBlending}
                 />
               </points>
@@ -192,6 +193,7 @@ function NeuralCoreMesh() {
                   vertexColors
                   transparent
                   depthWrite={false}
+                  toneMapped={false}
                   blending={THREE.AdditiveBlending}
                 />
               </lineSegments>
@@ -251,7 +253,7 @@ function NeuralCoreMesh() {
       </group>
 
       <EffectComposer multisampling={0}>
-        <Bloom intensity={1.15} luminanceThreshold={0.6} luminanceSmoothing={0.65} mipmapBlur />
+        <Bloom intensity={1.35} luminanceThreshold={0.52} luminanceSmoothing={0.65} mipmapBlur radius={0.68} />
       </EffectComposer>
     </>
   )

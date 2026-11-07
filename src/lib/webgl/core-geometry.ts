@@ -227,8 +227,13 @@ export const morphVertexShader = `
     vec4 viewPosition = modelViewMatrix * vec4(blendedPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
 
-    float pSize = mix(aSize, aSize * 1.25, ease);
-    gl_PointSize = clamp(pSize * (22.0 / -viewPosition.z), 1.0, 18.0);
+    // If aStrength < 0.0, this is an extra portrait-only node: keep size 0 on the sphere so it doesn't clutter the circuitry!
+    float isPortraitOnly = step(0.0, -aStrength);
+    float absStrength = abs(aStrength);
+    float sphereScale = mix(1.0, vEase, isPortraitOnly);
+
+    float pSize = mix(aSize, aSize * 1.2, ease) * sphereScale;
+    gl_PointSize = clamp(pSize * (16.0 / -viewPosition.z), 0.0, 15.0);
   }
 `
 
@@ -238,14 +243,19 @@ export const morphFragmentShader = `
   varying float vEase;
 
   void main() {
+    float isPortraitOnly = step(0.0, -vStrength);
+    float visibility = mix(1.0, vEase, isPortraitOnly);
+    if (visibility < 0.02) discard;
+
+    float s = abs(vStrength);
     float dist = length(gl_PointCoord - 0.5);
     float core = 1.0 - smoothstep(0.04, 0.22, dist);
     float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.8);
-    float alpha = (core * 0.82 + glow * 0.58) * mix(0.75, 0.95, vEase);
+    float alpha = (core * 0.85 + glow * 0.55) * visibility;
 
     if (alpha < 0.02) discard;
 
-    vec3 finalColor = uColor * (0.85 + core * 1.35) * clamp(vStrength, 0.25, 1.45);
+    vec3 finalColor = uColor * (0.9 + core * 1.4) * clamp(s, 0.3, 1.5);
     gl_FragColor = vec4(finalColor, alpha);
   }
 `
@@ -257,8 +267,22 @@ export const morphLineFragmentShader = `
   varying float vEase;
 
   void main() {
-    float lineAlpha = mix(0.32, 0.44, vEase) * clamp(vStrength, 0.3, 1.25);
-    vec3 lineCol = mix(vColor, uColor * (0.55 + vStrength * 0.65), vEase * 0.65);
+    // Negative vStrength marks extra portrait-only contour lines -> invisible at uProgress=0 (Sphere), visible at uProgress=1 (Portrait)
+    float isPortraitOnly = step(0.0, -vStrength);
+    float s = abs(vStrength);
+
+    // At uProgress = 0 (Sphere): render pure 1.0 alpha vertex color (vColor) so the 90-degree circuit paths glow brightly like Screenshot 2!
+    float sphereAlpha = 0.96 * (1.0 - isPortraitOnly);
+    float portraitAlpha = 0.42 * clamp(s, 0.3, 1.25);
+    float lineAlpha = mix(sphereAlpha, portraitAlpha, vEase);
+
+    if (lineAlpha < 0.01) discard;
+
+    // Preserve exact HDR vertex colors (vColor) on the sphere so UnrealBloom lights up the circuit traces
+    vec3 sphereCol = vColor * 1.15;
+    vec3 portraitCol = mix(vColor, uColor * (0.55 + s * 0.65), 0.65);
+    vec3 lineCol = mix(sphereCol, portraitCol, vEase);
+
     gl_FragColor = vec4(lineCol, lineAlpha);
   }
 `
