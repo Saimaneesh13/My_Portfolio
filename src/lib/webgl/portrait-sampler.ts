@@ -51,45 +51,15 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
   ctx.closePath()
   ctx.fillStyle = '#e8e8e8'
   ctx.fill()
-
-  ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 2.5
-  ctx.beginPath()
-  ctx.moveTo(cx - 44, cy + 102)
-  ctx.lineTo(cx - 64, cy + 150)
-  ctx.lineTo(cx - 18, cy + 215)
-  ctx.moveTo(cx + 44, cy + 102)
-  ctx.lineTo(cx + 64, cy + 150)
-  ctx.lineTo(cx + 18, cy + 215)
-  ctx.stroke()
   ctx.restore()
 
   // Neck
   ctx.save()
-  ctx.beginPath()
-  ctx.rect(cx - 28, cy + 68, 56, 44)
-  const neckGrad = ctx.createLinearGradient(cx - 28, cy + 68, cx + 28, cy + 68)
-  neckGrad.addColorStop(0, '#626262')
-  neckGrad.addColorStop(0.5, '#b8b8b8')
-  neckGrad.addColorStop(1, '#585858')
-  ctx.fillStyle = neckGrad
-  ctx.fill()
+  ctx.fillStyle = '#8c8c8c'
+  ctx.fillRect(cx - 28, cy + 68, 56, 44)
   ctx.restore()
 
-  // Ears
-  ctx.fillStyle = '#969696'
-  ctx.strokeStyle = '#d4d4d4'
-  ctx.lineWidth = 2
-  ctx.beginPath()
-  ctx.ellipse(cx - 72, cy + 4, 10, 22, -0.1, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.stroke()
-  ctx.beginPath()
-  ctx.ellipse(cx + 72, cy + 4, 10, 22, 0.1, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.stroke()
-
-  // Face Contour
+  // Head contour
   ctx.save()
   ctx.beginPath()
   ctx.moveTo(cx - 68, cy - 25)
@@ -102,7 +72,6 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
   const faceGrad = ctx.createRadialGradient(cx - 10, cy - 10, 12, cx, cy, 90)
   faceGrad.addColorStop(0, '#fcfcfc')
   faceGrad.addColorStop(0.55, '#c6c6c6')
-  faceGrad.addColorStop(0.88, '#6e6e6e')
   faceGrad.addColorStop(1, '#3b3b3b')
   ctx.fillStyle = faceGrad
   ctx.fill()
@@ -111,104 +80,19 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
   ctx.stroke()
   ctx.restore()
 
-  // Hair
-  ctx.save()
-  ctx.beginPath()
-  ctx.moveTo(cx - 70, cy - 12)
-  ctx.quadraticCurveTo(cx - 82, cy - 75, cx - 38, cy - 104)
-  ctx.quadraticCurveTo(cx, cy - 122, cx + 48, cy - 102)
-  ctx.quadraticCurveTo(cx + 82, cy - 75, cx + 70, cy - 12)
-  ctx.quadraticCurveTo(cx + 58, cy - 52, cx + 24, cy - 64)
-  ctx.quadraticCurveTo(cx - 15, cy - 72, cx - 52, cy - 52)
-  ctx.closePath()
-  ctx.fillStyle = '#4a4a4a'
-  ctx.fill()
-  ctx.strokeStyle = '#d8d8d8'
-  ctx.lineWidth = 2
-  ctx.stroke()
-  ctx.strokeStyle = '#bababa'
-  ctx.lineWidth = 1.6
-  for (let i = -3; i <= 3; i++) {
-    ctx.beginPath()
-    ctx.moveTo(cx + i * 16, cy - 66)
-    ctx.quadraticCurveTo(cx + i * 20 - 8, cy - 92, cx + i * 12 + 10, cy - 108)
-    ctx.stroke()
-  }
-  ctx.restore()
-
-  // Eyebrows
+  // Hair & Facial features
   ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 3.5
-  ctx.lineCap = 'round'
+  ctx.lineWidth = 3
   ctx.beginPath()
   ctx.moveTo(cx - 46, cy - 16)
   ctx.quadraticCurveTo(cx - 28, cy - 24, cx - 13, cy - 17)
   ctx.moveTo(cx + 13, cy - 17)
   ctx.quadraticCurveTo(cx + 28, cy - 24, cx + 46, cy - 16)
-  ctx.stroke()
-
-  // Eyes
-  const drawEye = (ex: number, ey: number) => {
-    ctx.save()
-    ctx.beginPath()
-    ctx.moveTo(ex - 15, ey)
-    ctx.quadraticCurveTo(ex, ey - 9, ex + 15, ey)
-    ctx.quadraticCurveTo(ex, ey + 8, ex - 15, ey)
-    ctx.closePath()
-    ctx.fillStyle = '#222222'
-    ctx.fill()
-    ctx.lineWidth = 2
-    ctx.strokeStyle = '#ffffff'
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.arc(ex, ey, 4.5, 0, Math.PI * 2)
-    ctx.fillStyle = '#ffffff'
-    ctx.fill()
-    ctx.restore()
-  }
-  drawEye(cx - 29, cy - 3)
-  drawEye(cx + 29, cy - 3)
-
-  // Nose
-  ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 2.4
-  ctx.beginPath()
   ctx.moveTo(cx, cy - 15)
   ctx.lineTo(cx - 2, cy + 22)
-  ctx.lineTo(cx - 10, cy + 27)
-  ctx.moveTo(cx - 2, cy + 22)
-  ctx.lineTo(cx + 9, cy + 27)
-  ctx.stroke()
-
-  // Cheeks
-  ctx.strokeStyle = 'rgba(255,255,255,0.65)'
-  ctx.lineWidth = 1.6
-  ctx.beginPath()
-  ctx.moveTo(cx - 56, cy + 12)
-  ctx.quadraticCurveTo(cx - 44, cy + 36, cx - 28, cy + 46)
-  ctx.moveTo(cx + 56, cy + 12)
-  ctx.quadraticCurveTo(cx + 44, cy + 36, cx + 28, cy + 46)
-  ctx.stroke()
-
-  // Lips
-  ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 2.6
-  ctx.beginPath()
+  ctx.lineTo(cx + 8, cy + 26)
   ctx.moveTo(cx - 22, cy + 48)
   ctx.quadraticCurveTo(cx, cy + 55, cx + 22, cy + 48)
-  ctx.stroke()
-
-  ctx.lineWidth = 1.8
-  ctx.beginPath()
-  ctx.moveTo(cx - 14, cy + 56)
-  ctx.quadraticCurveTo(cx, cy + 61, cx + 14, cy + 56)
-  ctx.stroke()
-
-  // Chin
-  ctx.beginPath()
-  ctx.arc(cx, cy + 72, 9, 0.2 * Math.PI, 0.8 * Math.PI)
-  ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 2
   ctx.stroke()
 
   return canvas
@@ -227,7 +111,7 @@ export function samplePortraitAndCore(
 
   const targetMaxDim = 175
   const maxDim = Math.max(srcW, srcH)
-  const effectiveStep = Math.max(1, (maxDim / targetMaxDim) * (sampleStep / 2))
+  const effectiveStep = Math.max(1, maxDim / targetMaxDim) * (sampleStep / 2)
 
   const width = (canvas.width = Math.max(64, Math.floor(srcW / effectiveStep)))
   const height = (canvas.height = Math.max(64, Math.floor(srcH / effectiveStep)))
@@ -473,7 +357,10 @@ export function samplePortraitAndCore(
   const coreNodeCount = rawNodePos.length / 3
 
   for (let i = 0; i < coreNodeCount; i++) {
-    const nx = rawNodePos[i * 3], ny = rawNodePos[i * 3 + 1], nz = rawNodePos[i * 3 + 2]
+    const nx = rawNodePos[i * 3]
+    const ny = rawNodePos[i * 3 + 1]
+    const nz = rawNodePos[i * 3 + 2]
+
     const u = THREE.MathUtils.clamp((nx / coreRadius) * 0.5 + 0.5, 0, 1)
     const v = THREE.MathUtils.clamp(0.5 - (ny / coreRadius) * 0.5, 0, 1)
     const feat = findNearestFeature(u, v, i * 47 + 13)

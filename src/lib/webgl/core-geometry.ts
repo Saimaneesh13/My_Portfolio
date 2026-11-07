@@ -58,7 +58,6 @@ export function createCoreGeometry() {
     strengths.push(strength)
   }
 
-  // 1. SURFACE LAYERS
   for (let layer = 0; layer < 3; layer++) {
     const radius = 2.04 + layer * 0.095
     for (let band = -10; band <= 10; band++) {
@@ -87,7 +86,6 @@ export function createCoreGeometry() {
     }
   }
 
-  // 2. CIRCUITRY PATHS
   for (let path = 0; path < 310; path++) {
     const radius = 1.94 + random() * 0.31
     let longitude = random() * Math.PI * 2
@@ -114,7 +112,6 @@ export function createCoreGeometry() {
     }
   }
 
-  // 3. INTERNAL LATTICE
   const interior = Array.from({ length: 180 }, () => {
     const point = spherePoint(0.5 + random() * 1.22, random() * Math.PI * 2, Math.asin(random() * 2 - 1))
     node(point, 0.5 + random(), 0.65)

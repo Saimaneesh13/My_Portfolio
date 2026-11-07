@@ -75,7 +75,7 @@ function NeuralCoreMesh() {
 
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
-      if ((e.target as HTMLElement).closest('button, input, a, .glass-panel, form')) return
+      if ((e.target as HTMLElement).closest('button, input, a, .glass-panel')) return
       dragRef.current.active = true
       dragRef.current.prevX = e.clientX
       dragRef.current.prevY = e.clientY
@@ -110,31 +110,15 @@ function NeuralCoreMesh() {
     uniforms.uTime.value = elapsed
 
     const desiredProgress = manualProgress !== null ? manualProgress : targetProgress
-    uniforms.uProgress.value += (desiredProgress - uniforms.uProgress.value) * 0.045
+    uniforms.uProgress.value += (desiredProgress - uniforms.uProgress.value) * 0.04
     const p = uniforms.uProgress.value
-    const spherePresence = Math.max(0, 1.0 - p * 1.12)
+    const spherePresence = Math.max(0.0, 1.0 - p * 1.12)
 
-    // Position the core/portrait on desktop based on current route
+    // Pan camera slightly left on desktop Home so the core/portrait sits on the right
+    // with ZERO perspective distortion (viewed 100% straight-on like your first screenshot)
     const isDesktop = size.width >= 1024
-    let targetX = 0
-    let targetY = 0
-    if (isDesktop) {
-      if (flowState === 'home') {
-        targetX = 1.85
-        targetY = 0.05
-      } else if (flowState === 'about') {
-        targetX = 0
-        targetY = 0.55
-      } else if (['projects', 'case-study', 'expertise', 'contact'].includes(flowState)) {
-        targetX = 1.4
-        targetY = 0
-      }
-    }
-
-    if (rootGroup.current) {
-      rootGroup.current.position.x = THREE.MathUtils.lerp(rootGroup.current.position.x, targetX, 0.06)
-      rootGroup.current.position.y = THREE.MathUtils.lerp(rootGroup.current.position.y, targetY, 0.06)
-    }
+    const targetCamX = flowState === 'home' && isDesktop ? -1.65 : 0
+    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, targetCamX, 0.06)
 
     if (!dragRef.current.active) {
       dragRef.current.rotY *= Math.pow(0.95, dt * 60)
@@ -160,8 +144,8 @@ function NeuralCoreMesh() {
     if (kernelGroup.current) {
       kernelGroup.current.rotation.z = elapsed * 0.18
       kernelGroup.current.rotation.y = -elapsed * 0.11
-      const pulse = 1 + Math.sin(elapsed * 1.4) * 0.04
-      kernelGroup.current.scale.setScalar(pulse * Math.max(0.001, spherePresence))
+      const kernelPulse = 1 + Math.sin(elapsed * 1.4) * 0.04
+      kernelGroup.current.scale.setScalar(kernelPulse * Math.max(0.001, spherePresence))
     }
   })
 
@@ -254,7 +238,7 @@ function NeuralCoreMesh() {
       </group>
 
       <EffectComposer multisampling={0}>
-        <Bloom intensity={1.15} luminanceThreshold={0.65} luminanceSmoothing={0.6} mipmapBlur />
+        <Bloom intensity={1.15} luminanceThreshold={0.6} luminanceSmoothing={0.65} mipmapBlur />
       </EffectComposer>
     </>
   )
