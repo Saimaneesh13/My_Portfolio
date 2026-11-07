@@ -27,10 +27,10 @@ export const useSceneStore = create<SceneStore>((set) => ({
 
   setFlowState: (flowState) =>
     set(() => {
-      // Keep the 3D portrait morphed (1) on 'morph', 'home', and 'about'
+      // Morph to Portrait (1) on morph, home, and about; Morph to Core Sphere (0) on case-study & other views
       const isPortraitView = flowState === 'morph' || flowState === 'home' || flowState === 'about'
-      // Keep 'greet', 'morph', and 'home' unblurred; dim background only on text-heavy subpages
-      const shouldDim = ['about', 'projects', 'case-study', 'expertise', 'contact'].includes(flowState)
+      // Turn OFF blur on 'case-study' and 'home' so the 3D Core/Portrait is completely sharp
+      const shouldDim = ['about', 'projects', 'expertise', 'contact'].includes(flowState)
       return {
         flowState,
         targetProgress: isPortraitView ? 1 : 0,
@@ -43,7 +43,13 @@ export const useSceneStore = create<SceneStore>((set) => ({
   setManualProgress: (manualProgress) => set({ manualProgress, isCanvasDimmed: false }),
   setActiveCaseStudy: (activeCaseStudyId) => {
     if (typeof window !== 'undefined') window.location.hash = '#case-study'
-    set({ activeCaseStudyId, flowState: 'case-study', isCanvasDimmed: true })
+    set({
+      activeCaseStudyId,
+      flowState: 'case-study',
+      targetProgress: 0,      // Morphs back to the Golden Core sphere
+      manualProgress: null,
+      isCanvasDimmed: false,  // Blur turned OFF by default on Case Studies
+    })
   },
   toggleInspect3D: () => set((state) => ({ isCanvasDimmed: !state.isCanvasDimmed })),
   setCustomImage: (customImageSrc) => set({ customImageSrc, targetProgress: 1, isCanvasDimmed: false }),

@@ -31,6 +31,7 @@ function NeuralCoreMesh() {
   const innerOrbitMat = useRef<THREE.LineBasicMaterial>(null)
   const icoInnerMat = useRef<THREE.MeshBasicMaterial>(null)
   const icoOuterMat = useRef<THREE.MeshBasicMaterial>(null)
+  const bloomRef = useRef<any>(null)
 
   const [morphData, setMorphData] = useState<MorphSystemData | null>(null)
 
@@ -110,20 +111,49 @@ function NeuralCoreMesh() {
     uniforms.uTime.value = elapsed
 
     const desiredProgress = manualProgress !== null ? manualProgress : targetProgress
-    uniforms.uProgress.value += (desiredProgress - uniforms.uProgress.value) * 0.04
+    uniforms.uProgress.value += (desiredProgress - uniforms.uProgress.value) * 0.045
     const p = uniforms.uProgress.value
     const spherePresence = Math.max(0.0, 1.0 - p * 1.12)
 
-    // 1. Keep camera at X = 0 looking straight ahead (zero perspective distortion)
-    state.camera.position.x = 0
+    // Dynamically tune Bloom: fiery 1.35 glow on Sphere (p=0), crisp 0.78 on Portrait (p=1) for clear facial detail
+    if (bloomRef.current) {
+      bloomRef.current.intensity = THREE.MathUtils.lerp(1.35, 0.78, p)
+    }
 
-    // 2. Shift the 3D group to the right on desktop Home
     const isDesktop = size.width >= 1024
-    const targetX = flowState === 'home' && isDesktop ? 2.15 : 0
-    const isSubpage = ['projects', 'case-study', 'expertise', 'contact'].includes(flowState)
-    const targetScale = isSubpage ? 0.68 : 1.0
+
+    // Use frustum viewOffset on Home so the portrait sits on the right with ZERO 3D angle distortion
+    if (flowState === 'home' && isDesktop) {
+      state.camera.setViewOffset(
+        size.width,
+        size.height,
+        -size.width * 0.22, // Shifts rendered center 22% to the right of the screen
+        0,
+        size.width,
+        size.height
+      )
+    } else {
+      state.camera.clearViewOffset()
+    }
+
+    // Position the Core per page:
+    // - Home: centered in its shifted frustum (0, 0)
+    // - Case Study: pushed to the top-right (x: 3.35, y: 1.35, scale: 1.22) so half the glowing horizon peeks in!
+    let targetX = 0
+    let targetY = 0
+    let targetScale = 1.0
+
+    if (flowState === 'case-study' && isDesktop) {
+      targetX = 3.35
+      targetY = 1.35
+      targetScale = 1.22
+    } else if (['projects', 'expertise', 'contact'].includes(flowState)) {
+      targetScale = 0.68
+    }
+
     if (rootGroup.current) {
-      rootGroup.current.position.x = THREE.MathUtils.lerp(rootGroup.current.position.x, targetX, 0.08)
+      rootGroup.current.position.x = THREE.MathUtils.lerp(rootGroup.current.position.x, targetX, 0.06)
+      rootGroup.current.position.y = THREE.MathUtils.lerp(rootGroup.current.position.y, targetY, 0.06)
       const s = THREE.MathUtils.lerp(rootGroup.current.scale.x, targetScale, 0.06)
       rootGroup.current.scale.setScalar(s)
     }
@@ -133,14 +163,9 @@ function NeuralCoreMesh() {
       dragRef.current.rotX *= Math.pow(0.95, dt * 60)
     }
 
-    if (morphGroup.current && rootGroup.current) {
-      // 3. Exact mathematical counter-rotation so the portrait plane faces the camera Lens 100% dead-on
-      const camDist = state.camera.position.z // 7.6
-      const lookAtCameraAngle = -Math.atan2(rootGroup.current.position.x, camDist) * (1.0 - spherePresence)
-
-      const baseRotY = elapsed * 0.16 * spherePresence + lookAtCameraAngle + dragRef.current.rotY
+    if (morphGroup.current) {
+      const baseRotY = elapsed * 0.16 * spherePresence + dragRef.current.rotY
       const baseRotX = Math.sin(elapsed * 0.25) * 0.1 * spherePresence + dragRef.current.rotX
-
       morphGroup.current.rotation.y = THREE.MathUtils.lerp(morphGroup.current.rotation.y, baseRotY, 0.12)
       morphGroup.current.rotation.x = THREE.MathUtils.lerp(morphGroup.current.rotation.x, baseRotX, 0.12)
     }
@@ -253,7 +278,14 @@ function NeuralCoreMesh() {
       </group>
 
       <EffectComposer multisampling={0}>
-        <Bloom intensity={1.35} luminanceThreshold={0.52} luminanceSmoothing={0.65} mipmapBlur radius={0.68} />
+        <Bloom
+          ref={bloomRef}
+          intensity={1.35}
+          luminanceThreshold={0.52}
+          luminanceSmoothing={0.65}
+          mipmapBlur
+          radius={0.68}
+        />
       </EffectComposer>
     </>
   )

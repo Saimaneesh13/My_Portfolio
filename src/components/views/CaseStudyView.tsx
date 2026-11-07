@@ -79,8 +79,8 @@ export default function CaseStudyView() {
           })}
         </div>
 
-        {/* Right Dynamic Content Box */}
-        <div className="lg:col-span-9 glass-panel rounded-2xl p-6 sm:p-8 relative overflow-hidden space-y-6">
+        {/* Right Dynamic Content Box — semi-transparent so the top-right Golden Core horizon shines through */}
+        <div className="lg:col-span-9 bg-[#0b111e]/70 backdrop-blur-md border border-gold/25 rounded-2xl p-6 sm:p-8 relative overflow-hidden space-y-6">
           {/* Background Globe / Atmosphere Watermark */}
           <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-gold/5 blur-3xl pointer-events-none" />
 
