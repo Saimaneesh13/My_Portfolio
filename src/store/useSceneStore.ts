@@ -41,7 +41,10 @@ export const useSceneStore = create<SceneStore>((set) => ({
 
   setTargetProgress: (targetProgress) => set({ targetProgress }),
   setManualProgress: (manualProgress) => set({ manualProgress, isCanvasDimmed: false }),
-  setActiveCaseStudy: (activeCaseStudyId) => set({ activeCaseStudyId, flowState: 'case-study', isCanvasDimmed: true }),
+  setActiveCaseStudy: (activeCaseStudyId) => {
+    if (typeof window !== 'undefined') window.location.hash = '#case-study'
+    set({ activeCaseStudyId, flowState: 'case-study', isCanvasDimmed: true })
+  },
   toggleInspect3D: () => set((state) => ({ isCanvasDimmed: !state.isCanvasDimmed })),
   setCustomImage: (customImageSrc) => set({ customImageSrc, targetProgress: 1, isCanvasDimmed: false }),
 }))

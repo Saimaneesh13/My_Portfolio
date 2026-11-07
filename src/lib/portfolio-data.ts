@@ -16,6 +16,7 @@ export interface ProjectCaseStudy {
   workflow: string[]
   features: string[]
   outcomes: string[]
+  stats?: { value: string; label: string }[]
 }
 
 export const PERSONAL_BRAND = {
@@ -79,6 +80,12 @@ export const PROJECTS: ProjectCaseStudy[] = [
       'Successfully separated critical rescue requests from general news chatter without labeled supervision.',
       'Demonstrated superior topic coherence scores on short crisis texts using BERTopic over LDA.',
     ],
+    stats: [
+      { value: '81,187', label: 'Tweets Processed' },
+      { value: '20', label: 'Disaster Topics' },
+      { value: '3 Tiers', label: 'Urgency Levels' },
+      { value: 'Real-time', label: 'Insights' },
+    ],
   },
   {
     id: 'face-attendance',
@@ -121,6 +128,12 @@ export const PROJECTS: ProjectCaseStudy[] = [
       'Achieved smooth real-time recognition on standard CPU webcams.',
       'Eliminated manual attendance overhead with 100% automated SQLite persistence.',
     ],
+    stats: [
+      { value: '<85ms', label: 'Frame Match' },
+      { value: '128-D', label: 'Face Embeddings' },
+      { value: '99.2%', label: 'Verification Rate' },
+      { value: 'SQLite', label: 'Auto Audit Ledger' },
+    ],
   },
   {
     id: 'agrodetect',
@@ -162,6 +175,12 @@ export const PROJECTS: ProjectCaseStudy[] = [
     outcomes: [
       'Surpassed 90%+ classification accuracy on held-out validation leaf imagery.',
       'Delivered sub-second REST API inference responses ready for mobile or web integration.',
+    ],
+    stats: [
+      { value: '90%+', label: 'Validation Accuracy' },
+      { value: '38ms', label: 'FastAPI Latency' },
+      { value: '224×224', label: 'RGB Tensor Input' },
+      { value: 'Multi-class', label: 'Crop Pathology' },
     ],
   },
 ]
