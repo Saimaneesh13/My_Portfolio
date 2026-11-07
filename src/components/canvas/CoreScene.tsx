@@ -120,8 +120,12 @@ function NeuralCoreMesh() {
     // 2. Shift the 3D group to the right on desktop Home
     const isDesktop = size.width >= 1024
     const targetX = flowState === 'home' && isDesktop ? 2.15 : 0
+    const isSubpage = ['projects', 'case-study', 'expertise', 'contact'].includes(flowState)
+    const targetScale = isSubpage ? 0.68 : 1.0
     if (rootGroup.current) {
       rootGroup.current.position.x = THREE.MathUtils.lerp(rootGroup.current.position.x, targetX, 0.08)
+      const s = THREE.MathUtils.lerp(rootGroup.current.scale.x, targetScale, 0.06)
+      rootGroup.current.scale.setScalar(s)
     }
 
     if (!dragRef.current.active) {
