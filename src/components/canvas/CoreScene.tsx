@@ -114,20 +114,29 @@ function NeuralCoreMesh() {
     const p = uniforms.uProgress.value
     const spherePresence = Math.max(0.0, 1.0 - p * 1.12)
 
-    // Pan camera slightly left on desktop Home so the core/portrait sits on the right
-    // with ZERO perspective distortion (viewed 100% straight-on like your first screenshot)
+    // 1. Keep camera at X = 0 looking straight ahead (zero perspective distortion)
+    state.camera.position.x = 0
+
+    // 2. Shift the 3D group to the right on desktop Home
     const isDesktop = size.width >= 1024
-    const targetCamX = flowState === 'home' && isDesktop ? -1.65 : 0
-    state.camera.position.x = THREE.MathUtils.lerp(state.camera.position.x, targetCamX, 0.06)
+    const targetX = flowState === 'home' && isDesktop ? 2.15 : 0
+    if (rootGroup.current) {
+      rootGroup.current.position.x = THREE.MathUtils.lerp(rootGroup.current.position.x, targetX, 0.08)
+    }
 
     if (!dragRef.current.active) {
       dragRef.current.rotY *= Math.pow(0.95, dt * 60)
       dragRef.current.rotX *= Math.pow(0.95, dt * 60)
     }
 
-    if (morphGroup.current) {
-      const baseRotY = elapsed * 0.16 * spherePresence + dragRef.current.rotY
+    if (morphGroup.current && rootGroup.current) {
+      // 3. Exact mathematical counter-rotation so the portrait plane faces the camera Lens 100% dead-on
+      const camDist = state.camera.position.z // 7.6
+      const lookAtCameraAngle = -Math.atan2(rootGroup.current.position.x, camDist) * (1.0 - spherePresence)
+
+      const baseRotY = elapsed * 0.16 * spherePresence + lookAtCameraAngle + dragRef.current.rotY
       const baseRotX = Math.sin(elapsed * 0.25) * 0.1 * spherePresence + dragRef.current.rotX
+
       morphGroup.current.rotation.y = THREE.MathUtils.lerp(morphGroup.current.rotation.y, baseRotY, 0.12)
       morphGroup.current.rotation.x = THREE.MathUtils.lerp(morphGroup.current.rotation.x, baseRotX, 0.12)
     }
