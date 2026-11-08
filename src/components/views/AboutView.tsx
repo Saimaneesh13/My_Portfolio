@@ -8,7 +8,6 @@ import {
   Maximize2,
   Minimize2,
   Download,
-  ExternalLink,
   Sparkles,
   Linkedin,
   Github,
@@ -38,26 +37,26 @@ export default function AboutView() {
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   return (
-    <div className="min-h-screen max-w-[1340px] mx-auto px-4 sm:px-8 pt-24 pb-20 flex items-center pointer-events-none select-none">
-      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-7 items-stretch">
+    <div className="h-screen max-w-[1360px] mx-auto px-4 sm:px-8 pt-20 pb-14 flex items-center overflow-hidden pointer-events-none select-none">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
         {/* ============================================================
             LEFT COLUMN: 05 // ABOUT ME, STATS, TECH, JOURNEY, HIGHLIGHTS
            ============================================================ */}
-        <div className="lg:col-span-6 flex flex-col justify-between space-y-4 pointer-events-auto">
+        <div className="lg:col-span-6 flex flex-col justify-between space-y-3.5 pointer-events-auto">
           {/* Header & Bio */}
-          <div className="space-y-2">
-            <div className="mono-label text-gold">// 05 // ABOUT ME</div>
-            <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-pure">
+          <div className="space-y-1.5">
+            <div className="mono-label text-gold !text-[10px]">05 // ABOUT ME</div>
+            <h1 className="font-display text-3xl sm:text-[44px] font-bold tracking-tight text-pure leading-none">
               Gorrela Sai Maneesh
             </h1>
-            <div className="font-display text-lg sm:text-xl font-semibold text-gold">
+            <div className="font-display text-base sm:text-lg font-semibold text-gold pt-0.5">
               AI / ML Engineer
             </div>
-            <div className="font-mono text-xs text-pure/90 tracking-wide">
+            <div className="font-mono text-[11px] text-pure/90 tracking-wide">
               Software Developer <span className="text-gold mx-1">•</span> Computer Vision{' '}
               <span className="text-gold mx-1">•</span> NLP
             </div>
-            <p className="text-xs sm:text-sm text-mist leading-relaxed pt-1 max-w-xl">
+            <p className="text-xs text-mist leading-relaxed pt-1 max-w-xl">
               I build intelligent systems that transform complex real-world problems into meaningful
               solutions, with a focus on Machine Learning, Computer Vision, and Natural Language
               Processing.
@@ -74,51 +73,51 @@ export default function AboutView() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="glass-panel rounded-xl px-3.5 py-2.5 flex items-center gap-3 border border-gold/25"
+                className="glass-panel rounded-xl px-3 py-2.5 flex items-center gap-2.5 border border-gold/25"
               >
-                <item.icon className="w-5 h-5 text-gold shrink-0" />
+                <item.icon className="w-4 h-4 text-gold shrink-0" />
                 <div>
-                  <div className="font-display text-base font-bold text-pure leading-none">
+                  <div className="font-display text-sm font-bold text-pure leading-none">
                     {item.val}
                   </div>
-                  <div className="font-mono text-[10px] text-mist mt-1">{item.label}</div>
+                  <div className="font-mono text-[9px] text-mist mt-1">{item.label}</div>
                 </div>
               </div>
             ))}
           </div>
 
           {/* Technical Expertise Pills Card */}
-          <div className="glass-panel rounded-2xl p-4 border border-gold/25 space-y-3">
-            <div className="flex items-center gap-2 font-display text-sm font-semibold text-pure">
+          <div className="glass-panel rounded-2xl p-3.5 border border-gold/25 space-y-2.5">
+            <div className="flex items-center gap-2 font-display text-xs font-semibold text-pure">
               <span className="text-gold font-mono">&lt;/&gt;</span>
               <span>Technical Expertise</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {TECH_PILLS.map((t) => (
                 <div
                   key={t.name}
-                  className="px-3 py-1.5 rounded-lg bg-obsidian/90 border border-gold/20 flex items-center gap-2 text-xs font-medium text-pure"
+                  className="px-2.5 py-1 rounded-lg bg-obsidian/90 border border-gold/20 flex items-center gap-1.5 text-[11px] font-medium text-pure"
                 >
                   <span>{t.icon}</span>
                   <span>{t.name}</span>
                 </div>
               ))}
-              <div className="px-3 py-1.5 rounded-lg bg-obsidian/90 border border-gold/20 text-xs font-mono text-gold">
+              <div className="px-2.5 py-1 rounded-lg bg-obsidian/90 border border-gold/20 text-[11px] font-mono text-gold">
                 •••
               </div>
             </div>
           </div>
 
           {/* Bottom Split: My Journey Timeline + Key Highlights */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {/* My Journey */}
-            <div className="glass-panel rounded-2xl p-4 border border-gold/25 space-y-3">
-              <div className="flex items-center gap-2 font-display text-sm font-semibold text-pure">
+            <div className="glass-panel rounded-2xl p-3.5 border border-gold/25 space-y-2.5">
+              <div className="flex items-center gap-2 font-display text-xs font-semibold text-pure">
                 <span className="text-gold">📊</span>
                 <span>My Journey</span>
               </div>
 
-              <div className="relative pl-4 border-l-2 border-gold/40 space-y-3">
+              <div className="relative pl-3.5 border-l-2 border-gold/40 space-y-2.5">
                 {[
                   {
                     year: '2023',
@@ -141,55 +140,55 @@ export default function AboutView() {
                     sub: '(CSE – AI & ML)',
                   },
                 ].map((step, i) => (
-                  <div key={i} className="relative text-xs">
-                    <span className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-gold shadow-gold-glow" />
-                    <div className="font-mono text-[10px] font-semibold text-gold">
+                  <div key={i} className="relative text-[11px]">
+                    <span className="absolute -left-[19px] top-1 w-2 h-2 rounded-full bg-gold shadow-gold-glow" />
+                    <div className="font-mono text-[9.5px] font-semibold text-gold">
                       {step.year}
                     </div>
-                    <div className="text-pure font-medium leading-snug">{step.title}</div>
-                    <div className="text-[11px] text-mist">{step.sub}</div>
+                    <div className="text-pure font-medium leading-tight">{step.title}</div>
+                    <div className="text-[10px] text-mist">{step.sub}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Key Highlights */}
-            <div className="glass-panel rounded-2xl p-4 border border-gold/25 space-y-3">
-              <div className="flex items-center gap-2 font-display text-sm font-semibold text-pure">
-                <Trophy className="w-4 h-4 text-gold" />
+            <div className="glass-panel rounded-2xl p-3.5 border border-gold/25 space-y-2.5">
+              <div className="flex items-center gap-2 font-display text-xs font-semibold text-pure">
+                <Trophy className="w-3.5 h-3.5 text-gold" />
                 <span>Key Highlights</span>
               </div>
 
-              <div className="space-y-2.5 text-xs">
-                <div className="flex items-start gap-2.5">
-                  <Award className="w-4 h-4 text-gold shrink-0 mt-0.5" />
+              <div className="space-y-2 text-[11px]">
+                <div className="flex items-start gap-2">
+                  <Award className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-pure">Best Performance Award</div>
-                    <div className="text-[11px] text-mist">During ML Internship at EduExpose</div>
+                    <div className="font-semibold text-pure leading-tight">Best Performance Award</div>
+                    <div className="text-[10px] text-mist">During ML Internship at EduExpose</div>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2.5">
-                  <Layers className="w-4 h-4 text-gold shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2">
+                  <Layers className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-pure">2 Coursera Specializations</div>
-                    <div className="text-[11px] text-mist">(8 courses) – University of Colorado</div>
+                    <div className="font-semibold text-pure leading-tight">2 Coursera Specializations</div>
+                    <div className="text-[10px] text-mist">(8 courses) – University of Colorado</div>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2.5">
-                  <Code2 className="w-4 h-4 text-gold shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2">
+                  <Code2 className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-pure">3 End-to-End Projects</div>
-                    <div className="text-[11px] text-mist">NLP, Computer Vision and CNN</div>
+                    <div className="font-semibold text-pure leading-tight">3 End-to-End Projects</div>
+                    <div className="text-[10px] text-mist">NLP, Computer Vision and CNN</div>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-2.5">
-                  <GraduationCap className="w-4 h-4 text-gold shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2">
+                  <GraduationCap className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
                   <div>
-                    <div className="font-semibold text-pure">B.Tech – CSE (AI & ML)</div>
-                    <div className="text-[11px] text-mist">Lovely Professional University</div>
+                    <div className="font-semibold text-pure leading-tight">B.Tech – CSE (AI & ML)</div>
+                    <div className="text-[10px] text-mist">Lovely Professional University</div>
                   </div>
                 </div>
               </div>
@@ -198,65 +197,55 @@ export default function AboutView() {
         </div>
 
         {/* ============================================================
-            RIGHT COLUMN: 3D GOLDEN CV HOLOGRAM -> CLICK FOR WHITE CV
+            RIGHT COLUMN: 3D GOLDEN CV HOLOGRAM OR WHITE SINGLE-PAGE CV
            ============================================================ */}
-        <div className="lg:col-span-6 flex items-center justify-center relative min-h-[540px] pointer-events-auto">
+        <div className="lg:col-span-6 flex items-center justify-center relative h-[555px] pointer-events-auto">
           {!isCvPaperOpen ? (
-            /* STAGE 1: Interactive Hotspot over the 3D Golden CV Hologram */
+            /* STAGE 1: Unobstructed 3D Golden CV Hologram with clean click trigger */
             <div
               onClick={() => setCvPaperOpen(true)}
-              className="w-full h-full min-h-[520px] rounded-2xl border border-dashed border-gold/35 hover:border-gold/80 bg-space/10 hover:bg-gold/5 transition-all cursor-pointer flex flex-col items-center justify-end p-6 group relative"
+              className="w-full h-full flex flex-col items-center justify-end pb-6 cursor-pointer group"
             >
-              <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-obsidian/80 border border-gold/30 font-mono text-[10px] text-gold">
-                3D GOLDEN CV HOLOGRAM ACTIVE
-              </div>
-
-              <div className="glass-panel px-6 py-3.5 rounded-2xl border border-gold shadow-gold-glow flex items-center gap-3 group-hover:scale-105 transition-transform">
+              <button
+                type="button"
+                className="glass-panel px-5 py-2.5 rounded-full border border-gold shadow-gold-glow flex items-center gap-2.5 group-hover:scale-105 transition-transform"
+              >
                 <Sparkles className="w-4 h-4 text-gold animate-pulse" />
-                <div className="text-left">
-                  <div className="font-display text-xs font-semibold text-pure">
-                    Click 3D CV Core to Open White CV Format
-                  </div>
-                  <div className="font-mono text-[10px] text-gold">
-                    Interactive Hologram → Standard Document View
-                  </div>
-                </div>
-              </div>
+                <span className="font-display text-xs font-semibold text-pure">
+                  Click 3D Golden CV to Open White Format
+                </span>
+              </button>
             </div>
           ) : (
-            /* STAGE 2: White Paper Curriculum Vitae Format (Matches official cv.pdf) */
+            /* STAGE 2: Single-Page White Curriculum Vitae (Fits all 6 sections without scrolling!) */
             <div
               className={`${
                 isFullscreen
-                  ? 'fixed inset-4 z-50 max-w-4xl mx-auto'
-                  : 'w-full max-h-[620px]'
-              } glass-panel rounded-2xl p-3 sm:p-4 border-2 border-gold shadow-[0_0_55px_rgba(234,183,103,0.28)] flex flex-col animate-fadeIn`}
+                  ? 'fixed inset-4 z-50 max-w-4xl mx-auto overflow-y-auto'
+                  : 'w-full'
+              } bg-[#0c1220]/95 backdrop-blur-xl rounded-2xl p-3.5 border-2 border-gold shadow-[0_0_55px_rgba(234,183,103,0.3)] flex flex-col animate-fadeIn`}
             >
-              {/* Top Dark Frame Bar */}
-              <div className="flex items-center justify-between pb-3 mb-2 px-1 border-b border-gold/25">
+              {/* Clean Top Header Bar matching image_de1a7e.jpg */}
+              <div className="flex items-center justify-between pb-2.5 mb-2 px-1">
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-gold" />
                   <span className="font-display text-sm font-semibold text-pure">
                     Curriculum Vitae
-                  </span>
-                  <span className="hidden sm:inline-block px-2 py-0.5 rounded-full bg-gold/15 text-gold text-[10px] font-mono border border-gold/30">
-                    Official Single-Page Format
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setCvPaperOpen(false)}
-                    className="px-2.5 py-1 rounded-lg bg-obsidian border border-gold/35 font-mono text-[10px] text-gold hover:bg-gold/15 flex items-center gap-1"
-                    title="Morph back into 3D Golden CV Hologram"
+                    className="px-2.5 py-1 rounded-lg bg-obsidian border border-gold/30 font-mono text-[10px] text-gold hover:bg-gold/15 flex items-center gap-1"
                   >
                     <Sparkles className="w-3 h-3" />
-                    <span className="hidden sm:inline">3D Core CV</span>
+                    <span>3D View</span>
                   </button>
 
                   <button
                     onClick={() => setIsFullscreen((prev) => !prev)}
-                    className="px-2.5 py-1 rounded-lg bg-obsidian border border-gold/25 font-mono text-[10px] text-pure hover:border-gold flex items-center gap-1"
+                    className="px-3 py-1 rounded-lg bg-obsidian border border-gold/25 font-mono text-[10px] text-pure hover:border-gold flex items-center gap-1.5"
                   >
                     {isFullscreen ? (
                       <>
@@ -273,332 +262,187 @@ export default function AboutView() {
 
                   <a
                     href="/cv/Gorrela_Sai_Maneesh_CV.pdf"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-2.5 py-1 rounded-lg bg-obsidian border border-gold/25 font-mono text-[10px] text-pure hover:border-gold flex items-center gap-1"
-                    title="Open original PDF in new tab"
-                  >
-                    <ExternalLink className="w-3 h-3 text-gold" />
-                    <span>View PDF</span>
-                  </a>
-
-                  <a
-                    href="/cv/Gorrela_Sai_Maneesh_CV.pdf"
-                    download="Gorrela_Sai_Maneesh_CV.pdf"
-                    className="p-1.5 rounded-lg bg-gold text-space hover:brightness-110 flex items-center gap-1 text-[11px] font-semibold px-2"
-                    title="Download official CV PDF"
+                    download
+                    className="p-1.5 rounded-lg bg-obsidian border border-gold/30 text-gold hover:bg-gold hover:text-space transition-colors"
+                    title="Download CV PDF"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Download</span>
                   </a>
                 </div>
               </div>
 
-              {/* Crisp White Paper Sheet (Typeset strictly matching uploaded PDF) */}
-              <div className="bg-[#FAF8F5] text-[#111827] rounded-xl p-5 sm:p-7 overflow-y-auto space-y-4 shadow-inner relative font-sans text-[11px] leading-relaxed">
+              {/* Crisp White Paper Sheet — All 6 Sections Visible at Once */}
+              <div className="bg-[#FAF8F5] text-[#111827] rounded-xl px-5 py-3.5 space-y-2 shadow-inner relative overflow-hidden">
                 {/* Gold Corner Ribbon Accent */}
-                <div className="absolute top-0 right-0 w-16 h-16 overflow-hidden pointer-events-none">
-                  <div className="w-24 h-6 bg-gradient-to-r from-[#EAB767] to-[#C5A46D] rotate-45 translate-x-4 -translate-y-1 shadow" />
+                <div className="absolute top-0 right-0 w-14 h-14 overflow-hidden pointer-events-none">
+                  <div className="w-20 h-5 bg-gradient-to-r from-[#EAB767] to-[#C5A46D] rotate-45 translate-x-3 -translate-y-1 shadow" />
                 </div>
 
-                {/* 1. CV Header */}
-                <div className="border-b-2 border-gray-900 pb-2.5">
-                  <h2 className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#0f172a] mb-1.5">
+                {/* CV Header */}
+                <div className="border-b border-gray-300 pb-2">
+                  <h2 className="font-display text-lg font-bold text-[#0f172a] leading-tight">
                     Gorrela Sai Maneesh
                   </h2>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-[11px] text-gray-700 font-medium">
-                    <div className="flex items-center gap-1.5">
-                      <Linkedin className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-                      <span className="font-semibold text-gray-900">LinkedIn:</span>
-                      <a
-                        href="https://linkedin.com/in/sai-maneesh"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-700 hover:underline"
-                      >
-                        linkedin.com/in/sai-maneesh
-                      </a>
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:justify-end">
-                      <Mail className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-                      <span className="font-semibold text-gray-900">Email:</span>
-                      <a
-                        href="mailto:ssai68352@gmail.com"
-                        className="text-blue-700 hover:underline"
-                      >
-                        ssai68352@gmail.com
-                      </a>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Github className="w-3.5 h-3.5 text-gray-900 shrink-0" />
-                      <span className="font-semibold text-gray-900">GitHub:</span>
-                      <a
-                        href="https://github.com/Saimaneesh13"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-blue-700 hover:underline"
-                      >
-                        github.com/Saimaneesh13
-                      </a>
-                    </div>
-                    <div className="flex items-center gap-1.5 sm:justify-end">
-                      <Phone className="w-3.5 h-3.5 text-gray-900 shrink-0" />
-                      <span className="font-semibold text-gray-900">Mobile:</span>
-                      <a href="tel:+916281433838" className="text-gray-900 hover:underline">
-                        +91 6281433838
-                      </a>
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 mt-1 text-[9.5px] text-gray-700 font-medium">
+                    <a
+                      href="https://linkedin.com/in/sai-maneesh"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 hover:text-amber-700 truncate"
+                    >
+                      <Linkedin className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>linkedin.com/in/sai-maneesh</span>
+                    </a>
+                    <a
+                      href="mailto:ssai68352@gmail.com"
+                      className="flex items-center gap-1 hover:text-amber-700 truncate"
+                    >
+                      <Mail className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>ssai68352@gmail.com</span>
+                    </a>
+                    <a
+                      href="https://github.com/Saimaneesh13"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 hover:text-amber-700 truncate"
+                    >
+                      <Github className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>github.com/Saimaneesh13</span>
+                    </a>
+                    <div className="flex items-center gap-1">
+                      <Phone className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span>+91 6281433838</span>
                     </div>
                   </div>
                 </div>
 
-                {/* 2. SKILLS */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-serif text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-400 pb-0.5">
-                    <Code2 className="w-3.5 h-3.5 text-amber-700" />
+                {/* 1. SKILLS */}
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1 font-display text-[10px] font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-300 pb-0.5">
+                    <Code2 className="w-3 h-3 text-amber-600" />
                     <span>SKILLS</span>
                   </div>
-                  <div className="grid grid-cols-12 gap-y-1 text-[10.5px] leading-snug">
-                    <div className="col-span-4 font-semibold text-gray-900">Languages:</div>
-                    <div className="col-span-8 text-gray-800">Python, Java, SQL, HTML5, CSS3</div>
+                  <div className="grid grid-cols-12 gap-y-0.5 text-[9px] leading-tight pt-0.5">
+                    <div className="col-span-4 font-semibold text-gray-800">Languages:</div>
+                    <div className="col-span-8 text-gray-700">Python, Java, SQL, HTML5, CSS3</div>
 
-                    <div className="col-span-4 font-semibold text-gray-900">Backend & Frameworks:</div>
-                    <div className="col-span-8 text-gray-800">Flask, FastAPI, REST APIs, Tkinter, JavaFX</div>
+                    <div className="col-span-4 font-semibold text-gray-800">Backend & Frameworks:</div>
+                    <div className="col-span-8 text-gray-700">Flask, FastAPI, REST APIs, Tkinter, JavaFX</div>
 
-                    <div className="col-span-4 font-semibold text-gray-900">AI & Machine Learning:</div>
-                    <div className="col-span-8 text-gray-800">
+                    <div className="col-span-4 font-semibold text-gray-800">AI & Machine Learning:</div>
+                    <div className="col-span-8 text-gray-700">
                       Scikit-learn, TensorFlow, Keras, OpenCV, NLP, BERTopic, LDA, UMAP, HDBSCAN
                     </div>
 
-                    <div className="col-span-4 font-semibold text-gray-900">Data & Visualization:</div>
-                    <div className="col-span-8 text-gray-800">
-                      Pandas, NumPy, Streamlit, Plotly, SQLite
-                    </div>
+                    <div className="col-span-4 font-semibold text-gray-800">Data & Visualization:</div>
+                    <div className="col-span-8 text-gray-700">Pandas, NumPy, Streamlit, Plotly, SQLite</div>
 
-                    <div className="col-span-4 font-semibold text-gray-900">Tools & Platforms:</div>
-                    <div className="col-span-8 text-gray-800">Git, GitHub, VS Code, Jupyter</div>
+                    <div className="col-span-4 font-semibold text-gray-800">Tools & Platforms:</div>
+                    <div className="col-span-8 text-gray-700">Git, GitHub, VS Code, Jupyter</div>
 
-                    <div className="col-span-4 font-semibold text-gray-900">Core CS:</div>
-                    <div className="col-span-8 text-gray-800">
+                    <div className="col-span-4 font-semibold text-gray-800">Core CS:</div>
+                    <div className="col-span-8 text-gray-700">
                       OOP, Data Structures, Computer Networking (TCP/IP), Data Preprocessing, Model Evaluation
                     </div>
 
-                    <div className="col-span-4 font-semibold text-gray-900">Soft Skills:</div>
-                    <div className="col-span-8 text-gray-800">
+                    <div className="col-span-4 font-semibold text-gray-800">Soft Skills:</div>
+                    <div className="col-span-8 text-gray-700">
                       Leadership, Problem-Solving, Communication, Project Management, Creativity, Team work
                     </div>
                   </div>
                 </div>
 
-                {/* 3. INTERNSHIP */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-serif text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-400 pb-0.5">
-                    <Briefcase className="w-3.5 h-3.5 text-amber-700" />
+                {/* 2. INTERNSHIP */}
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1 font-display text-[10px] font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-300 pb-0.5">
+                    <Briefcase className="w-3 h-3 text-amber-600" />
                     <span>INTERNSHIP</span>
                   </div>
-                  <div className="flex items-baseline justify-between text-[11px]">
-                    <div>
-                      <strong className="text-gray-900">EduExpose</strong>
-                      <span className="text-gray-700 italic ml-1">| Machine Learning Intern</span>
-                    </div>
-                    <span className="font-medium text-gray-800 text-[10.5px]">Dec 2025 – Feb 2026</span>
+                  <div className="flex items-center justify-between text-[9.5px] font-bold text-gray-900 pt-0.5">
+                    <span>• EduExpose | Machine Learning Intern</span>
+                    <span className="font-mono text-[8.5px] text-gray-700">Dec 2025 – Feb 2026</span>
                   </div>
-                  <ul className="list-disc list-outside ml-4 space-y-1 text-[10.5px] text-gray-800">
-                    <li>
-                      Completed a 3-month applied Machine Learning internship covering the full model lifecycle: development, evaluation, and optimization on real-world datasets
-                    </li>
-                    <li>
-                      Implemented and compared supervised and unsupervised algorithms for predictive modeling and pattern discovery tasks
-                    </li>
-                    <li>
-                      Practiced feature engineering, cross-validation, and hyperparameter tuning to improve model performance using Python and standard ML frameworks
-                    </li>
+                  <ul className="list-disc list-inside text-[8.8px] text-gray-700 leading-tight space-y-0.5 pl-1">
+                    <li>Completed a 3-month applied Machine Learning internship covering the full model lifecycle.</li>
+                    <li>Implemented and compared supervised and unsupervised algorithms for predictive modeling.</li>
+                    <li>Practiced feature engineering, cross-validation, and hyperparameter tuning to improve performance.</li>
                   </ul>
                 </div>
 
-                {/* 4. PROJECTS */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1.5 font-serif text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-400 pb-0.5">
-                    <FolderGit2 className="w-3.5 h-3.5 text-amber-700" />
+                {/* 3. PROJECTS */}
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1 font-display text-[10px] font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-300 pb-0.5">
+                    <FolderGit2 className="w-3 h-3 text-amber-600" />
                     <span>PROJECTS</span>
                   </div>
-
-                  {/* Project 1 */}
-                  <div className="space-y-1">
-                    <div className="flex items-baseline justify-between text-[11px]">
-                      <div>
-                        <strong className="text-gray-900">AI-Based Disaster Intelligence System:</strong>{' '}
-                        <span className="text-gray-800">Unsupervised NLP Topic Discovery & Urgency Classification</span>{' '}
-                        <span className="text-gray-500">|</span>{' '}
-                        <a
-                          href="https://github.com/Saimaneesh13"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-700 hover:underline font-medium"
-                        >
-                          GitHub
-                        </a>
-                      </div>
-                      <span className="font-medium text-gray-800 text-[10.5px] shrink-0 ml-2">
-                        Apr 2026 – May 2026
-                      </span>
-                    </div>
-                    <ul className="list-disc list-outside ml-4 space-y-0.5 text-[10.5px] text-gray-800">
-                      <li>
-                        Built a hybrid BERTopic + LDA NLP pipeline for unsupervised topic discovery and clustering of unstructured disaster-related text, combining sentence-transformer embeddings with UMAP dimensionality reduction and HDBSCAN density-based clustering
-                      </li>
-                      <li>
-                        Developed a real-time urgency intelligence engine to classify and prioritize disaster-related reports by severity, enabling faster triage of high-impact events
-                      </li>
-                      <li>
-                        Designed an interactive Streamlit dashboard with Plotly visual analytics for live topic monitoring and data summarization, and exposed the pipeline through a FastAPI service for programmatic access
-                      </li>
-                    </ul>
-                    <div className="text-[10px] text-gray-700 font-mono pl-4">
-                      <strong className="text-gray-900">Tech Stack:</strong> Python, BERTopic, spaCy, Sentence-Transformers, UMAP, HDBSCAN, FAISS, Streamlit, FastAPI, Plotly, Pandas
-                    </div>
-                  </div>
-
-                  {/* Project 2 */}
-                  <div className="space-y-1 pt-1">
-                    <div className="flex items-baseline justify-between text-[11px]">
-                      <div>
-                        <strong className="text-gray-900">Face Recognition Attendance System:</strong>{' '}
-                        <span className="text-gray-800">Real-Time Computer Vision Attendance Automation</span>{' '}
-                        <span className="text-gray-500">|</span>{' '}
-                        <a
-                          href="https://github.com/Saimaneesh13"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-700 hover:underline font-medium"
-                        >
-                          GitHub
-                        </a>
-                      </div>
-                      <span className="font-medium text-gray-800 text-[10.5px] shrink-0 ml-2">
-                        Feb 2026 – Mar 2026
-                      </span>
-                    </div>
-                    <ul className="list-disc list-outside ml-4 space-y-0.5 text-[10.5px] text-gray-800">
-                      <li>
-                        Built a real-time face recognition attendance system with Flask and OpenCV, detecting and matching faces via live webcam feed using the face_recognition library
-                      </li>
-                      <li>
-                        Implemented student registration with persisted face-encoding storage and automated attendance logging (name, ID, department, date, time, confidence score) to a SQLite database
-                      </li>
-                      <li>
-                        Designed a Bootstrap-based live dashboard for attendance monitoring and history review, improving reliability through optimized image-processing and identification thresholds
-                      </li>
-                    </ul>
-                    <div className="text-[10px] text-gray-700 font-mono pl-4">
-                      <strong className="text-gray-900">Tech Stack:</strong> Python, Flask, OpenCV, face_recognition, NumPy, SQLite, Bootstrap 5
-                    </div>
-                  </div>
-
-                  {/* Project 3 */}
-                  <div className="space-y-1 pt-1">
-                    <div className="flex items-baseline justify-between text-[11px]">
-                      <div>
-                        <strong className="text-gray-900">AgroDetect AI:</strong>{' '}
-                        <span className="text-gray-800">CNN-Based Crop Disease Detection System</span>{' '}
-                        <span className="text-gray-500">|</span>{' '}
-                        <a
-                          href="https://github.com/Saimaneesh13"
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-700 hover:underline font-medium"
-                        >
-                          GitHub
-                        </a>
-                      </div>
-                      <span className="font-medium text-gray-800 text-[10.5px] shrink-0 ml-2">
-                        Jan 2026 – Feb 2026
-                      </span>
-                    </div>
-                    <ul className="list-disc list-outside ml-4 space-y-0.5 text-[10.5px] text-gray-800">
-                      <li>
-                        Developed a crop disease detection model with a TensorFlow/Keras CNN, achieving 90%+ classification accuracy on plant-leaf image data
-                      </li>
-                      <li>
-                        Applied data preprocessing, augmentation, and feature-engineering pipelines with Scikit-learn and Pandas to reduce overfitting and improve validation accuracy
-                      </li>
-                      <li>
-                        Exposed model inference through a FastAPI backend with a Streamlit interface for rapid demo and testing
-                      </li>
-                    </ul>
-                    <div className="text-[10px] text-gray-700 font-mono pl-4">
-                      <strong className="text-gray-900">Tech Stack:</strong> Python, TensorFlow, Keras, Scikit-learn, OpenCV, FastAPI, Streamlit, Pandas, NumPy
-                    </div>
-                  </div>
-                </div>
-
-                {/* 5. ACHIEVEMENTS */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-serif text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-400 pb-0.5">
-                    <Trophy className="w-3.5 h-3.5 text-amber-700" />
-                    <span>ACHIEVEMENTS</span>
-                  </div>
-                  <ul className="list-disc list-outside ml-4 space-y-1 text-[10.5px] text-gray-800">
+                  <ul className="text-[8.8px] text-gray-700 leading-tight space-y-0.5 pt-0.5">
                     <li>
-                      Received the <strong className="text-gray-900">Best Award</strong> for outstanding, result-oriented performance during the Machine Learning internship at EduExpose
+                      <strong className="text-gray-900">• AI-Based Disaster Intelligence System:</strong>{' '}
+                      Unsupervised NLP Topic Discovery & Urgency Classification
                     </li>
                     <li>
-                      Completed <strong className="text-gray-900">2 Coursera Specializations</strong> (8 courses total) from the University of Colorado, Colorado Springs
+                      <strong className="text-gray-900">• Face Recognition Attendance System:</strong>{' '}
+                      Real-Time Computer Vision Attendance Automation
                     </li>
                     <li>
-                      Designed, built, and publicly maintain <strong className="text-gray-900">3 end-to-end AI/ML and computer-vision projects</strong> on GitHub spanning NLP, CNNs, and real-time inference
+                      <strong className="text-gray-900">• AgroDetect AI:</strong> CNN-Based Crop Disease Detection System
                     </li>
                   </ul>
                 </div>
 
-                {/* 6. CERTIFICATIONS */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-serif text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-400 pb-0.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-700" />
+                {/* 4. ACHIEVEMENTS */}
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1 font-display text-[10px] font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-300 pb-0.5">
+                    <Trophy className="w-3 h-3 text-amber-600" />
+                    <span>ACHIEVEMENTS</span>
+                  </div>
+                  <ul className="list-disc list-inside text-[8.8px] text-gray-700 leading-tight space-y-0.5 pl-1 pt-0.5">
+                    <li>Received the Best Award for outstanding, result-oriented performance during the ML Internship.</li>
+                    <li>Completed 2 Coursera Specializations (8 courses total) from the University of Colorado.</li>
+                    <li>Designed, built, and publicly maintain 3 end-to-end AI/ML and computer-vision projects on GitHub.</li>
+                  </ul>
+                </div>
+
+                {/* 5. CERTIFICATIONS */}
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1 font-display text-[10px] font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-300 pb-0.5">
+                    <CheckCircle2 className="w-3 h-3 text-amber-600" />
                     <span>CERTIFICATIONS</span>
                   </div>
-                  <div className="space-y-1 text-[10.5px] text-gray-800">
-                    <div className="flex justify-between items-baseline">
-                      <span>• <strong className="text-gray-900">Computer Communications</strong> – 4-course Specialization, University of Colorado, Colorado Springs (Coursera)</span>
-                      <span className="font-medium text-gray-800 text-[10.5px] shrink-0 ml-2">Nov 2024</span>
+                  <div className="space-y-0.5 text-[8.8px] text-gray-700 leading-tight pt-0.5">
+                    <div className="flex justify-between">
+                      <span>• Computer Communications – University of Colorado, Colorado Springs (Coursera)</span>
+                      <span className="font-semibold text-gray-900 shrink-0 ml-2">Nov 2024</span>
                     </div>
-                    <div className="flex justify-between items-baseline">
-                      <span>• <strong className="text-gray-900">Interpersonal Communication for Engineering Leaders</strong> – Rice University (Coursera)</span>
-                      <span className="font-medium text-gray-800 text-[10.5px] shrink-0 ml-2">Apr 2026</span>
+                    <div className="flex justify-between">
+                      <span>• Interpersonal Communication for Engineering Leaders – Rice University (Coursera)</span>
+                      <span className="font-semibold text-gray-900 shrink-0 ml-2">Apr 2026</span>
                     </div>
-                    <div className="flex justify-between items-baseline">
-                      <span>• <strong className="text-gray-900">Computational Theory: Language Principle & Finite Automata Theory</strong> – Infosys Springboard</span>
-                      <span className="font-medium text-gray-800 text-[10.5px] shrink-0 ml-2">Aug 2025</span>
+                    <div className="flex justify-between">
+                      <span>• Computational Theory: Language Principle & Finite Automata Theory – Infosys</span>
+                      <span className="font-semibold text-gray-900 shrink-0 ml-2">Aug 2025</span>
                     </div>
                   </div>
                 </div>
 
-                {/* 7. EDUCATION */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-serif text-xs font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-400 pb-0.5">
-                    <GraduationCap className="w-3.5 h-3.5 text-amber-700" />
+                {/* 6. EDUCATION */}
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1 font-display text-[10px] font-bold uppercase tracking-wider text-[#0f172a] border-b border-gray-300 pb-0.5">
+                    <GraduationCap className="w-3 h-3 text-amber-600" />
                     <span>EDUCATION</span>
                   </div>
-                  <div className="space-y-2 text-[10.5px]">
-                    <div className="space-y-0.5">
-                      <div className="flex justify-between items-baseline">
-                        <strong className="text-gray-900 text-[11px]">Lovely Professional University</strong>
-                        <span className="text-gray-700 italic">Punjab, India</span>
-                      </div>
-                      <div className="flex justify-between items-baseline text-gray-800">
-                        <span>Bachelor of Technology – Computer Science and Engineering</span>
-                        <span className="font-medium text-gray-800 text-[10.5px]">Aug 2023 – Present</span>
-                      </div>
+                  <div className="space-y-0.5 text-[8.8px] text-gray-700 leading-tight pt-0.5">
+                    <div className="flex justify-between">
+                      <span>
+                        <strong className="text-gray-900">• Lovely Professional University</strong> – B.Tech in Computer Science & Engineering (AI & ML)
+                      </span>
+                      <span className="font-semibold text-gray-900 shrink-0 ml-2">Aug 2023 – Present</span>
                     </div>
-
-                    <div className="space-y-0.5">
-                      <div className="flex justify-between items-baseline">
-                        <strong className="text-gray-900 text-[11px]">Narayana Junior College</strong>
-                        <span className="text-gray-700 italic">Bhimavaram, Andhra Pradesh</span>
-                      </div>
-                      <div className="flex justify-between items-baseline text-gray-800">
-                        <span>Intermediate – PCM</span>
-                        <span className="font-medium text-gray-800 text-[10.5px]">Apr 2021 – Mar 2023</span>
-                      </div>
+                    <div className="flex justify-between">
+                      <span>
+                        <strong className="text-gray-900">• Narayana Junior College</strong> – Intermediate – PCM
+                      </span>
+                      <span className="font-semibold text-gray-900 shrink-0 ml-2">Apr 2021 – Mar 2023</span>
                     </div>
                   </div>
                 </div>

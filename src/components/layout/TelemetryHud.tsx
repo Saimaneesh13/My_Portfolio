@@ -2,12 +2,12 @@ import { Eye, Sparkles } from 'lucide-react'
 import { useSceneStore } from '../../store/useSceneStore'
 
 export default function TelemetryHud() {
-  const { flowState, targetProgress, manualProgress, isCanvasDimmed, setManualProgress, toggleInspect3D } =
+  const { flowState, isCvPaperOpen, targetProgress, manualProgress, isCanvasDimmed, setManualProgress, toggleInspect3D } =
     useSceneStore()
 
   const currentVal = manualProgress !== null ? manualProgress : targetProgress
 
-  if (flowState === 'greet') return null
+  if (flowState === 'greet' || (flowState === 'about' && isCvPaperOpen)) return null
 
   return (
     <div className="fixed bottom-5 right-6 z-30 pointer-events-auto glass-panel rounded-xl px-4 py-2.5 flex items-center gap-3.5">

@@ -19,7 +19,7 @@ import {
 import { useSceneStore } from '../../store/useSceneStore'
 
 function NeuralCoreMesh() {
-  const { flowState, targetProgress, targetCvProgress, manualProgress, customImageSrc } = useSceneStore()
+  const { flowState, targetProgress, targetCvProgress, isCvPaperOpen, manualProgress, customImageSrc } = useSceneStore()
   const { size } = useThree()
 
   const rootGroup = useRef<THREE.Group>(null)
@@ -179,8 +179,8 @@ function NeuralCoreMesh() {
       targetScale = 0.78
     } else if (flowState === 'about' && isDesktop) {
       targetX = 0
-      targetY = 0
-      targetScale = 0.88
+      targetY = -0.04
+      targetScale = isCvPaperOpen ? 0.001 : 0.92
     } else if (flowState === 'contact') {
       targetX = 0
       targetY = 0

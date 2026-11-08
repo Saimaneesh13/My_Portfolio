@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { CORE_COLOR, createCoreGeometry, generateCvDocumentSegments } from './core-geometry'
+import { CORE_COLOR, createCoreGeometry } from './core-geometry'
 
 export interface MorphSystemData {
   lineGeo: THREE.BufferGeometry
@@ -94,6 +94,78 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
   ctx.moveTo(cx - 22, cy + 48)
   ctx.quadraticCurveTo(cx, cy + 55, cx + 22, cy + 48)
   ctx.stroke()
+
+  return canvas
+}
+
+export function createCvHologramCanvas(): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  const w = (canvas.width = 420)
+  const h = (canvas.height = 540)
+  const ctx = canvas.getContext('2d')!
+
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(0, 0, w, h)
+
+  // Outer glowing document border & corner ribbon
+  ctx.strokeStyle = '#ffffff'
+  ctx.lineWidth = 3
+  ctx.strokeRect(14, 14, w - 28, h - 28)
+  ctx.lineWidth = 1
+  ctx.strokeRect(20, 20, w - 40, h - 40)
+
+  // Corner ribbon
+  ctx.fillStyle = '#ffffff'
+  ctx.beginPath()
+  ctx.moveTo(w - 55, 14)
+  ctx.lineTo(w - 14, 14)
+  ctx.lineTo(w - 14, 55)
+  ctx.closePath()
+  ctx.fill()
+
+  // Header Name & Contact rows
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 22px sans-serif'
+  ctx.fillText('Gorrela Sai Maneesh', 32, 52)
+
+  ctx.font = '10px monospace'
+  ctx.fillStyle = '#cccccc'
+  ctx.fillText('linkedin.com/in/sai-maneesh', 32, 70)
+  ctx.fillText('github.com/Saimaneesh13', 32, 84)
+  ctx.fillText('ssai68352@gmail.com', 245, 70)
+  ctx.fillText('+91 6281433838', 245, 84)
+
+  const sections = [
+    { y: 110, title: 'SKILLS', rows: 5 },
+    { y: 198, title: 'INTERNSHIP — EduExpose (ML Intern)', rows: 3 },
+    { y: 268, title: 'PROJECTS — Disaster NLP · Face CV · AgroDetect', rows: 3 },
+    { y: 338, title: 'ACHIEVEMENTS — Best Award · Coursera', rows: 3 },
+    { y: 408, title: 'CERTIFICATIONS — Colorado · Rice · Infosys', rows: 3 },
+    { y: 476, title: 'EDUCATION — Lovely Professional University', rows: 2 },
+  ]
+
+  sections.forEach((sec) => {
+    ctx.fillStyle = '#ffffff'
+    ctx.font = 'bold 11px sans-serif'
+    ctx.fillRect(32, sec.y - 8, 8, 8)
+    ctx.fillText(sec.title, 46, sec.y)
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.65)'
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.moveTo(32, sec.y + 5)
+    ctx.lineTo(w - 32, sec.y + 5)
+    ctx.stroke()
+
+    ctx.fillStyle = 'rgba(255,255,255,0.78)'
+    for (let r = 0; r < sec.rows; r++) {
+      const ry = sec.y + 16 + r * 11
+      // Simulated typography word blocks so particles form crisp readable document lines
+      ctx.fillRect(36, ry, 65 + ((r * 29) % 40), 3.5)
+      ctx.fillRect(115, ry, 140 + ((r * 53) % 85), 3.5)
+      if (r === 0) ctx.fillRect(w - 82, ry, 46, 3.5)
+    }
+  })
 
   return canvas
 }
@@ -401,32 +473,57 @@ export function samplePortraitAndCore(
   nodeGeo.setAttribute('aTarget', new THREE.Float32BufferAttribute(nodeTargets, 3))
   nodeGeo.setAttribute('aDelay', new THREE.Float32BufferAttribute(nodeDelays, 1))
 
-  const cvSegs = generateCvDocumentSegments()
-  const cvSegCount = cvSegs.length
+  // Sample the high-res CV Hologram Canvas so the 3D CV looks like a real glowing document hologram
+  const cvCanvas = createCvHologramCanvas()
+  const cvW = 140
+  const cvH = 180
+  const tmpCanvas = document.createElement('canvas')
+  tmpCanvas.width = cvW
+  tmpCanvas.height = cvH
+  const tmpCtx = tmpCanvas.getContext('2d')!
+  tmpCtx.drawImage(cvCanvas, 0, 0, cvW, cvH)
+  const cvImg = tmpCtx.getImageData(0, 0, cvW, cvH).data
 
+  const cvPoints: { x: number; y: number; z: number }[] = []
+  const docScale = 4.25
+  const docAspect = cvW / cvH
+
+  for (let y = 0; y < cvH; y++) {
+    for (let x = 0; x < cvW; x++) {
+      const lum = cvImg[(y * cvW + x) * 4] / 255
+      if (lum > 0.15) {
+        cvPoints.push({
+          x: (x / cvW - 0.5) * docScale * docAspect,
+          y: (0.5 - y / cvH) * docScale,
+          z: (lum - 0.5) * 0.08,
+        })
+      }
+    }
+  }
+
+  const cvCount = Math.max(1, cvPoints.length)
   const lineSegTotal = linePositions.length / 6
   const lineCvTargets = new Float32Array(linePositions.length)
+
   for (let s = 0; s < lineSegTotal; s++) {
-    const cvSeg = cvSegs[s % cvSegCount]
+    const pt = cvPoints[(s * 7) % cvCount]
     const i6 = s * 6
-    const jitter = ((s % 7) - 3) * 0.003
-    lineCvTargets[i6] = cvSeg.a.x
-    lineCvTargets[i6 + 1] = cvSeg.a.y + jitter
-    lineCvTargets[i6 + 2] = cvSeg.a.z
-    lineCvTargets[i6 + 3] = cvSeg.b.x
-    lineCvTargets[i6 + 4] = cvSeg.b.y + jitter
-    lineCvTargets[i6 + 5] = cvSeg.b.z
+    lineCvTargets[i6] = pt.x - 0.015
+    lineCvTargets[i6 + 1] = pt.y
+    lineCvTargets[i6 + 2] = pt.z
+    lineCvTargets[i6 + 3] = pt.x + 0.015
+    lineCvTargets[i6 + 4] = pt.y
+    lineCvTargets[i6 + 5] = pt.z
   }
   lineGeo.setAttribute('aCvTarget', new THREE.BufferAttribute(lineCvTargets, 3))
 
   const totalNodeCount = nodePositions.length / 3
   const nodeCvTargets = new Float32Array(nodePositions.length)
   for (let i = 0; i < totalNodeCount; i++) {
-    const cvSeg = cvSegs[i % cvSegCount]
-    const t = ((i * 19) % 100) / 100
-    nodeCvTargets[i * 3] = THREE.MathUtils.lerp(cvSeg.a.x, cvSeg.b.x, t)
-    nodeCvTargets[i * 3 + 1] = THREE.MathUtils.lerp(cvSeg.a.y, cvSeg.b.y, t)
-    nodeCvTargets[i * 3 + 2] = cvSeg.a.z
+    const pt = cvPoints[i % cvCount]
+    nodeCvTargets[i * 3] = pt.x
+    nodeCvTargets[i * 3 + 1] = pt.y
+    nodeCvTargets[i * 3 + 2] = pt.z
   }
   nodeGeo.setAttribute('aCvTarget', new THREE.BufferAttribute(nodeCvTargets, 3))
 
