@@ -325,6 +325,7 @@ export const morphVertexShader = `
 
 export const morphFragmentShader = `
   uniform vec3 uColor;
+  uniform float uFade;
   varying float vStrength;
   varying float vEase;
   varying float vCvEase;
@@ -332,8 +333,8 @@ export const morphFragmentShader = `
   void main() {
     float isPortraitOnly = step(0.0, -vStrength);
     float activeMorph = max(vEase, vCvEase);
-    float visibility = mix(1.0, activeMorph, isPortraitOnly);
-    if (visibility < 0.02) discard;
+    float visibility = mix(1.0, activeMorph, isPortraitOnly) * uFade;
+    if (visibility < 0.01) discard;
 
     float s = abs(vStrength);
     float dist = length(gl_PointCoord - 0.5);
@@ -341,7 +342,7 @@ export const morphFragmentShader = `
     float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.8);
     float alpha = (core * 0.85 + glow * 0.55) * visibility;
 
-    if (alpha < 0.02) discard;
+    if (alpha < 0.01) discard;
 
     vec3 finalColor = uColor * (0.9 + core * 1.4) * clamp(s, 0.3, 1.5);
     gl_FragColor = vec4(finalColor, alpha);
@@ -350,6 +351,7 @@ export const morphFragmentShader = `
 
 export const morphLineFragmentShader = `
   uniform vec3 uColor;
+  uniform float uFade;
   varying vec3 vColor;
   varying float vStrength;
   varying float vEase;
@@ -362,7 +364,7 @@ export const morphLineFragmentShader = `
 
     float sphereAlpha = 0.96 * (1.0 - isPortraitOnly);
     float morphedAlpha = mix(0.42, 0.58, vCvEase) * clamp(s, 0.3, 1.35);
-    float lineAlpha = mix(sphereAlpha, morphedAlpha, activeMorph);
+    float lineAlpha = mix(sphereAlpha, morphedAlpha, activeMorph) * uFade;
 
     if (lineAlpha < 0.01) discard;
 

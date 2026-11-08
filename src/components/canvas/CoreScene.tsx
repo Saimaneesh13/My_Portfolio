@@ -45,6 +45,7 @@ function NeuralCoreMesh() {
     () => ({
       uProgress: { value: 0 },
       uCvProgress: { value: 0 },
+      uFade: { value: 1.0 },
       uTime: { value: 0 },
       uColor: { value: new THREE.Color(CORE_COLOR) },
     }),
@@ -118,6 +119,10 @@ function NeuralCoreMesh() {
     uniforms.uProgress.value = THREE.MathUtils.damp(uniforms.uProgress.value, desiredProgress, 3.2, dt)
     uniforms.uCvProgress.value = THREE.MathUtils.damp(uniforms.uCvProgress.value, targetCvProgress, 3.4, dt)
 
+    // Pure opacity cross-fade when switching between 3D Golden CV and White CV
+    const targetFade = flowState === 'about' && isCvPaperOpen ? 0.0 : 1.0
+    uniforms.uFade.value = THREE.MathUtils.damp(uniforms.uFade.value, targetFade, 4.5, dt)
+
     const activeMorph = Math.max(uniforms.uProgress.value, uniforms.uCvProgress.value)
     const spherePresence = Math.max(0.0, 1.0 - activeMorph * 1.12)
 
@@ -185,10 +190,8 @@ function NeuralCoreMesh() {
       targetScale = 0.78
     } else if (flowState === 'about' && isDesktop) {
       targetX = 0
-      targetY = -0.06
-      // Keep scale at 1.0 when 3D CV is shown so its outer border matches the HTML card 1:1;
-      // fade/shrink smoothly in place (0.96) when the White CV overlay is open
-      targetScale = isCvPaperOpen ? 0.001 : 1.0
+      targetY = -0.05
+      targetScale = 1.0 // Stays 1.0 so it cross-fades in place without shrinking!
     } else if (flowState === 'contact') {
       targetX = 0
       targetY = 0

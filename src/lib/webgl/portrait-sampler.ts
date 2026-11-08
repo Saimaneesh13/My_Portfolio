@@ -100,76 +100,59 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
 
 export function createCvHologramCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
-  // Match the exact 620x545 widescreen aspect ratio of the HTML CV card
-  const w = (canvas.width = 520)
-  const h = (canvas.height = 456)
+  const w = (canvas.width = 500)
+  const h = (canvas.height = 530)
   const ctx = canvas.getContext('2d')!
 
   ctx.fillStyle = '#000000'
   ctx.fillRect(0, 0, w, h)
 
-  // Outer document frame
+  // Clean single document border matching the frameless white CV sheet
   ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 3.5
-  ctx.strokeRect(12, 12, w - 24, h - 24)
-  ctx.lineWidth = 1.2
-  ctx.strokeRect(20, 38, w - 40, h - 48)
+  ctx.lineWidth = 3
+  ctx.strokeRect(10, 10, w - 20, h - 20)
 
-  // Top header bar
+  // Name & Contact block
   ctx.fillStyle = '#ffffff'
-  ctx.font = 'bold 12px sans-serif'
-  ctx.fillText('Curriculum Vitae', 26, 28)
-  ctx.strokeRect(w - 150, 16, 48, 16)
-  ctx.strokeRect(w - 94, 16, 56, 16)
-  ctx.strokeRect(w - 30, 16, 14, 16)
+  ctx.font = 'bold 21px sans-serif'
+  ctx.fillText('Gorrela Sai Maneesh', 28, 44)
 
-  // Corner ribbon
-  ctx.beginPath()
-  ctx.moveTo(w - 52, 38)
-  ctx.lineTo(w - 20, 38)
-  ctx.lineTo(w - 20, 70)
-  ctx.closePath()
-  ctx.fill()
-
-  // Name & Contact
-  ctx.font = 'bold 18px sans-serif'
-  ctx.fillText('Gorrela Sai Maneesh', 32, 62)
-
-  ctx.font = '9.5px monospace'
-  ctx.fillStyle = '#cccccc'
-  ctx.fillText('linkedin.com/in/sai-maneesh', 32, 77)
-  ctx.fillText('github.com/Saimaneesh13', 32, 89)
-  ctx.fillText('ssai68352@gmail.com', 285, 77)
-  ctx.fillText('+91 6281433838', 285, 89)
+  ctx.font = '10px monospace'
+  ctx.fillStyle = '#d4d4d4'
+  ctx.fillText('LinkedIn: linkedin.com/in/sai-maneesh', 28, 62)
+  ctx.fillText('GitHub: github.com/Saimaneesh13', 28, 76)
+  ctx.fillText('Email: ssai68352@gmail.com', 295, 62)
+  ctx.fillText('Mobile: +91 6281433838', 295, 76)
 
   const sections = [
-    { y: 112, title: 'SKILLS', rows: 4 },
-    { y: 176, title: 'INTERNSHIP — EduExpose (ML Intern)', rows: 3 },
-    { y: 232, title: 'PROJECTS — Disaster NLP · Face CV · AgroDetect', rows: 3 },
-    { y: 288, title: 'ACHIEVEMENTS — Best Award · Coursera', rows: 2 },
-    { y: 334, title: 'CERTIFICATIONS — Colorado · Rice · Infosys', rows: 2 },
-    { y: 380, title: 'EDUCATION — Lovely Professional University', rows: 2 },
+    { y: 102, title: 'SKILLS', rows: 6 },
+    { y: 196, title: 'INTERNSHIP', rows: 3 },
+    { y: 266, title: 'PROJECTS', rows: 3 },
+    { y: 336, title: 'ACHIEVEMENTS', rows: 3 },
+    { y: 406, title: 'CERTIFICATIONS', rows: 3 },
+    { y: 472, title: 'EDUCATION', rows: 2 },
   ]
 
   sections.forEach((sec) => {
     ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 10px sans-serif'
-    ctx.fillRect(32, sec.y - 7, 7, 7)
-    ctx.fillText(sec.title, 44, sec.y)
+    ctx.font = 'bold 11px sans-serif'
+    ctx.fillText(sec.title, 28, sec.y)
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.65)'
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)'
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.moveTo(32, sec.y + 4)
-    ctx.lineTo(w - 32, sec.y + 4)
+    ctx.moveTo(28, sec.y + 5)
+    ctx.lineTo(w - 28, sec.y + 5)
     ctx.stroke()
 
-    ctx.fillStyle = 'rgba(255,255,255,0.8)'
+    ctx.fillStyle = 'rgba(255,255,255,0.82)'
     for (let r = 0; r < sec.rows; r++) {
-      const ry = sec.y + 11 + r * 9.5
-      ctx.fillRect(36, ry, 70 + ((r * 29) % 40), 3)
-      ctx.fillRect(122, ry, 170 + ((r * 53) % 95), 3)
-      if (r === 0) ctx.fillRect(w - 88, ry, 48, 3)
+      const ry = sec.y + 13 + r * 10
+      ctx.fillRect(28, ry, 75 + ((r * 29) % 35), 3)
+      ctx.fillRect(120, ry, 185 + ((r * 53) % 95), 3)
+      if (sec.title !== 'SKILLS' && sec.title !== 'ACHIEVEMENTS') {
+        ctx.fillRect(w - 86, ry, 54, 3)
+      }
     }
   })
 
@@ -481,8 +464,8 @@ export function samplePortraitAndCore(
 
   // Sample the high-res CV Hologram Canvas so the 3D CV looks like a real glowing document hologram
   const cvCanvas = createCvHologramCanvas()
-  const cvW = 208
-  const cvH = 182
+  const cvW = 190
+  const cvH = 200
   const tmpCanvas = document.createElement('canvas')
   tmpCanvas.width = cvW
   tmpCanvas.height = cvH
@@ -491,7 +474,7 @@ export function samplePortraitAndCore(
   const cvImg = tmpCtx.getImageData(0, 0, cvW, cvH).data
 
   const cvPoints: { x: number; y: number; z: number }[] = []
-  const docScale = 4.35
+  const docScale = 4.38
   const docAspect = cvW / cvH
 
   for (let y = 0; y < cvH; y++) {
