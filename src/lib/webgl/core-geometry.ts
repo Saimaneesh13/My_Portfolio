@@ -187,11 +187,91 @@ export function createDustGeometry() {
   return geometry
 }
 
+export function generateCvDocumentSegments(): { a: THREE.Vector3; b: THREE.Vector3; strength: number }[] {
+  const segs: { a: THREE.Vector3; b: THREE.Vector3; strength: number }[] = []
+  const W = 3.25
+  const H = 4.35
+  const hw = W / 2
+  const hh = H / 2
+
+  const addLine = (x1: number, y1: number, x2: number, y2: number, z = 0, strength = 1.15, subdivs = 8) => {
+    for (let i = 0; i < subdivs; i++) {
+      const t1 = i / subdivs
+      const t2 = (i + 1) / subdivs
+      segs.push({
+        a: new THREE.Vector3(THREE.MathUtils.lerp(x1, x2, t1), THREE.MathUtils.lerp(y1, y2, t1), z),
+        b: new THREE.Vector3(THREE.MathUtils.lerp(x1, x2, t2), THREE.MathUtils.lerp(y1, y2, t2), z),
+        strength,
+      })
+    }
+  }
+
+  // 1. Outer CV Sheet Frame & Double Luxury Border
+  addLine(-hw, hh, hw, hh, 0.04, 1.4, 24)
+  addLine(hw, hh, hw, -hh, 0.04, 1.4, 28)
+  addLine(hw, -hh, -hw, -hh, 0.04, 1.4, 24)
+  addLine(-hw, -hh, -hw, hh, 0.04, 1.4, 28)
+
+  const pad = 0.08
+  addLine(-hw + pad, hh - pad, hw - pad, hh - pad, 0.02, 0.9, 18)
+  addLine(hw - pad, hh - pad, hw - pad, -hh + pad, 0.02, 0.9, 22)
+  addLine(hw - pad, -hh + pad, -hw + pad, -hh + pad, 0.02, 0.9, 18)
+  addLine(-hw + pad, -hh + pad, -hw + pad, hh - pad, 0.02, 0.9, 22)
+
+  // 2. Top Header: Name Block ("Gorrela Sai Maneesh") + Contact Metadata Lines
+  addLine(-1.38, 1.85, -0.05, 1.85, 0.06, 1.45, 16)
+  addLine(-1.38, 1.79, -0.05, 1.79, 0.06, 1.45, 16)
+  // Left contact links (LinkedIn / GitHub)
+  addLine(-1.38, 1.64, -0.25, 1.64, 0.03, 0.95, 10)
+  addLine(-1.38, 1.51, -0.35, 1.51, 0.03, 0.95, 10)
+  // Right contact links (Email / Phone)
+  addLine(0.32, 1.64, 1.38, 1.64, 0.03, 0.95, 10)
+  addLine(0.32, 1.51, 1.15, 1.51, 0.03, 0.95, 8)
+
+  // 3. Six CV Sections matching image_de1a7e.jpg (Skills, Internship, Projects, Achievements, Certifications, Education)
+  const sectionY = [1.28, 0.42, -0.18, -0.74, -1.26, -1.72]
+
+  sectionY.forEach((sy, idx) => {
+    // Section Icon Box
+    addLine(-1.38, sy + 0.07, -1.26, sy + 0.07, 0.05, 1.35, 2)
+    addLine(-1.26, sy + 0.07, -1.26, sy - 0.05, 0.05, 1.35, 2)
+    addLine(-1.26, sy - 0.05, -1.38, sy - 0.05, 0.05, 1.35, 2)
+    addLine(-1.38, sy - 0.05, -1.38, sy + 0.07, 0.05, 1.35, 2)
+
+    // Section Title Bar + Full-Width Divider Rule
+    addLine(-1.18, sy + 0.01, -0.45, sy + 0.01, 0.05, 1.35, 10)
+    addLine(-1.38, sy - 0.1, 1.38, sy - 0.1, 0.02, 0.85, 20)
+
+    if (idx === 0) {
+      // SKILLS 2-Column Table Rows
+      for (let r = 0; r < 6; r++) {
+        const ry = sy - 0.21 - r * 0.1
+        addLine(-1.36, ry, -0.68, ry, 0.03, 0.95, 6)
+        addLine(-0.48, ry, 1.28 - (r % 3) * 0.18, ry, 0.02, 0.75, 14)
+      }
+    } else {
+      // Bullet Rows + Right-Aligned Dates
+      const rowCount = idx === 5 ? 2 : 3
+      for (let r = 0; r < rowCount; r++) {
+        const ry = sy - 0.22 - r * 0.11
+        addLine(-1.32, ry, 0.88 - (r % 2) * 0.25, ry, 0.03, 0.85, 16)
+        if (r === 0 && (idx === 1 || idx === 3 || idx === 4 || idx === 5)) {
+          addLine(1.02, ry, 1.36, ry, 0.04, 1.1, 4)
+        }
+      }
+    }
+  })
+
+  return segs
+}
+
 export const morphVertexShader = `
   uniform float uProgress;
+  uniform float uCvProgress;
   uniform float uTime;
 
   attribute vec3 aTarget;
+  attribute vec3 aCvTarget;
   attribute float aDelay;
   attribute float aStrength;
   attribute float aSize;
@@ -199,6 +279,7 @@ export const morphVertexShader = `
   varying float vStrength;
   varying vec3 vColor;
   varying float vEase;
+  varying float vCvEase;
 
   vec3 getFlowDisplacement(vec3 pos, float factor) {
     float wave = sin(pos.y * 3.0 + uTime * 2.0) * cos(pos.x * 2.5);
@@ -213,27 +294,32 @@ export const morphVertexShader = `
     float ease = smoothstep(0.0, 1.0, localProgress);
     vEase = ease;
 
-    float arc = sin(ease * 3.14159265);
-    vec3 midFlow = getFlowDisplacement(position, arc * 0.72);
+    float localCv = clamp((uCvProgress - aDelay * 0.45) / 0.65, 0.0, 1.0);
+    float cvEase = smoothstep(0.0, 1.0, localCv);
+    vCvEase = cvEase;
+
+    float arc = max(sin(ease * 3.14159265), sin(cvEase * 3.14159265));
+    vec3 midFlow = getFlowDisplacement(position, arc * 0.68);
 
     vec3 portraitBreath = vec3(
       sin(uTime * 1.5 + aTarget.y * 2.2) * 0.012,
       cos(uTime * 1.2 + aTarget.x * 2.2) * 0.012,
       sin(uTime * 1.8 + aTarget.x * 3.0) * 0.025
-    ) * ease;
+    ) * max(ease, cvEase);
 
-    vec3 blendedPosition = mix(position, aTarget, ease) + midFlow + portraitBreath;
+    // Blend Sphere -> Portrait, then -> 3D Golden CV Sheet when on About page
+    vec3 basePos = mix(position, aTarget, ease);
+    vec3 blendedPosition = mix(basePos, aCvTarget, cvEase) + midFlow + portraitBreath;
 
     vec4 viewPosition = modelViewMatrix * vec4(blendedPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
 
-    // If aStrength < 0.0, this is an extra portrait-only node: keep size 0 on the sphere so it doesn't clutter the circuitry!
     float isPortraitOnly = step(0.0, -aStrength);
-    float absStrength = abs(aStrength);
-    float sphereScale = mix(1.0, vEase, isPortraitOnly);
+    float activeMorph = max(vEase, vCvEase);
+    float sphereScale = mix(1.0, activeMorph, isPortraitOnly);
 
-    float pSize = mix(aSize, aSize * 1.2, ease) * sphereScale;
-    gl_PointSize = clamp(pSize * (16.0 / -viewPosition.z), 0.0, 15.0);
+    float pSize = mix(aSize, aSize * 1.15, activeMorph) * sphereScale;
+    gl_PointSize = clamp(pSize * (16.0 / -viewPosition.z), 0.0, 14.0);
   }
 `
 
@@ -241,10 +327,12 @@ export const morphFragmentShader = `
   uniform vec3 uColor;
   varying float vStrength;
   varying float vEase;
+  varying float vCvEase;
 
   void main() {
     float isPortraitOnly = step(0.0, -vStrength);
-    float visibility = mix(1.0, vEase, isPortraitOnly);
+    float activeMorph = max(vEase, vCvEase);
+    float visibility = mix(1.0, activeMorph, isPortraitOnly);
     if (visibility < 0.02) discard;
 
     float s = abs(vStrength);
@@ -265,23 +353,22 @@ export const morphLineFragmentShader = `
   varying vec3 vColor;
   varying float vStrength;
   varying float vEase;
+  varying float vCvEase;
 
   void main() {
-    // Negative vStrength marks extra portrait-only contour lines -> invisible at uProgress=0 (Sphere), visible at uProgress=1 (Portrait)
     float isPortraitOnly = step(0.0, -vStrength);
+    float activeMorph = max(vEase, vCvEase);
     float s = abs(vStrength);
 
-    // At uProgress = 0 (Sphere): render pure 1.0 alpha vertex color (vColor) so the 90-degree circuit paths glow brightly like Screenshot 2!
     float sphereAlpha = 0.96 * (1.0 - isPortraitOnly);
-    float portraitAlpha = 0.42 * clamp(s, 0.3, 1.25);
-    float lineAlpha = mix(sphereAlpha, portraitAlpha, vEase);
+    float morphedAlpha = mix(0.42, 0.58, vCvEase) * clamp(s, 0.3, 1.35);
+    float lineAlpha = mix(sphereAlpha, morphedAlpha, activeMorph);
 
     if (lineAlpha < 0.01) discard;
 
-    // Preserve exact HDR vertex colors (vColor) on the sphere so UnrealBloom lights up the circuit traces
     vec3 sphereCol = vColor * 1.15;
-    vec3 portraitCol = mix(vColor, uColor * (0.55 + s * 0.65), 0.65);
-    vec3 lineCol = mix(sphereCol, portraitCol, vEase);
+    vec3 morphedCol = mix(vColor, uColor * (0.62 + s * 0.65), 0.72);
+    vec3 lineCol = mix(sphereCol, morphedCol, activeMorph);
 
     gl_FragColor = vec4(lineCol, lineAlpha);
   }

@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { CORE_COLOR, createCoreGeometry } from './core-geometry'
+import { CORE_COLOR, createCoreGeometry, generateCvDocumentSegments } from './core-geometry'
 
 export interface MorphSystemData {
   lineGeo: THREE.BufferGeometry
@@ -400,6 +400,35 @@ export function samplePortraitAndCore(
   nodeGeo.setAttribute('aStrength', new THREE.Float32BufferAttribute(nodeStrengths, 1))
   nodeGeo.setAttribute('aTarget', new THREE.Float32BufferAttribute(nodeTargets, 3))
   nodeGeo.setAttribute('aDelay', new THREE.Float32BufferAttribute(nodeDelays, 1))
+
+  const cvSegs = generateCvDocumentSegments()
+  const cvSegCount = cvSegs.length
+
+  const lineSegTotal = linePositions.length / 6
+  const lineCvTargets = new Float32Array(linePositions.length)
+  for (let s = 0; s < lineSegTotal; s++) {
+    const cvSeg = cvSegs[s % cvSegCount]
+    const i6 = s * 6
+    const jitter = ((s % 7) - 3) * 0.003
+    lineCvTargets[i6] = cvSeg.a.x
+    lineCvTargets[i6 + 1] = cvSeg.a.y + jitter
+    lineCvTargets[i6 + 2] = cvSeg.a.z
+    lineCvTargets[i6 + 3] = cvSeg.b.x
+    lineCvTargets[i6 + 4] = cvSeg.b.y + jitter
+    lineCvTargets[i6 + 5] = cvSeg.b.z
+  }
+  lineGeo.setAttribute('aCvTarget', new THREE.BufferAttribute(lineCvTargets, 3))
+
+  const totalNodeCount = nodePositions.length / 3
+  const nodeCvTargets = new Float32Array(nodePositions.length)
+  for (let i = 0; i < totalNodeCount; i++) {
+    const cvSeg = cvSegs[i % cvSegCount]
+    const t = ((i * 19) % 100) / 100
+    nodeCvTargets[i * 3] = THREE.MathUtils.lerp(cvSeg.a.x, cvSeg.b.x, t)
+    nodeCvTargets[i * 3 + 1] = THREE.MathUtils.lerp(cvSeg.a.y, cvSeg.b.y, t)
+    nodeCvTargets[i * 3 + 2] = cvSeg.a.z
+  }
+  nodeGeo.setAttribute('aCvTarget', new THREE.BufferAttribute(nodeCvTargets, 3))
 
   return {
     lineGeo,

@@ -5,12 +5,16 @@ export type FlowState = 'greet' | 'morph' | 'about' | 'home' | 'projects' | 'cas
 export interface SceneStore {
   flowState: FlowState
   targetProgress: number        // 0 = Golden Core Sphere, 1 = 3D Portrait
-  manualProgress: number | null // Non-null when user drags the bottom-right slider
-  activeCaseStudyId: string     // 'disaster-nlp' | 'face-attendance' | 'agrodetect'
-  isCanvasDimmed: boolean       // Blurs/dims background when reading dense text views
-  customImageSrc: string | null // Stores URL.createObjectURL when user uploads a photo
+  targetCvProgress: number      // 0 = Normal, 1 = 3D Golden CV Wireframe Hologram
+  isCvPaperOpen: boolean        // false = 3D Golden CV visible, true = White CV Paper Card visible
+  manualProgress: number | null
+  activeCaseStudyId: string
+  isCanvasDimmed: boolean
+  customImageSrc: string | null
   setFlowState: (state: FlowState) => void
   setTargetProgress: (val: number) => void
+  setTargetCvProgress: (val: number) => void
+  setCvPaperOpen: (open: boolean) => void
   setManualProgress: (val: number | null) => void
   setActiveCaseStudy: (id: string) => void
   toggleInspect3D: () => void
@@ -20,6 +24,8 @@ export interface SceneStore {
 export const useSceneStore = create<SceneStore>((set) => ({
   flowState: 'greet',
   targetProgress: 0,
+  targetCvProgress: 0,
+  isCvPaperOpen: false,
   manualProgress: null,
   activeCaseStudyId: 'disaster-nlp',
   isCanvasDimmed: false,
@@ -27,32 +33,39 @@ export const useSceneStore = create<SceneStore>((set) => ({
 
   setFlowState: (flowState) =>
     set(() => {
-      // Morph to Portrait (1) on morph, home, and about; Morph to Core Sphere (0) on case-study & other views
-      const isPortraitView = flowState === 'morph' || flowState === 'home' || flowState === 'about'
-      // Turn OFF blur on 'case-study' and 'home' so the 3D Core/Portrait is completely sharp
-      const shouldDim = ['about', 'projects', 'expertise', 'contact'].includes(flowState)
+      const isPortraitView = flowState === 'morph' || flowState === 'home'
+      const isAboutView = flowState === 'about'
+      // Keep 'home', 'case-study', and 'about' unblurred so the 3D Portrait / Core / 3D Golden CV shine clearly!
+      const shouldDim = ['projects', 'expertise', 'contact'].includes(flowState)
       return {
         flowState,
         targetProgress: isPortraitView ? 1 : 0,
+        targetCvProgress: isAboutView ? 1 : 0,
+        isCvPaperOpen: false, // Start About page showing the 3D Golden CV Hologram; click to open White CV!
         manualProgress: null,
         isCanvasDimmed: shouldDim,
       }
     }),
 
-  setTargetProgress: (targetProgress) => set({ targetProgress }),
-  setManualProgress: (manualProgress) => set({ manualProgress, isCanvasDimmed: false }),
+  setTargetProgress: (targetProgress) => set({ targetProgress, targetCvProgress: 0 }),
+  setTargetCvProgress: (targetCvProgress) => set({ targetCvProgress }),
+  setCvPaperOpen: (isCvPaperOpen) => set({ isCvPaperOpen }),
+  setManualProgress: (manualProgress) =>
+    set({ manualProgress, targetCvProgress: 0, isCanvasDimmed: false }),
   setActiveCaseStudy: (activeCaseStudyId) => {
     if (typeof window !== 'undefined') window.location.hash = '#case-study'
     set({
       activeCaseStudyId,
       flowState: 'case-study',
-      targetProgress: 0,      // Morphs back to the Golden Core sphere
+      targetProgress: 0,
+      targetCvProgress: 0,
       manualProgress: null,
-      isCanvasDimmed: false,  // Blur turned OFF by default on Case Studies
+      isCanvasDimmed: false,
     })
   },
   toggleInspect3D: () => set((state) => ({ isCanvasDimmed: !state.isCanvasDimmed })),
-  setCustomImage: (customImageSrc) => set({ customImageSrc, targetProgress: 1, isCanvasDimmed: false }),
+  setCustomImage: (customImageSrc) =>
+    set({ customImageSrc, targetProgress: 1, targetCvProgress: 0, isCanvasDimmed: false }),
 }))
 
 export default useSceneStore

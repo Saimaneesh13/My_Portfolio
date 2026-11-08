@@ -19,7 +19,7 @@ import {
 import { useSceneStore } from '../../store/useSceneStore'
 
 function NeuralCoreMesh() {
-  const { flowState, targetProgress, manualProgress, customImageSrc } = useSceneStore()
+  const { flowState, targetProgress, targetCvProgress, manualProgress, customImageSrc } = useSceneStore()
   const { size } = useThree()
 
   const rootGroup = useRef<THREE.Group>(null)
@@ -44,6 +44,7 @@ function NeuralCoreMesh() {
   const uniforms = useMemo(
     () => ({
       uProgress: { value: 0 },
+      uCvProgress: { value: 0 },
       uTime: { value: 0 },
       uColor: { value: new THREE.Color(CORE_COLOR) },
     }),
@@ -112,22 +113,24 @@ function NeuralCoreMesh() {
     const elapsed = state.clock.elapsedTime
     uniforms.uTime.value = elapsed
 
-    // 1. Smoothly damp uProgress (0 = Golden Core Sphere, 1 = 3D Portrait)
+    // 1. Smoothly damp uProgress (0 = Golden Core Sphere, 1 = 3D Portrait) & uCvProgress (1 = 3D Golden CV Hologram)
     const desiredProgress = manualProgress !== null ? manualProgress : targetProgress
     uniforms.uProgress.value = THREE.MathUtils.damp(uniforms.uProgress.value, desiredProgress, 3.2, dt)
-    const p = uniforms.uProgress.value
-    const spherePresence = Math.max(0.0, 1.0 - p * 1.12)
+    uniforms.uCvProgress.value = THREE.MathUtils.damp(uniforms.uCvProgress.value, targetCvProgress, 3.4, dt)
 
-    // 2. Smoothly transition Bloom intensity: rich glow on Sphere, crisp detail on Portrait
+    const activeMorph = Math.max(uniforms.uProgress.value, uniforms.uCvProgress.value)
+    const spherePresence = Math.max(0.0, 1.0 - activeMorph * 1.12)
+
+    // 2. Smoothly transition Bloom intensity: rich glow on Sphere, crisp detail on Portrait/CV
     if (bloomRef.current) {
-      const targetBloom = THREE.MathUtils.lerp(1.25, 0.72, p)
+      const targetBloom = THREE.MathUtils.lerp(1.25, 0.72, activeMorph)
       bloomRef.current.intensity = THREE.MathUtils.damp(bloomRef.current.intensity, targetBloom, 4.0, dt)
     }
 
     const isDesktop = size.width >= 1024
 
-    // 3. Smoothly interpolate camera frustum offset (eliminates the sudden snap when leaving Home!)
-    const targetViewOffsetX = flowState === 'home' && isDesktop ? -size.width * 0.21 : 0
+    // 3. Smoothly interpolate camera frustum offset (eliminates the sudden snap when leaving Home or About!)
+    const targetViewOffsetX = (flowState === 'home' || flowState === 'about') && isDesktop ? -size.width * 0.22 : 0
     smoothViewOffsetRef.current = THREE.MathUtils.damp(
       smoothViewOffsetRef.current,
       targetViewOffsetX,
@@ -175,7 +178,7 @@ function NeuralCoreMesh() {
       targetZ = -0.8
       targetScale = 0.78
     } else if (flowState === 'about' && isDesktop) {
-      targetX = 2.2
+      targetX = 0
       targetY = 0
       targetScale = 0.88
     } else if (flowState === 'contact') {
