@@ -139,17 +139,12 @@ function NeuralCoreMesh() {
 
     const isDesktop = size.width >= 1024
 
-    // 2. Align frustum offset with the right column
-    const targetViewOffsetX =
-      flowState === 'home' && isDesktop
-        ? -size.width * 0.21
-        : flowState === 'about' && isDesktop
-        ? -size.width * 0.24
-        : 0
+    // 1. Only use frustum viewOffset on Home; on About we use exact DOM-rect projection!
+    const targetViewOffsetX = flowState === 'home' && isDesktop ? -size.width * 0.21 : 0
     smoothViewOffsetRef.current = THREE.MathUtils.damp(
       smoothViewOffsetRef.current,
       targetViewOffsetX,
-      3.8,
+      4.2,
       dt
     )
 
@@ -166,49 +161,65 @@ function NeuralCoreMesh() {
       state.camera.clearViewOffset()
     }
 
-    // 4. Per-Page Smooth 3D Core Choreography (Position & Scale)
+    // 2. Compute exact 3D World Position & Scale
     let targetX = 0
     let targetY = 0
     let targetZ = 0
-    let targetScale = 1.0
+    let targetScaleX = 1.0
+    let targetScaleY = 1.0
+    let targetScaleZ = 1.0
 
-    if (flowState === 'home' && isDesktop) {
+    if (flowState === 'about') {
+      const anchorEl = document.getElementById('cv-stage-anchor')
+      if (anchorEl) {
+        const rect = anchorEl.getBoundingClientRect()
+        const cam = state.camera as THREE.PerspectiveCamera
+        const fovRad = THREE.MathUtils.degToRad(cam.fov)
+        // Visible 3D height and width at Z = 0 plane
+        const visibleHeight = 2 * Math.tan(fovRad / 2) * cam.position.z
+        const visibleWidth = visibleHeight * (size.width / size.height)
+
+        // Convert HTML element center (px) -> Normalized (-0.5 to +0.5) -> 3D World (X, Y)
+        const centerX = rect.left + rect.width / 2
+        const centerY = rect.top + rect.height / 2
+
+        targetX = (centerX / size.width - 0.5) * visibleWidth
+        targetY = (0.5 - centerY / size.height) * visibleHeight
+
+        // Convert HTML element pixel width & height -> 3D World Scale (1:1 pixel match!)
+        targetScaleX = (rect.width / size.width) * visibleWidth
+        targetScaleY = (rect.height / size.height) * visibleHeight
+        targetScaleZ = 1.0
+      }
+    } else if (flowState === 'home' && isDesktop) {
       targetX = 0
       targetY = 0.04
-      targetScale = 0.96
+      targetScaleX = targetScaleY = targetScaleZ = 0.96
     } else if (flowState === 'projects') {
-      targetX = 0
-      targetY = 0.05
       targetZ = -1.2
-      targetScale = 0.72
+      targetScaleX = targetScaleY = targetScaleZ = 0.72
     } else if (flowState === 'case-study' && isDesktop) {
-      // Positioned on the upper-right horizon like a rising planet, tucked cleanly behind the card edge
       targetX = 3.85
       targetY = 0.95
       targetZ = -1.4
-      targetScale = 0.92
+      targetScaleX = targetScaleY = targetScaleZ = 0.92
     } else if (flowState === 'expertise' && isDesktop) {
-      targetX = 0
       targetY = 0.05
       targetZ = -0.8
-      targetScale = 0.78
-    } else if (flowState === 'about' && isDesktop) {
-      targetX = 0.38   // Shifts the 3D CV right to match the exact center of the right-hand HTML column
-      targetY = -0.04
-      targetScale = 0.98
+      targetScaleX = targetScaleY = targetScaleZ = 0.78
     } else if (flowState === 'contact') {
-      targetX = 0
-      targetY = 0
       targetZ = -1.5
-      targetScale = 0.62
+      targetScaleX = targetScaleY = targetScaleZ = 0.62
     }
 
     if (rootGroup.current) {
-      rootGroup.current.position.x = THREE.MathUtils.damp(rootGroup.current.position.x, targetX, 3.6, dt)
-      rootGroup.current.position.y = THREE.MathUtils.damp(rootGroup.current.position.y, targetY, 3.6, dt)
-      rootGroup.current.position.z = THREE.MathUtils.damp(rootGroup.current.position.z, targetZ, 3.6, dt)
-      const nextScale = THREE.MathUtils.damp(rootGroup.current.scale.x, targetScale, 3.6, dt)
-      rootGroup.current.scale.setScalar(nextScale)
+      rootGroup.current.position.x = THREE.MathUtils.damp(rootGroup.current.position.x, targetX, 4.5, dt)
+      rootGroup.current.position.y = THREE.MathUtils.damp(rootGroup.current.position.y, targetY, 4.5, dt)
+      rootGroup.current.position.z = THREE.MathUtils.damp(rootGroup.current.position.z, targetZ, 4.5, dt)
+
+      rootGroup.current.scale.x = THREE.MathUtils.damp(rootGroup.current.scale.x, targetScaleX, 4.5, dt)
+      rootGroup.current.scale.y = THREE.MathUtils.damp(rootGroup.current.scale.y, targetScaleY, 4.5, dt)
+      rootGroup.current.scale.z = THREE.MathUtils.damp(rootGroup.current.scale.z, targetScaleZ, 4.5, dt)
     }
 
     if (!dragRef.current.active) {

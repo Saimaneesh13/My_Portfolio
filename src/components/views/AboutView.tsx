@@ -185,12 +185,12 @@ export default function AboutView() {
         </div>
 
         {/* ============================================================
-            RIGHT COLUMN: LOCKED STAGE CONTAINER (3D GOLDEN CV <-> WHITE CV)
+            RIGHT COLUMN: LOCKED PIXEL ANCHOR FOR BOTH 3D & WHITE CV
            ============================================================ */}
         <div className="lg:col-span-6 flex items-center justify-center relative h-[555px] pointer-events-auto">
-          {/* Locked Stage Box: Exactly 545px × 545px so both 3D & White CV share identical bounds */}
-          <div className="relative w-full max-w-[545px] h-[545px]">
-            {/* Subtle Top-Right Expand / Toggle Button */}
+          {/* CoreScene reads this exact DOM element's pixel rect to lock the 3D CV position & size 1:1 */}
+          <div id="cv-stage-anchor" className="relative w-full max-w-[545px] h-[545px]">
+            {/* Subtle Top-Right Expand Icon */}
             <button
               type="button"
               onClick={(e) => {
@@ -206,30 +206,29 @@ export default function AboutView() {
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
 
-            <AnimatePresence mode="wait">
+            {/* Simultaneous Cross-Fade (no mode="wait" delay) */}
+            <AnimatePresence>
               {!isCvPaperOpen ? (
-                /* STAGE 1: Absolute Overlay over 3D Golden CV Hologram */
                 <motion.div
                   key="cv-hologram-trigger"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.45, ease: 'easeInOut' }}
+                  transition={{ duration: 0.5, ease: 'easeInOut' }}
                   onClick={() => setCvPaperOpen(true)}
                   className="absolute inset-0 cursor-pointer flex items-end justify-center pb-2 group"
                 >
-                  <span className="font-mono text-[10px] uppercase tracking-[2px] text-gold/70 group-hover:text-gold transition-opacity">
+                  <span className="font-mono text-[10px] uppercase tracking-[2px] text-gold/80 group-hover:text-gold transition-opacity bg-space/80 px-3.5 py-1 rounded-full border border-gold/30">
                     [ Click 3D CV to Reveal Document ]
                   </span>
                 </motion.div>
               ) : (
-                /* STAGE 2: Pure Frameless White CV Sheet in Exact Same Inset-0 Bounds */
                 <motion.div
                   key="cv-white-sheet"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.55, ease: 'easeInOut' }}
+                  transition={{ duration: 0.5, ease: 'easeInOut' }}
                   onClick={() => {
                     if (!isFullscreen) setCvPaperOpen(false)
                   }}

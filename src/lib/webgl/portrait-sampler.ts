@@ -107,10 +107,10 @@ export function createCvHologramCanvas(): HTMLCanvasElement {
   ctx.fillStyle = '#000000'
   ctx.fillRect(0, 0, w, h)
 
-  // Clean single document border matching the frameless white CV sheet
+  // Flush outer border (0 to w, 0 to h) so 3D edge = HTML card edge 1:1
   ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 3
-  ctx.strokeRect(10, 10, w - 20, h - 20)
+  ctx.lineWidth = 4
+  ctx.strokeRect(2, 2, w - 4, h - 4)
 
   // Name & Contact block
   ctx.fillStyle = '#ffffff'
@@ -474,17 +474,16 @@ export function samplePortraitAndCore(
   const cvImg = tmpCtx.getImageData(0, 0, cvW, cvH).data
 
   const cvPoints: { x: number; y: number; z: number }[] = []
-  const docScale = 4.38
-  const docAspect = cvW / cvH
 
   for (let y = 0; y < cvH; y++) {
     for (let x = 0; x < cvW; x++) {
       const lum = cvImg[(y * cvW + x) * 4] / 255
       if (lum > 0.15) {
+        // Normalized 1.0 x 1.0 unit coordinates (-0.5 to +0.5)
         cvPoints.push({
-          x: (x / cvW - 0.5) * docScale * docAspect,
-          y: (0.5 - y / cvH) * docScale,
-          z: (lum - 0.5) * 0.08,
+          x: x / cvW - 0.5,
+          y: 0.5 - y / cvH,
+          z: (lum - 0.5) * 0.02,
         })
       }
     }
@@ -497,10 +496,10 @@ export function samplePortraitAndCore(
   for (let s = 0; s < lineSegTotal; s++) {
     const pt = cvPoints[(s * 7) % cvCount]
     const i6 = s * 6
-    lineCvTargets[i6] = pt.x - 0.015
+    lineCvTargets[i6] = pt.x - 0.0035
     lineCvTargets[i6 + 1] = pt.y
     lineCvTargets[i6 + 2] = pt.z
-    lineCvTargets[i6 + 3] = pt.x + 0.015
+    lineCvTargets[i6 + 3] = pt.x + 0.0035
     lineCvTargets[i6 + 4] = pt.y
     lineCvTargets[i6 + 5] = pt.z
   }
