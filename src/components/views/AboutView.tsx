@@ -197,18 +197,18 @@ export default function AboutView() {
         </div>
 
         {/* ============================================================
-            RIGHT COLUMN: 3D GOLDEN CV HOLOGRAM OR WHITE SINGLE-PAGE CV
+            RIGHT COLUMN: LOCKED 620x545px STAGE FOR BOTH 3D & WHITE CV
            ============================================================ */}
-        <div className="lg:col-span-6 flex items-center justify-center relative h-[555px] pointer-events-auto">
+        <div className="lg:col-span-6 flex items-center justify-center relative h-[545px] pointer-events-auto">
           {!isCvPaperOpen ? (
-            /* STAGE 1: Unobstructed 3D Golden CV Hologram with clean click trigger */
+            /* STAGE 1: Exact same 620x545 footprint over the 3D Golden CV Hologram */
             <div
               onClick={() => setCvPaperOpen(true)}
-              className="w-full h-full flex flex-col items-center justify-end pb-6 cursor-pointer group"
+              className="w-full max-w-[620px] h-[545px] flex flex-col items-center justify-end pb-4 cursor-pointer group"
             >
               <button
                 type="button"
-                className="glass-panel px-5 py-2.5 rounded-full border border-gold shadow-gold-glow flex items-center gap-2.5 group-hover:scale-105 transition-transform"
+                className="glass-panel px-5 py-2 rounded-full border border-gold shadow-gold-glow flex items-center gap-2.5 group-hover:scale-105 transition-transform"
               >
                 <Sparkles className="w-4 h-4 text-gold animate-pulse" />
                 <span className="font-display text-xs font-semibold text-pure">
@@ -217,13 +217,13 @@ export default function AboutView() {
               </button>
             </div>
           ) : (
-            /* STAGE 2: Single-Page White Curriculum Vitae (Fits all 6 sections without scrolling!) */
+            /* STAGE 2: White Curriculum Vitae Card locked to the exact same w-full max-w-[620px] h-[545px] dimensions */
             <div
               className={`${
                 isFullscreen
                   ? 'fixed inset-4 z-50 max-w-4xl mx-auto overflow-y-auto'
-                  : 'w-full'
-              } bg-[#0c1220]/95 backdrop-blur-xl rounded-2xl p-3.5 border-2 border-gold shadow-[0_0_55px_rgba(234,183,103,0.3)] flex flex-col animate-fadeIn`}
+                  : 'w-full max-w-[620px] h-[545px]'
+              } bg-[#0c1220]/95 backdrop-blur-xl rounded-2xl p-3.5 border-2 border-gold shadow-[0_0_55px_rgba(234,183,103,0.3)] flex flex-col justify-between animate-fadeIn`}
             >
               {/* Clean Top Header Bar matching image_de1a7e.jpg */}
               <div className="flex items-center justify-between pb-2.5 mb-2 px-1">

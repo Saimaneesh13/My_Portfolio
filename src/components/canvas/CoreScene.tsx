@@ -130,7 +130,13 @@ function NeuralCoreMesh() {
     const isDesktop = size.width >= 1024
 
     // 3. Smoothly interpolate camera frustum offset (eliminates the sudden snap when leaving Home or About!)
-    const targetViewOffsetX = (flowState === 'home' || flowState === 'about') && isDesktop ? -size.width * 0.22 : 0
+    // Shift camera frustum -23.5% on About page so the 3D CV aligns dead-center with the right 6-column grid
+    const targetViewOffsetX =
+      flowState === 'home' && isDesktop
+        ? -size.width * 0.21
+        : flowState === 'about' && isDesktop
+        ? -size.width * 0.235
+        : 0
     smoothViewOffsetRef.current = THREE.MathUtils.damp(
       smoothViewOffsetRef.current,
       targetViewOffsetX,
@@ -179,8 +185,10 @@ function NeuralCoreMesh() {
       targetScale = 0.78
     } else if (flowState === 'about' && isDesktop) {
       targetX = 0
-      targetY = -0.04
-      targetScale = isCvPaperOpen ? 0.001 : 0.92
+      targetY = -0.06
+      // Keep scale at 1.0 when 3D CV is shown so its outer border matches the HTML card 1:1;
+      // fade/shrink smoothly in place (0.96) when the White CV overlay is open
+      targetScale = isCvPaperOpen ? 0.001 : 1.0
     } else if (flowState === 'contact') {
       targetX = 0
       targetY = 0

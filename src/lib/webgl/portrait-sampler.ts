@@ -100,70 +100,75 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
 
 export function createCvHologramCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
-  const w = (canvas.width = 420)
-  const h = (canvas.height = 540)
+  const w = (canvas.width = 480)
+  const h = (canvas.height = 430)
   const ctx = canvas.getContext('2d')!
 
   ctx.fillStyle = '#000000'
   ctx.fillRect(0, 0, w, h)
 
-  // Outer glowing document border & corner ribbon
+  // Outer glowing document border & inner sheet border matching the HTML CV Card
   ctx.strokeStyle = '#ffffff'
-  ctx.lineWidth = 3
-  ctx.strokeRect(14, 14, w - 28, h - 28)
-  ctx.lineWidth = 1
-  ctx.strokeRect(20, 20, w - 40, h - 40)
+  ctx.lineWidth = 3.5
+  ctx.strokeRect(10, 10, w - 20, h - 20)
+  ctx.lineWidth = 1.2
+  ctx.strokeRect(22, 42, w - 44, h - 54)
+
+  // Top header bar ("Curriculum Vitae" + action buttons)
+  ctx.fillStyle = '#ffffff'
+  ctx.font = 'bold 12px sans-serif'
+  ctx.fillText('Curriculum Vitae', 26, 30)
+  ctx.strokeRect(w - 155, 18, 52, 16)
+  ctx.strokeRect(w - 96, 18, 58, 16)
+  ctx.strokeRect(w - 32, 18, 16, 16)
 
   // Corner ribbon
-  ctx.fillStyle = '#ffffff'
   ctx.beginPath()
-  ctx.moveTo(w - 55, 14)
-  ctx.lineTo(w - 14, 14)
-  ctx.lineTo(w - 14, 55)
+  ctx.moveTo(w - 58, 42)
+  ctx.lineTo(w - 22, 42)
+  ctx.lineTo(w - 22, 78)
   ctx.closePath()
   ctx.fill()
 
-  // Header Name & Contact rows
-  ctx.fillStyle = '#ffffff'
-  ctx.font = 'bold 22px sans-serif'
-  ctx.fillText('Gorrela Sai Maneesh', 32, 52)
+  // Name & Contact block
+  ctx.font = 'bold 19px sans-serif'
+  ctx.fillText('Gorrela Sai Maneesh', 36, 68)
 
-  ctx.font = '10px monospace'
+  ctx.font = '9.5px monospace'
   ctx.fillStyle = '#cccccc'
-  ctx.fillText('linkedin.com/in/sai-maneesh', 32, 70)
-  ctx.fillText('github.com/Saimaneesh13', 32, 84)
-  ctx.fillText('ssai68352@gmail.com', 245, 70)
-  ctx.fillText('+91 6281433838', 245, 84)
+  ctx.fillText('linkedin.com/in/sai-maneesh', 36, 83)
+  ctx.fillText('github.com/Saimaneesh13', 36, 95)
+  ctx.fillText('ssai68352@gmail.com', 265, 83)
+  ctx.fillText('+91 6281433838', 265, 95)
 
   const sections = [
-    { y: 110, title: 'SKILLS', rows: 5 },
-    { y: 198, title: 'INTERNSHIP — EduExpose (ML Intern)', rows: 3 },
-    { y: 268, title: 'PROJECTS — Disaster NLP · Face CV · AgroDetect', rows: 3 },
-    { y: 338, title: 'ACHIEVEMENTS — Best Award · Coursera', rows: 3 },
-    { y: 408, title: 'CERTIFICATIONS — Colorado · Rice · Infosys', rows: 3 },
-    { y: 476, title: 'EDUCATION — Lovely Professional University', rows: 2 },
+    { y: 116, title: 'SKILLS', rows: 4 },
+    { y: 178, title: 'INTERNSHIP — EduExpose (ML Intern)', rows: 3 },
+    { y: 232, title: 'PROJECTS — Disaster NLP · Face CV · AgroDetect', rows: 3 },
+    { y: 286, title: 'ACHIEVEMENTS — Best Award · Coursera', rows: 2 },
+    { y: 332, title: 'CERTIFICATIONS — Colorado · Rice · Infosys', rows: 2 },
+    { y: 378, title: 'EDUCATION — Lovely Professional University', rows: 2 },
   ]
 
   sections.forEach((sec) => {
     ctx.fillStyle = '#ffffff'
-    ctx.font = 'bold 11px sans-serif'
-    ctx.fillRect(32, sec.y - 8, 8, 8)
-    ctx.fillText(sec.title, 46, sec.y)
+    ctx.font = 'bold 10px sans-serif'
+    ctx.fillRect(36, sec.y - 7, 7, 7)
+    ctx.fillText(sec.title, 48, sec.y)
 
     ctx.strokeStyle = 'rgba(255,255,255,0.65)'
-    ctx.lineWidth = 1.2
+    ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.moveTo(32, sec.y + 5)
-    ctx.lineTo(w - 32, sec.y + 5)
+    ctx.moveTo(36, sec.y + 4)
+    ctx.lineTo(w - 36, sec.y + 4)
     ctx.stroke()
 
-    ctx.fillStyle = 'rgba(255,255,255,0.78)'
+    ctx.fillStyle = 'rgba(255,255,255,0.8)'
     for (let r = 0; r < sec.rows; r++) {
-      const ry = sec.y + 16 + r * 11
-      // Simulated typography word blocks so particles form crisp readable document lines
-      ctx.fillRect(36, ry, 65 + ((r * 29) % 40), 3.5)
-      ctx.fillRect(115, ry, 140 + ((r * 53) % 85), 3.5)
-      if (r === 0) ctx.fillRect(w - 82, ry, 46, 3.5)
+      const ry = sec.y + 12 + r * 9.5
+      ctx.fillRect(40, ry, 75 + ((r * 29) % 40), 3)
+      ctx.fillRect(130, ry, 165 + ((r * 53) % 95), 3)
+      if (r === 0) ctx.fillRect(w - 92, ry, 50, 3)
     }
   })
 
@@ -475,8 +480,8 @@ export function samplePortraitAndCore(
 
   // Sample the high-res CV Hologram Canvas so the 3D CV looks like a real glowing document hologram
   const cvCanvas = createCvHologramCanvas()
-  const cvW = 140
-  const cvH = 180
+  const cvW = 192
+  const cvH = 172
   const tmpCanvas = document.createElement('canvas')
   tmpCanvas.width = cvW
   tmpCanvas.height = cvH
@@ -485,7 +490,8 @@ export function samplePortraitAndCore(
   const cvImg = tmpCtx.getImageData(0, 0, cvW, cvH).data
 
   const cvPoints: { x: number; y: number; z: number }[] = []
-  const docScale = 4.25
+  // 4.18 vertical height x (192/172) aspect = 4.66 width -> matches the exact pixel box of the right-hand HTML CV Card!
+  const docScale = 4.18
   const docAspect = cvW / cvH
 
   for (let y = 0; y < cvH; y++) {
