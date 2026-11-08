@@ -5,9 +5,10 @@ export const BRAND = {
   university: 'Lovely Professional University',
   degree: 'B.Tech in Computer Science and Engineering (AI & ML)',
   graduationYear: '2027',
-  email: 'gorrelasaimaneesh@gmail.com',
-  github: 'https://github.com/maneesh-neural',
+  email: 'ssai68352@gmail.com',
+  github: 'https://github.com/Saimaneesh13',
   linkedin: 'https://linkedin.com/in/sai-maneesh',
+  phone: '+91 6281433838',
   cvPath: '/cv/Gorrela_Sai_Maneesh_CV.pdf',
 } as const;
 

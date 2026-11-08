@@ -26,9 +26,10 @@ export const PERSONAL_BRAND = {
   headline: 'Intelligence. Engineered with precision.',
   subheadline: 'Building intelligent systems that turn complex problems into meaningful solutions.',
   bio: 'Gorrela Sai Maneesh is an AI and Machine Learning engineer and software developer. He is a B.Tech Computer Science student at Lovely Professional University, and completed a Machine Learning internship at EduExpose, where he received the Best Award for outstanding, result-oriented performance. He builds systems in NLP, computer vision and deep learning, including an AI-based disaster intelligence system, a face recognition attendance system and a crop disease detector with over 90% accuracy.',
-  email: 'maneesh@ai-portfolio.dev',
-  github: 'https://github.com/',
-  linkedin: 'https://linkedin.com/',
+  email: 'ssai68352@gmail.com',
+  github: 'https://github.com/Saimaneesh13',
+  linkedin: 'https://linkedin.com/in/sai-maneesh',
+  phone: '+91 6281433838',
   availability: 'Available for AI/ML Engineering Roles & High-Impact Internships',
   proofBadges: [
     'BERTopic & Unsupervised NLP',
@@ -48,7 +49,7 @@ export const PROJECTS: ProjectCaseStudy[] = [
     summary: 'Extracts actionable intelligence from noisy, unlabeled emergency feeds using transformer embeddings, UMAP dimensionality reduction, HDBSCAN clustering, and BERTopic.',
     metrics: 'Zero-Shot Topic Discovery · Real-Time Urgency Triage',
     tags: ['Unsupervised NLP', 'BERTopic', 'LDA', 'UMAP', 'HDBSCAN', 'Python', 'Plotly'],
-    githubUrl: 'https://github.com/',
+    githubUrl: 'https://github.com/Saimaneesh13',
     liveUrl: '#case-study',
     problem: 'During natural disasters, emergency response teams are overwhelmed by thousands of unstructured social media posts and distress messages. Manual triage is too slow, and supervised models fail when encountering unseen crisis types.',
     objectives: [
@@ -97,7 +98,7 @@ export const PROJECTS: ProjectCaseStudy[] = [
     summary: 'Automates classroom and workplace attendance logging by detecting faces in live video streams, computing 128-D facial encodings, and writing verified timestamps to SQLite.',
     metrics: 'Sub-100ms Frame Matching · Automated SQLite Audit Logs',
     tags: ['OpenCV', 'Flask', 'SQLite', 'Python', 'Real-time Recognition'],
-    githubUrl: 'https://github.com/',
+    githubUrl: 'https://github.com/Saimaneesh13',
     liveUrl: '#case-study',
     problem: 'Manual roll calls and RFID cards are slow and prone to proxy attendance. Organizations need a contactless, real-time biometric verification pipeline that runs reliably on standard hardware.',
     objectives: [
@@ -145,7 +146,7 @@ export const PROJECTS: ProjectCaseStudy[] = [
     summary: 'Diagnoses crop leaf diseases from field imagery with over 90% validation accuracy using a custom TensorFlow/Keras CNN architecture deployed behind an asynchronous FastAPI service.',
     metrics: '90%+ Validation Accuracy · FastAPI Low-Latency Inference',
     tags: ['CNN', 'TensorFlow', 'Keras', 'FastAPI', 'Python', 'NumPy'],
-    githubUrl: 'https://github.com/',
+    githubUrl: 'https://github.com/Saimaneesh13',
     liveUrl: '#case-study',
     problem: 'Crop diseases cause severe agricultural yield loss when identified late. Farmers often lack immediate access to plant pathologists for accurate early-stage visual diagnosis.',
     objectives: [

@@ -49,7 +49,7 @@ const CAROUSEL_PROJECTS: CoverflowProject[] = [
     featured: true,
     categories: ['All Projects', 'NLP', 'Deep Learning'],
     tags: ['BERTopic', 'Sentence-BERT', 'UMAP', 'HDBSCAN', 'LDA'],
-    githubUrl: 'https://github.com/',
+    githubUrl: 'https://github.com/Saimaneesh13',
     imageUrl:
       'https://images.unsplash.com/photo-1527482797697-8795b05a13fe?auto=format&fit=crop&w=900&q=80',
     stats: [
@@ -68,7 +68,7 @@ const CAROUSEL_PROJECTS: CoverflowProject[] = [
     featured: false,
     categories: ['All Projects', 'Deep Learning', 'Computer Vision', 'Full-Stack'],
     tags: ['CNN', 'TensorFlow', 'Keras', 'FastAPI'],
-    githubUrl: 'https://github.com/',
+    githubUrl: 'https://github.com/Saimaneesh13',
     imageUrl:
       'https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=900&q=80',
     stats: [
@@ -87,7 +87,7 @@ const CAROUSEL_PROJECTS: CoverflowProject[] = [
     featured: false,
     categories: ['All Projects', 'Experiments'],
     tags: ['Three.js', 'GLSL', 'Spatial Hashing', 'UnrealBloom'],
-    githubUrl: 'https://github.com/',
+    githubUrl: 'https://github.com/Saimaneesh13',
     imageUrl:
       'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=900&q=80',
     stats: [
@@ -106,7 +106,7 @@ const CAROUSEL_PROJECTS: CoverflowProject[] = [
     featured: false,
     categories: ['All Projects', 'NLP', 'Full-Stack'],
     tags: ['Scikit-learn', 'Pandas', 'NumPy', 'Plotly', 'Streamlit'],
-    githubUrl: 'https://github.com/',
+    githubUrl: 'https://github.com/Saimaneesh13',
     imageUrl:
       'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80',
     stats: [
@@ -125,7 +125,7 @@ const CAROUSEL_PROJECTS: CoverflowProject[] = [
     featured: false,
     categories: ['All Projects', 'Computer Vision', 'Full-Stack'],
     tags: ['OpenCV', 'Flask', 'SQLite', 'Python'],
-    githubUrl: 'https://github.com/',
+    githubUrl: 'https://github.com/Saimaneesh13',
     imageUrl:
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=80',
     stats: [
