@@ -185,61 +185,60 @@ export default function AboutView() {
         </div>
 
         {/* ============================================================
-            RIGHT COLUMN: PURE FADE TRANSITION (3D GOLDEN CV <-> WHITE CV)
+            RIGHT COLUMN: LOCKED STAGE CONTAINER (3D GOLDEN CV <-> WHITE CV)
            ============================================================ */}
-        <div className="lg:col-span-6 flex items-center justify-center relative h-[560px] pointer-events-auto">
-          {/* Subtle Top-Right Expand / Toggle Button (Matches 1st image `⛶` icon) */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              if (!isCvPaperOpen) {
-                setCvPaperOpen(true)
-              } else {
-                setIsFullscreen((prev) => !prev)
-              }
-            }}
-            className="absolute -top-2 right-4 z-30 p-2 rounded-lg text-mist hover:text-gold transition-colors"
-            title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen CV'}
-          >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
+        <div className="lg:col-span-6 flex items-center justify-center relative h-[555px] pointer-events-auto">
+          {/* Locked Stage Box: Exactly 545px × 545px so both 3D & White CV share identical bounds */}
+          <div className="relative w-full max-w-[545px] h-[545px]">
+            {/* Subtle Top-Right Expand / Toggle Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (!isCvPaperOpen) {
+                  setCvPaperOpen(true)
+                } else {
+                  setIsFullscreen((prev) => !prev)
+                }
+              }}
+              className="absolute -top-7 right-0 z-30 p-1.5 rounded-lg text-mist hover:text-gold transition-colors"
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
 
-          <AnimatePresence>
-            {!isCvPaperOpen ? (
-              /* STAGE 1: Invisible Clickable Area over the 3D Golden CV Hologram */
-              <motion.div
-                key="cv-hologram-trigger"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.65, ease: 'easeInOut' }}
-                onClick={() => setCvPaperOpen(true)}
-                className="w-full max-w-[525px] h-[545px] cursor-pointer flex items-end justify-center pb-2 group"
-                title="Click to fade into White CV format"
-              >
-                <span className="font-mono text-[10px] uppercase tracking-[2px] text-gold/70 group-hover:text-gold transition-opacity">
-                  [ Click 3D CV to Reveal Document ]
-                </span>
-              </motion.div>
-            ) : (
-              /* STAGE 2: Pure Cross-Fade Frameless White CV Sheet (Matches 1st Image 1:1) */
-              <motion.div
-                key="cv-white-sheet"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.75, ease: 'easeInOut' }}
-                onClick={() => {
-                  if (!isFullscreen) setCvPaperOpen(false)
-                }}
-                className={`${
-                  isFullscreen
-                    ? 'fixed inset-6 z-50 max-w-3xl mx-auto overflow-y-auto p-8'
-                    : 'w-full max-w-[525px] h-[545px] px-6 py-5 cursor-pointer'
-                } bg-white text-[#111827] rounded-[4px] shadow-[0_20px_70px_rgba(0,0,0,0.75),0_0_40px_rgba(234,183,103,0.18)] flex flex-col justify-between overflow-hidden`}
-                title="Click CV to fade back into 3D Golden Core CV"
-              >
+            <AnimatePresence mode="wait">
+              {!isCvPaperOpen ? (
+                /* STAGE 1: Absolute Overlay over 3D Golden CV Hologram */
+                <motion.div
+                  key="cv-hologram-trigger"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.45, ease: 'easeInOut' }}
+                  onClick={() => setCvPaperOpen(true)}
+                  className="absolute inset-0 cursor-pointer flex items-end justify-center pb-2 group"
+                >
+                  <span className="font-mono text-[10px] uppercase tracking-[2px] text-gold/70 group-hover:text-gold transition-opacity">
+                    [ Click 3D CV to Reveal Document ]
+                  </span>
+                </motion.div>
+              ) : (
+                /* STAGE 2: Pure Frameless White CV Sheet in Exact Same Inset-0 Bounds */
+                <motion.div
+                  key="cv-white-sheet"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.55, ease: 'easeInOut' }}
+                  onClick={() => {
+                    if (!isFullscreen) setCvPaperOpen(false)
+                  }}
+                  className={`${
+                    isFullscreen
+                      ? 'fixed inset-6 z-50 max-w-3xl mx-auto overflow-y-auto p-8'
+                      : 'absolute inset-0 px-6 py-4 cursor-pointer'
+                  } bg-white text-[#111827] rounded-[4px] shadow-[0_20px_70px_rgba(0,0,0,0.85),0_0_40px_rgba(234,183,103,0.18)] flex flex-col justify-between overflow-hidden`}
+                >
                 {/* Top Header */}
                 <div>
                   <h2 className="font-sans text-[19px] font-bold text-[#1e3a8a] leading-tight">
@@ -399,6 +398,7 @@ export default function AboutView() {
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
         </div>
       </div>
     </div>

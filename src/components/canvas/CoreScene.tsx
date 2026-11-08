@@ -121,7 +121,12 @@ function NeuralCoreMesh() {
 
     // Pure opacity cross-fade when switching between 3D Golden CV and White CV
     const targetFade = flowState === 'about' && isCvPaperOpen ? 0.0 : 1.0
-    uniforms.uFade.value = THREE.MathUtils.damp(uniforms.uFade.value, targetFade, 4.5, dt)
+    uniforms.uFade.value = THREE.MathUtils.damp(uniforms.uFade.value, targetFade, 6.0, dt)
+
+    // Also hide the mesh visibility when fully faded so zero ghost lines ever render behind the White CV
+    if (morphGroup.current) {
+      morphGroup.current.visible = uniforms.uFade.value > 0.02
+    }
 
     const activeMorph = Math.max(uniforms.uProgress.value, uniforms.uCvProgress.value)
     const spherePresence = Math.max(0.0, 1.0 - activeMorph * 1.12)
@@ -134,13 +139,12 @@ function NeuralCoreMesh() {
 
     const isDesktop = size.width >= 1024
 
-    // 3. Smoothly interpolate camera frustum offset (eliminates the sudden snap when leaving Home or About!)
-    // Shift camera frustum -23.5% on About page so the 3D CV aligns dead-center with the right 6-column grid
+    // 2. Align frustum offset with the right column
     const targetViewOffsetX =
       flowState === 'home' && isDesktop
         ? -size.width * 0.21
         : flowState === 'about' && isDesktop
-        ? -size.width * 0.235
+        ? -size.width * 0.24
         : 0
     smoothViewOffsetRef.current = THREE.MathUtils.damp(
       smoothViewOffsetRef.current,
@@ -189,9 +193,9 @@ function NeuralCoreMesh() {
       targetZ = -0.8
       targetScale = 0.78
     } else if (flowState === 'about' && isDesktop) {
-      targetX = 0
-      targetY = -0.05
-      targetScale = 1.0 // Stays 1.0 so it cross-fades in place without shrinking!
+      targetX = 0.38   // Shifts the 3D CV right to match the exact center of the right-hand HTML column
+      targetY = -0.04
+      targetScale = 0.98
     } else if (flowState === 'contact') {
       targetX = 0
       targetY = 0
