@@ -243,8 +243,16 @@ function NeuralCoreMesh() {
     }
 
     if (morphGroup.current) {
-      const baseRotY = elapsed * 0.16 * spherePresence + dragRef.current.rotY
-      const baseRotX = Math.sin(elapsed * 0.25) * 0.1 * spherePresence + dragRef.current.rotX
+      const isSideProfileOrDoc = flowState === 'about' || flowState === 'expertise'
+      const baseRotY = isSideProfileOrDoc ? 0 : elapsed * 0.16 * spherePresence + dragRef.current.rotY
+      const baseRotX = isSideProfileOrDoc ? 0 : Math.sin(elapsed * 0.25) * 0.1 * spherePresence + dragRef.current.rotX
+
+      // Wrap large accumulated rotations so it smoothly lerps to 0 over the shortest arc
+      if (isSideProfileOrDoc && Math.abs(morphGroup.current.rotation.y) > Math.PI) {
+        morphGroup.current.rotation.y =
+          THREE.MathUtils.euclideanModulo(morphGroup.current.rotation.y + Math.PI, Math.PI * 2) - Math.PI
+      }
+
       morphGroup.current.rotation.y = THREE.MathUtils.damp(morphGroup.current.rotation.y, baseRotY, 6.0, dt)
       morphGroup.current.rotation.x = THREE.MathUtils.damp(morphGroup.current.rotation.x, baseRotX, 6.0, dt)
     }

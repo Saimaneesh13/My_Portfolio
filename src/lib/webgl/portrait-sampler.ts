@@ -523,12 +523,11 @@ export function samplePortraitAndCore(
   for (let s = 0; s < lineSegTotal; s++) {
     const bSeg = brainSegs[s % brainSegCount]
     const i6 = s * 6
-    const jitter = ((s % 5) - 2) * 0.008
-    lineBrainTargets[i6] = bSeg.a.x + jitter
-    lineBrainTargets[i6 + 1] = bSeg.a.y + jitter
+    lineBrainTargets[i6] = bSeg.a.x
+    lineBrainTargets[i6 + 1] = bSeg.a.y
     lineBrainTargets[i6 + 2] = bSeg.a.z
-    lineBrainTargets[i6 + 3] = bSeg.b.x + jitter
-    lineBrainTargets[i6 + 4] = bSeg.b.y + jitter
+    lineBrainTargets[i6 + 3] = bSeg.b.x
+    lineBrainTargets[i6 + 4] = bSeg.b.y
     lineBrainTargets[i6 + 5] = bSeg.b.z
   }
   lineGeo.setAttribute('aBrainTarget', new THREE.BufferAttribute(lineBrainTargets, 3))
