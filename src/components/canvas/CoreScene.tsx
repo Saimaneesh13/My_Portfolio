@@ -134,9 +134,11 @@ function NeuralCoreMesh() {
     const activeMorph = Math.max(Math.max(p, uniforms.uCvProgress.value), uniforms.uBrainProgress.value)
     const spherePresence = Math.max(0.0, 1.0 - activeMorph * 1.12)
 
-    // 1. Keep Bloom controlled in Portrait & Brain modes so internal folds never wash out
     if (bloomRef.current) {
-      const targetBloom = THREE.MathUtils.lerp(1.25, 0.75, Math.max(p, uniforms.uBrainProgress.value))
+      const targetBloom =
+        flowState === 'expertise'
+          ? 1.05
+          : THREE.MathUtils.lerp(1.25, 0.75, p)
       bloomRef.current.intensity = THREE.MathUtils.damp(bloomRef.current.intensity, targetBloom, 4.0, dt)
     }
 
@@ -244,11 +246,11 @@ function NeuralCoreMesh() {
 
     if (morphGroup.current) {
       const brainPresence = uniforms.uBrainProgress.value
-      // Smooth 3D showcase oscillation + interactive pointer parallax when viewing the 3D Brain!
+      // Keep the brain centered on its anatomical side-profile with gentle ±10° 3D breathing & mouse parallax
       const brainShowcaseY =
-        (Math.sin(elapsed * 0.65) * 0.28 + state.pointer.x * 0.32) * brainPresence
+        (-0.14 + Math.sin(elapsed * 0.55) * 0.16 + state.pointer.x * 0.22) * brainPresence
       const brainShowcaseX =
-        (Math.cos(elapsed * 0.5) * 0.08 - state.pointer.y * 0.18) * brainPresence
+        (0.06 + Math.cos(elapsed * 0.45) * 0.05 - state.pointer.y * 0.12) * brainPresence
 
       const baseRotY = elapsed * 0.16 * spherePresence + brainShowcaseY + dragRef.current.rotY
       const baseRotX = Math.sin(elapsed * 0.25) * 0.1 * spherePresence + brainShowcaseX + dragRef.current.rotX

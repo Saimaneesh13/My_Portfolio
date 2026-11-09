@@ -534,11 +534,12 @@ export function samplePortraitAndCore(
 
   const nodeBrainTargets = new Float32Array(nodePositions.length)
   for (let i = 0; i < totalNodeCount; i++) {
-    const bSeg = brainSegs[(i * 7) % brainSegCount]
-    const t = ((i * 13) % 100) / 100
-    nodeBrainTargets[i * 3] = THREE.MathUtils.lerp(bSeg.a.x, bSeg.b.x, t)
-    nodeBrainTargets[i * 3 + 1] = THREE.MathUtils.lerp(bSeg.a.y, bSeg.b.y, t)
-    nodeBrainTargets[i * 3 + 2] = THREE.MathUtils.lerp(bSeg.a.z, bSeg.b.z, t)
+    // Snap nodes directly onto cortical vertices so they form crisp glowing synaptic stars on the gyri!
+    const bSeg = brainSegs[(i * 19) % brainSegCount]
+    const pt = i % 2 === 0 ? bSeg.a : bSeg.b
+    nodeBrainTargets[i * 3] = pt.x
+    nodeBrainTargets[i * 3 + 1] = pt.y
+    nodeBrainTargets[i * 3 + 2] = pt.z
   }
   nodeGeo.setAttribute('aBrainTarget', new THREE.BufferAttribute(nodeBrainTargets, 3))
 
