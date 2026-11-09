@@ -134,9 +134,9 @@ function NeuralCoreMesh() {
     const activeMorph = Math.max(Math.max(p, uniforms.uCvProgress.value), uniforms.uBrainProgress.value)
     const spherePresence = Math.max(0.0, 1.0 - activeMorph * 1.12)
 
-    // 2. Smoothly transition Bloom intensity: rich glow on Sphere, crisp detail on Portrait/CV
+    // 1. Keep Bloom controlled in Portrait & Brain modes so internal folds never wash out
     if (bloomRef.current) {
-      const targetBloom = THREE.MathUtils.lerp(1.25, 0.72, activeMorph)
+      const targetBloom = THREE.MathUtils.lerp(1.25, 0.75, Math.max(p, uniforms.uBrainProgress.value))
       bloomRef.current.intensity = THREE.MathUtils.damp(bloomRef.current.intensity, targetBloom, 4.0, dt)
     }
 
@@ -243,18 +243,18 @@ function NeuralCoreMesh() {
     }
 
     if (morphGroup.current) {
-      const isSideProfileOrDoc = flowState === 'about' || flowState === 'expertise'
-      const baseRotY = isSideProfileOrDoc ? 0 : elapsed * 0.16 * spherePresence + dragRef.current.rotY
-      const baseRotX = isSideProfileOrDoc ? 0 : Math.sin(elapsed * 0.25) * 0.1 * spherePresence + dragRef.current.rotX
+      const brainPresence = uniforms.uBrainProgress.value
+      // Smooth 3D showcase oscillation + interactive pointer parallax when viewing the 3D Brain!
+      const brainShowcaseY =
+        (Math.sin(elapsed * 0.65) * 0.28 + state.pointer.x * 0.32) * brainPresence
+      const brainShowcaseX =
+        (Math.cos(elapsed * 0.5) * 0.08 - state.pointer.y * 0.18) * brainPresence
 
-      // Wrap large accumulated rotations so it smoothly lerps to 0 over the shortest arc
-      if (isSideProfileOrDoc && Math.abs(morphGroup.current.rotation.y) > Math.PI) {
-        morphGroup.current.rotation.y =
-          THREE.MathUtils.euclideanModulo(morphGroup.current.rotation.y + Math.PI, Math.PI * 2) - Math.PI
-      }
+      const baseRotY = elapsed * 0.16 * spherePresence + brainShowcaseY + dragRef.current.rotY
+      const baseRotX = Math.sin(elapsed * 0.25) * 0.1 * spherePresence + brainShowcaseX + dragRef.current.rotX
 
-      morphGroup.current.rotation.y = THREE.MathUtils.damp(morphGroup.current.rotation.y, baseRotY, 6.0, dt)
-      morphGroup.current.rotation.x = THREE.MathUtils.damp(morphGroup.current.rotation.x, baseRotX, 6.0, dt)
+      morphGroup.current.rotation.y = THREE.MathUtils.damp(morphGroup.current.rotation.y, baseRotY, 5.0, dt)
+      morphGroup.current.rotation.x = THREE.MathUtils.damp(morphGroup.current.rotation.x, baseRotX, 5.0, dt)
     }
 
     if (orbitGroup.current) {
