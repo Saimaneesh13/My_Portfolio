@@ -310,8 +310,8 @@ export default function ExpertiseView() {
           id="brain-stage-anchor"
           className="lg:col-span-6 relative h-[340px] sm:h-[370px] flex items-center justify-center pointer-events-auto"
         >
-          {/* Top Center Pill: AI / ML */}
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
+          {/* Top Center Pill: AI / ML — Positioned cleanly above the brain crown */}
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
             <div className="px-4 py-1.5 rounded-full bg-[#0b101d]/90 border border-gold/55 shadow-gold-glow flex items-center gap-2 text-xs font-medium text-pure">
               <Cpu className="w-3.5 h-3.5 text-gold" />
               <span>AI / ML</span>

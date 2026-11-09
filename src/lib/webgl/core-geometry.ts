@@ -269,264 +269,302 @@ export function generateBrainSegments(): { a: THREE.Vector3; b: THREE.Vector3; s
   const segs: { a: THREE.Vector3; b: THREE.Vector3; strength: number }[] = []
 
   // =========================================================================
-  // 1. 3D PARAMETRIC ANATOMICAL CORTEX MANIFOLD (Left & Right Hemispheres)
+  // 1. EXACT ANATOMICAL SAGITTAL SILHOUETTE & 3D HEMISPHERE DEPTH FUNCTION
   // =========================================================================
-  // Evaluates an exact 3D point on the human cerebral cortex with realistic lobes,
-  // Sylvian fissure indentation, temporal lobe overhang, and 3D gyri/sulci folds.
-  function evalCortexSurface(u: number, v: number, hemi: number): { pos: THREE.Vector3; sulciDepth: number } {
-    // u: 0..PI (anterior frontal pole -> superior crown -> posterior occipital -> inferior base)
-    // v: 0..PI/2 (0 = medial longitudinal fissure, PI/2 = lateral outer temple)
-    const sinV = Math.sin(v)
-    const cosV = Math.cos(v)
+  // Evaluates whether a 2D (x, y) side-profile point is inside the human cerebrum,
+  // and returns its exact 3D lateral Z-thickness (NO hollow center hole!).
+  function getCerebrumThickness(x: number, y: number): number {
+    // Normalize into brain center coordinates (facing Left: Front = -X, Back = +X, Crown = +Y)
+    // Main upper cerebral dome (ellipsoid centered at x: -0.04, y: 0.34, rx: 1.38, ry: 0.82)
+    const dxDome = (x + 0.04) / 1.38
+    const dyDome = (y - 0.34) / 0.82
+    // Asymmetric anteroposterior shaping: fuller parietal/occipital crown, noble frontal slope
+    const crownShape = x < 0 ? 1.0 - Math.pow(-x / 1.45, 2.2) * 0.12 : 1.0 + Math.sin((x / 1.35) * Math.PI) * 0.06
+    const dDome = Math.hypot(dxDome, dyDome / crownShape)
 
-    // Base sagittal profile (theta around side profile: 0 = front(-X), PI/2 = top(+Y), PI = back(+X), 3PI/2 = bottom(-Y))
-    const theta = u * Math.PI * 2
-    const cT = Math.cos(theta)
-    const sT = Math.sin(theta)
+    // Temporal lobe lower-middle projection (centered at x: 0.02, y: -0.14, rx: 0.68, ry: 0.34, tilted forward-down)
+    const tx = (x - 0.02) * Math.cos(0.18) + (y + 0.14) * Math.sin(0.18)
+    const ty = -(x - 0.02) * Math.sin(0.18) + (y + 0.14) * Math.cos(0.18)
+    const dTemporal = Math.hypot(tx / 0.68, ty / 0.33)
 
-    // Base anatomical proportions (facing Left: Front is -X, Back is +X, Top is +Y)
-    let x = -cT * 1.42 * (0.32 + 0.68 * sinV)
-    let y = sT * 1.05 * (0.35 + 0.65 * sinV) + 0.26
-    let z = cosV * 0.78 * hemi
+    // Frontal orbital base (x: -0.82, y: 0.08, rx: 0.56, ry: 0.28)
+    const dFrontalBase = Math.hypot((x + 0.78) / 0.58, (y - 0.08) / 0.28)
 
-    // A. Sculpt the Frontal Pole & Superior Parietal Dome (Top half: sT >= 0)
-    if (sT >= 0) {
-      // High rounded parietal crown slightly behind center
-      y += Math.pow(sT, 1.4) * 0.18 * sinV
-      if (cT < 0) {
-        // Occipital lobe fullness at the back-right
-        x += Math.pow(-cT, 1.6) * 0.12 * sinV
-      } else {
-        // Steep, noble frontal lobe forehead curve on the front-left
-        y += Math.pow(cT, 2.0) * Math.sin(theta) * 0.14
-      }
-    } else {
-      // B. Sculpt Inferior Base: Orbital Frontal flattening + Temporal Lobe Bulge + Tentorial Notch
-      const down = -sT // 0..1 on the underside
-      if (x < -0.25) {
-        // Flatten the orbital frontal base (above the eyes)
-        y = Math.max(-0.12, y + down * 0.52)
-      } else if (x >= -0.25 && x < 0.58) {
-        // Prominent Temporal Lobe projecting forward & downward (the signature human brain silhouette!)
-        const tempT = (x - -0.25) / 0.83
-        const tempBulge = Math.sin(tempT * Math.PI)
-        y = -0.06 - tempBulge * 0.42 * (0.4 + 0.6 * sinV)
-        // Push temporal pole slightly forward at its tip to form the Sylvian notch
-        x -= tempBulge * 0.22 * sinV
-        z += hemi * tempBulge * 0.14 * sinV
-      } else {
-        // Tentorial notch (curves upward above the cerebellum at the back-bottom)
-        y = Math.max(-0.16, y + down * 0.48)
-      }
+    // Occipital posterior lobe (x: 0.72, y: 0.16, rx: 0.58, ry: 0.38)
+    const dOccipital = Math.hypot((x - 0.72) / 0.58, (y - 0.16) / 0.38)
+
+    // Smooth union (minimum distance) of the 4 anatomical cerebral regions
+    const smin = (a: number, b: number, k = 0.18) => {
+      const h = Math.max(k - Math.abs(a - b), 0.0) / k
+      return Math.min(a, b) - h * h * k * 0.25
     }
 
-    // C. Deep Sylvian Fissure (Lateral Sulcus) Groove separating Frontal/Parietal from Temporal Lobe
-    const sylvianLineY = -0.10 + (x + 0.45) * 0.34
-    const distSylvian = Math.abs(y - sylvianLineY)
-    const inSylvianX = x > -0.52 && x < 0.45 ? 1.0 : 0.0
-    const sylvianGroove = inSylvianX * Math.exp(-Math.pow(distSylvian / 0.13, 2)) * sinV
+    let d = smin(dDome, dTemporal, 0.22)
+    d = smin(d, dFrontalBase, 0.2)
+    d = smin(d, dOccipital, 0.2)
 
-    // D. Central Sulcus (Rolandic groove running down from crown)
-    const centralLineX = -0.06 - (1.1 - y) * 0.24
-    const distCentral = Math.abs(x - centralLineX)
-    const inCentralY = y > 0.05 ? 1.0 : 0.0
-    const centralGroove = inCentralY * Math.exp(-Math.pow(distCentral / 0.11, 2)) * sinV
+    // Carve the Inferior Frontal / Sylvian Notch at (x: -0.62, y: -0.16) so Temporal Pole is distinct
+    const notchDist = Math.hypot((x + 0.66) / 0.26, (y + 0.22) / 0.20)
+    if (notchDist < 1.0) {
+      d += Math.pow(1.0 - notchDist, 1.6) * 0.35
+    }
 
-    // E. Realistic 3D Gyri (ridges) & Sulci (grooves) multi-frequency anatomical wrinkling
-    const g1 = Math.sin(x * 8.2 + y * 5.8 + z * 3.5) * Math.cos(y * 7.6 - x * 4.8)
-    const g2 = Math.sin(x * 13.5 - y * 11.2 + z * 7.0) * 0.45
-    const gyriWave = g1 + g2 // -1.45 .. +1.45
+    // Carve flat inferior orbital floor & tentorial notch above cerebellum
+    if (y < -0.06 && x < -0.52) d += (-0.06 - y) * 1.6
+    if (y < -0.12 && x > 0.52) d += (-0.12 - y) * 1.4
 
-    // Sharp narrow sulci crevices vs broad rounded gyri crowns
-    const gyriHeight = (1.0 - Math.pow(Math.abs(gyriWave) / 1.45, 0.65)) * 0.075 - sylvianGroove * 0.11 - centralGroove * 0.06
+    if (d >= 1.0) return 0.0
 
-    // Displace along outward surface normal
-    const norm = new THREE.Vector3(x, y - 0.2, z).normalize()
-    x += norm.x * gyriHeight
-    y += norm.y * gyriHeight
-    z += norm.z * gyriHeight * 0.85
+    // Solid 3D hemisphere dome thickness (0 at outer silhouette rim -> 0.76 at lateral prominence)
+    const baseZ = Math.pow(1.0 - d * d, 0.58) * 0.76
 
-    // Keep a subtle 0.035 inter-hemispheric longitudinal fissure gap at the midline
-    z += hemi * 0.035
+    // Sculpt the deep Sylvian Fissure crease & Central Sulcus groove into the 3D surface
+    const sylvianY = -0.12 + (x + 0.48) * 0.36
+    const sylvianCrease =
+      x > -0.52 && x < 0.48 ? Math.exp(-Math.pow((y - sylvianY) / 0.09, 2)) * 0.16 : 0.0
 
-    const sulciFactor = THREE.MathUtils.clamp((gyriHeight + 0.08) / 0.15, 0.2, 1.4)
-    return { pos: new THREE.Vector3(x, y, z), sulciDepth: sulciFactor }
+    // Organic 3D Gyri & Sulci cortical convolutions
+    const gyri =
+      Math.sin(x * 9.5 + y * 6.5) * Math.cos(y * 8.5 - x * 5.2) * 0.045 +
+      Math.sin(x * 15.0 - y * 12.0) * 0.022
+
+    return Math.max(0.04, baseZ - sylvianCrease + gyri)
+  }
+
+  // Helper to project a 2D (x,y) point onto the 3D outer cortical surface of hemisphere `hemi` (-1 or +1)
+  function projectToCortex(x: number, y: number, hemi: number, zRatio = 1.0): THREE.Vector3 {
+    const zMax = getCerebrumThickness(x, y)
+    return new THREE.Vector3(x, y, hemi * (0.03 + zMax * zRatio))
+  }
+
+  // Helper to draw a smooth 3D Catmull-Rom cortical ribbon
+  function addCorticalSpline(pts: [number, number][], hemi: number, zRatio: number, strength: number, subdivs = 32) {
+    const vecs = pts.map(([x, y]) => projectToCortex(x, y, hemi, zRatio))
+    const curve = new THREE.CatmullRomCurve3(vecs)
+    const sampled = curve.getPoints(subdivs)
+    for (let i = 0; i < sampled.length - 1; i++) {
+      segs.push({ a: sampled[i], b: sampled[i + 1], strength })
+    }
   }
 
   // =========================================================================
-  // 2. BUILD DENSE VOLUMETRIC CORTICAL SURFACE MESH + GYRI CONTOURS
+  // 2. CONTINUOUS SOLID 3D CORTEX SHELL + WINDING GYRI SULCI FOLDS
   // =========================================================================
-  const U_RES = 84
-  const V_RES = 24
-
   ;[-1, 1].forEach((hemi) => {
-    const grid: { pos: THREE.Vector3; sulciDepth: number }[][] = []
-    for (let iu = 0; iu <= U_RES; iu++) {
-      const row: { pos: THREE.Vector3; sulciDepth: number }[] = []
-      const u = iu / U_RES
-      for (let iv = 0; iv <= V_RES; iv++) {
-        const v = (iv / V_RES) * (Math.PI * 0.49)
-        row.push(evalCortexSurface(u, v, hemi))
+    // A. Volumetric Cortical Contour Slices (from outer silhouette zRatio=0.15 up to lateral dome zRatio=1.0)
+    // This completely fills the interior of the brain so there is ZERO dark hole in the center!
+    const xSteps = 56
+    const ySteps = 40
+    for (let iy = 0; iy < ySteps; iy++) {
+      const y = -0.48 + (iy / ySteps) * 1.68
+      for (let ix = 0; ix < xSteps; ix++) {
+        const x1 = -1.46 + (ix / xSteps) * 2.92
+        const x2 = -1.46 + ((ix + 1) / xSteps) * 2.92
+        const z1 = getCerebrumThickness(x1, y)
+        const z2 = getCerebrumThickness(x2, y)
+
+        if (z1 > 0.02 && z2 > 0.02) {
+          // Rim brightening when near the outer silhouette edge (z1 < 0.28)
+          const isRim = z1 < 0.28 ? 1.35 : 0.72
+          const pA = new THREE.Vector3(x1, y, hemi * (0.03 + z1))
+          const pB = new THREE.Vector3(x2, y, hemi * (0.03 + z2))
+
+          // Wavy gyri displacement along the surface
+          const waveA = Math.sin(x1 * 10.0 + y * 8.0) * 0.018
+          const waveB = Math.sin(x2 * 10.0 + y * 8.0) * 0.018
+          pA.y += waveA
+          pB.y += waveB
+
+          if ((ix + iy) % 2 === 0 || z1 < 0.26) {
+            segs.push({ a: pA, b: pB, strength: isRim })
+          }
+        }
       }
-      grid.push(row)
     }
 
-    for (let iu = 0; iu < U_RES; iu++) {
-      for (let iv = 0; iv < V_RES; iv++) {
-        const p00 = grid[iu][iv]
-        const p10 = grid[iu + 1][iv]
-        const p01 = grid[iu][iv + 1]
-        const p11 = grid[iu + 1][iv + 1]
+    // B. Prominent Anatomical Sulci & Gyri Folds (Bright golden cortical grooves matching image_7c5e37.jpg)
+    const sulciCurves: [number, number][][] = [
+      // Outer Sagittal Silhouette Crown & Temporal Rim (Gives crisp glowing brain border)
+      [
+        [-1.36, 0.02], [-1.38, 0.28], [-1.22, 0.62], [-0.88, 0.92], [-0.38, 1.10],
+        [0.18, 1.12], [0.72, 0.96], [1.14, 0.66], [1.30, 0.28], [1.18, -0.04],
+        [0.78, -0.14], [0.46, -0.18], [0.16, -0.42], [-0.28, -0.44], [-0.52, -0.26],
+        [-0.44, -0.08], [-0.88, -0.08], [-1.22, -0.06], [-1.36, 0.02],
+      ],
+      // Deep Sylvian Fissure (Lateral Sulcus)
+      [[-0.48, -0.10], [-0.22, -0.02], [0.08, 0.10], [0.38, 0.22], [0.64, 0.36]],
+      // Central Sulcus (Rolandic fissure)
+      [[-0.04, 1.10], [-0.10, 0.82], [-0.18, 0.52], [-0.24, 0.22], [-0.28, 0.02]],
+      // Precentral & Postcentral Gyri
+      [[-0.28, 1.06], [-0.34, 0.78], [-0.40, 0.48], [-0.44, 0.16]],
+      [[0.22, 1.08], [0.14, 0.78], [0.06, 0.48], [-0.02, 0.18]],
+      // Superior, Middle & Inferior Frontal Gyri (Winding frontal lobe folds)
+      [[-1.20, 0.58], [-0.94, 0.74], [-0.66, 0.86], [-0.42, 0.82]],
+      [[-1.32, 0.32], [-1.04, 0.48], [-0.74, 0.58], [-0.48, 0.52]],
+      [[-1.30, 0.08], [-1.02, 0.20], [-0.76, 0.16], [-0.52, 0.26]],
+      // Parietal & Occipital Gyri
+      [[0.26, 0.90], [0.54, 0.84], [0.82, 0.74], [1.06, 0.52]],
+      [[0.18, 0.58], [0.46, 0.62], [0.76, 0.50], [1.08, 0.36]],
+      [[0.58, 0.24], [0.86, 0.20], [1.14, 0.10]],
+      // Superior & Inferior Temporal Gyri
+      [[-0.44, -0.22], [-0.12, -0.16], [0.22, -0.04], [0.54, 0.08]],
+      [[-0.32, -0.36], [0.02, -0.30], [0.34, -0.18], [0.60, -0.08]],
+    ]
 
-        // Boost strength along outer silhouette (iv near V_RES) and gyri peaks for realistic 3D rim shading!
-        const rimBoost = Math.pow(iv / V_RES, 1.6) * 0.45
-        const sBase = p00.sulciDepth * 0.75 + rimBoost
+    sulciCurves.forEach((curve, idx) => {
+      const isOuter = idx === 0
+      addCorticalSpline(curve, hemi, isOuter ? 0.35 : 0.96, isOuter ? 1.45 : 1.25, isOuter ? 96 : 32)
+      if (!isOuter) {
+        addCorticalSpline(curve, hemi, 0.55, 0.9, 24)
+      }
+    })
+  })
 
-        // Longitudinal cortical contour
-        segs.push({ a: p00.pos, b: p10.pos, strength: sBase })
-
-        // Cross-cortical contour
-        if ((iu + iv) % 2 === 0 || iv > V_RES - 4) {
-          segs.push({ a: p00.pos, b: p01.pos, strength: sBase * 0.9 })
-        }
-
-        // Triangulated neural network diagonal (creates the exact triangulated web from image_7c5e37.jpg)
-        if ((iu * 3 + iv) % 3 === 0) {
-          segs.push({ a: p00.pos, b: p11.pos, strength: sBase * 1.15 })
+  // =========================================================================
+  // 3. DELAUNAY-STYLE TRIANGULATED NEURAL CONSTELLATION (Matches Reference!)
+  // =========================================================================
+  // Places ~65 Golden Ratio synaptic star hubs across the 3D cortex and connects
+  // nearest neighbors into the crisp glowing triangular network seen in image_7c5e37.jpg
+  const synapticHubs: THREE.Vector3[] = []
+  ;[-1, 1].forEach((hemi) => {
+    let count = 0
+    let seed = 1
+    while (count < 64 && seed < 600) {
+      seed++
+      // Halton / Golden-ratio low-discrepancy distribution so hubs are evenly spaced!
+      const ux = ((seed * 0.6180339887) % 1.0) * 2.76 - 1.38
+      const uy = ((seed * 0.3819660112) % 1.0) * 1.56 - 0.42
+      const zThick = getCerebrumThickness(ux, uy)
+      if (zThick > 0.12) {
+        const hubPos = new THREE.Vector3(ux, uy, hemi * (0.05 + zThick * 1.02))
+        // Ensure minimum spacing between star hubs
+        if (synapticHubs.every((h) => h.distanceTo(hubPos) > 0.21)) {
+          synapticHubs.push(hubPos)
+          count++
         }
       }
     }
   })
 
-  // =========================================================================
-  // 3. BRIGHT SYNAPTIC HUB CONSTELLATION ON CORTEX SURFACE (Matches Reference)
-  // =========================================================================
-  // In image_7c5e37.jpg, ~45 bright glowing hub stars sit on the brain surface with radiating axons
-  const hubNodes: THREE.Vector3[] = []
-  ;[-1, 1].forEach((hemi) => {
-    for (let h = 0; h < 28; h++) {
-      const u = (h * 0.6180339) % 1.0
-      const v = (0.25 + ((h * 0.381966) % 0.72)) * (Math.PI * 0.48)
-      const { pos } = evalCortexSurface(u, v, hemi)
-      hubNodes.push(pos)
-    }
-  })
+  // Connect each Synaptic Hub to its 4 closest neighbors on the same hemisphere
+  for (let i = 0; i < synapticHubs.length; i++) {
+    const a = synapticHubs[i]
+    const neighbors = synapticHubs
+      .map((b, j) => ({ b, j, d: a.distanceTo(b) }))
+      .filter((item) => item.j !== i && item.b.z * a.z > 0 && item.d < 0.52)
+      .sort((p, q) => p.d - q.d)
+      .slice(0, 4)
 
-  for (let i = 0; i < hubNodes.length; i++) {
-    const a = hubNodes[i]
-    for (let j = i + 1; j < hubNodes.length; j++) {
-      const b = hubNodes[j]
-      if (a.z * b.z < 0) continue
-      const dist = a.distanceTo(b)
-      if (dist > 0.18 && dist < 0.52) {
-        // Subdivide hub axon into 3 segments so it curves slightly with the cortex
-        const mid = a.clone().add(b).multiplyScalar(0.5)
-        mid.z *= 1.06
-        segs.push({ a, b: mid, strength: 1.55 })
-        segs.push({ a: mid, b, strength: 1.55 })
+    neighbors.forEach(({ b, j }) => {
+      if (i < j) {
+        // Subdivide each synaptic axon into 4 segments so plenty of particles light it up brightly
+        for (let s = 0; s < 4; s++) {
+          const p1 = new THREE.Vector3().lerpVectors(a, b, s / 4)
+          const p2 = new THREE.Vector3().lerpVectors(a, b, (s + 1) / 4)
+          segs.push({ a: p1, b: p2, strength: 1.65 })
+        }
       }
-    }
+    })
   }
 
   // =========================================================================
-  // 4. VOLUMETRIC 3D CEREBELLUM (Tucked under Posterior Occipital Lobe)
+  // 4. TUCKED STRIATED CEREBELLUM (Snugly Nested Under Occipital Lobe)
   // =========================================================================
-  // Finely striated horizontal folia ridges on a 3D bilobed ellipsoid at (x: 0.78, y: -0.38)
-  const cbU = 28
-  const cbV = 16
+  // Centered at (x: 0.64, y: -0.32) so it merges seamlessly with the tentorial notch and pons
   ;[-1, 1].forEach((hemi) => {
-    for (let iv = 0; iv < cbV; iv++) {
-      const v1 = (iv / cbV) * Math.PI
-      const v2 = ((iv + 1) / cbV) * Math.PI
-      for (let iu = 0; iu < cbU; iu++) {
-        const u1 = (iu / cbU) * Math.PI
-        const u2 = ((iu + 1) / cbU) * Math.PI
+    const cbRows = 12
+    const cbCols = 22
+    for (let r = 0; r < cbRows; r++) {
+      const v = r / (cbRows - 1)
+      const angleV = (v - 0.5) * Math.PI * 0.88
+      const rowY = -0.32 + Math.sin(angleV) * 0.22
+      const radiusX = Math.cos(angleV) * 0.42
+      const radiusZ = Math.cos(angleV) * 0.38
 
-        const folia1 = 1.0 + Math.sin(v1 * 18.0) * 0.04
+      for (let c = 0; c < cbCols; c++) {
+        const u1 = (c / cbCols) * Math.PI
+        const u2 = ((c + 1) / cbCols) * Math.PI
         const p1 = new THREE.Vector3(
-          0.74 + Math.cos(u1) * Math.sin(v1) * 0.46 * folia1,
-          -0.38 + Math.cos(v1) * 0.26,
-          hemi * (0.04 + Math.sin(u1) * Math.sin(v1) * 0.44 * folia1)
+          0.64 - Math.cos(u1) * radiusX,
+          rowY + Math.sin(u1 * 3.0) * 0.01,
+          hemi * (0.03 + Math.sin(u1) * radiusZ)
         )
         const p2 = new THREE.Vector3(
-          0.74 + Math.cos(u2) * Math.sin(v1) * 0.46 * folia1,
-          -0.38 + Math.cos(v1) * 0.26,
-          hemi * (0.04 + Math.sin(u2) * Math.sin(v1) * 0.44 * folia1)
+          0.64 - Math.cos(u2) * radiusX,
+          rowY + Math.sin(u2 * 3.0) * 0.01,
+          hemi * (0.03 + Math.sin(u2) * radiusZ)
         )
-        segs.push({ a: p1, b: p2, strength: 1.05 })
-
-        if (iu % 2 === 0) {
-          const p3 = new THREE.Vector3(
-            0.74 + Math.cos(u1) * Math.sin(v2) * 0.46,
-            -0.38 + Math.cos(v2) * 0.26,
-            hemi * (0.04 + Math.sin(u1) * Math.sin(v2) * 0.44)
-          )
-          segs.push({ a: p1, b: p3, strength: 0.75 })
-        }
+        segs.push({ a: p1, b: p2, strength: 1.15 })
       }
     }
   })
 
   // =========================================================================
-  // 5. ANATOMICAL PONS & BRAINSTEM (Organic Tapered Fiber Bundle)
+  // 5. ANATOMICAL PONS & BRAINSTEM STALK (Merging into Pedestal)
   // =========================================================================
-  const stemCols = 24
-  const stemRows = 18
+  const stemCols = 22
+  const stemRows = 16
   for (let c = 0; c < stemCols; c++) {
-    const ang1 = (c / stemCols) * Math.PI * 2
-    const ang2 = ((c + 1) / stemCols) * Math.PI * 2
+    const ang = (c / stemCols) * Math.PI * 2
     for (let r = 0; r < stemRows; r++) {
       const t1 = r / stemRows
       const t2 = (r + 1) / stemRows
-
-      const evalStem = (t: number, ang: number) => {
-        const y = -0.22 - t * 0.78
-        // Anterior pons bulge at top (t < 0.45), tapering into medulla oblongata below
-        const ponsBulge = Math.sin(t * Math.PI) * 0.06 * (Math.cos(ang) < 0 ? 1.4 : 0.5)
-        const rx = (0.19 * (1.0 - t * 0.45) + ponsBulge) * Math.cos(ang)
-        const rz = 0.17 * (1.0 - t * 0.45) * Math.sin(ang)
-        const cx = 0.12 + t * 0.20
-        return new THREE.Vector3(cx + rx, y, rz)
+      const evalStem = (t: number) => {
+        const y = -0.24 - t * 0.78
+        const cx = 0.08 + t * 0.18
+        const rad = (0.18 * (1.0 - t * 0.42)) * (1.0 + (Math.cos(ang) < 0 ? Math.sin(t * Math.PI) * 0.25 : 0))
+        return new THREE.Vector3(cx + Math.cos(ang) * rad, y, Math.sin(ang) * rad * 0.85)
       }
-
-      const s00 = evalStem(t1, ang1)
-      const s10 = evalStem(t2, ang1)
-      const s01 = evalStem(t1, ang2)
-      segs.push({ a: s00, b: s10, strength: 1.05 })
-      if (r % 2 === 0) segs.push({ a: s00, b: s01, strength: 0.75 })
+      segs.push({ a: evalStem(t1), b: evalStem(t2), strength: 1.25 })
     }
   }
 
   // =========================================================================
-  // 6. HOLOGRAPHIC GOLDEN PEDESTAL & ORBITAL RINGS (Matches Reference)
+  // 6. FIERY HOLOGRAPHIC PEDESTAL + RISING VERTICAL RAYS + ORBIT RINGS
   // =========================================================================
-  const pedestalRadii = [0.55, 0.86, 1.16, 1.44, 1.72]
+  const pedestalRadii = [0.35, 0.58, 0.85, 1.15, 1.45, 1.75]
   pedestalRadii.forEach((pr, idx) => {
-    const py = -1.22 - idx * 0.028
-    const steps = 72
+    const py = -1.16 - idx * 0.025
+    const steps = 80
     for (let s = 0; s < steps; s++) {
-      if (idx % 2 === 1 && s % 7 === 0) continue
+      if (idx > 2 && s % 7 === 0) continue
       const a1 = (s / steps) * Math.PI * 2
       const a2 = ((s + 1) / steps) * Math.PI * 2
       const p1 = new THREE.Vector3(Math.cos(a1) * pr, py + Math.sin(a1) * pr * 0.14, Math.sin(a1) * pr)
       const p2 = new THREE.Vector3(Math.cos(a2) * pr, py + Math.sin(a2) * pr * 0.14, Math.sin(a2) * pr)
-      segs.push({ a: p1, b: p2, strength: idx === 2 ? 1.35 : 0.9 })
+      // Inner pedestal rings glow super bright like the energy emitter in image_7c5e37.jpg!
+      segs.push({ a: p1, b: p2, strength: idx <= 2 ? 1.75 : 1.1 })
     }
   })
 
+  // Vertical Holographic Emitter Rays rising from the pedestal into the brain base
+  for (let ray = 0; ray < 28; ray++) {
+    const ang = (ray / 28) * Math.PI * 2
+    const rad = 0.35 + (ray % 4) * 0.26
+    const rx = Math.cos(ang) * rad
+    const rz = Math.sin(ang) * rad
+    const pyBase = -1.18 + rz * 0.14
+    segs.push({
+      a: new THREE.Vector3(rx, pyBase, rz),
+      b: new THREE.Vector3(rx * 0.85, pyBase + 0.32 + (ray % 3) * 0.12, rz * 0.85),
+      strength: 0.95,
+    })
+  }
+
+  // Sweeping Synaptic Orbit Rings around the Brain
   const orbitConfigs = [
-    { rx: 2.28, ry: 0.66, tiltZ: -0.22, tiltX: 0.32 },
-    { rx: 2.16, ry: 0.74, tiltZ: 0.28, tiltX: -0.26 },
+    { rx: 2.32, ry: 0.68, tiltZ: -0.22, tiltX: 0.32 },
+    { rx: 2.18, ry: 0.78, tiltZ: 0.28, tiltX: -0.26 },
   ]
   orbitConfigs.forEach((cfg) => {
     const euler = new THREE.Euler(cfg.tiltX, 0, cfg.tiltZ)
-    const steps = 80
+    const steps = 84
     for (let s = 0; s < steps; s++) {
       const a1 = (s / steps) * Math.PI * 2
       const a2 = ((s + 1) / steps) * Math.PI * 2
-      const p1 = new THREE.Vector3(Math.cos(a1) * cfg.rx, 0.15 + Math.sin(a1) * cfg.ry, 0).applyEuler(euler)
-      const p2 = new THREE.Vector3(Math.cos(a2) * cfg.rx, 0.15 + Math.sin(a2) * cfg.ry, 0).applyEuler(euler)
-      segs.push({ a: p1, b: p2, strength: 0.85 })
+      const p1 = new THREE.Vector3(Math.cos(a1) * cfg.rx, 0.16 + Math.sin(a1) * cfg.ry, 0).applyEuler(euler)
+      const p2 = new THREE.Vector3(Math.cos(a2) * cfg.rx, 0.16 + Math.sin(a2) * cfg.ry, 0).applyEuler(euler)
+      segs.push({ a: p1, b: p2, strength: 1.05 })
     }
   })
 
@@ -578,18 +616,16 @@ export const morphVertexShader = `
     float arc = max(max(sin(ease * 3.14159265), sin(cvEase * 3.14159265)), sin(brainEase * 3.14159265));
     vec3 midFlow = getFlowDisplacement(position, arc * 0.68);
 
-    // Traveling neural firing pulse wave across the 3D brain lobes
-    float wavePhase = sin(uTime * 2.6 - aBrainTarget.x * 2.8 + aBrainTarget.y * 2.4 + aDelay * 8.0);
-    vPulse = pow(max(0.0, wavePhase), 5.0) * brainEase;
+    float wavePhase = sin(uTime * 2.8 - aBrainTarget.x * 2.6 + aBrainTarget.y * 2.4 + aDelay * 9.0);
+    vPulse = pow(max(0.0, wavePhase), 4.0) * brainEase;
 
-    // 3D Fresnel-style rim & gyri depth shading so the brain looks volumetric, not flat!
-    float radialRim = clamp(length(aBrainTarget.xy * vec2(0.72, 0.92)), 0.0, 1.25);
-    vBrainRim = smoothstep(0.35, 1.15, radialRim);
+    float radialRim = clamp(length((aBrainTarget.xy - vec2(0.0, 0.22)) * vec2(0.74, 0.96)), 0.0, 1.3);
+    vBrainRim = smoothstep(0.25, 1.08, radialRim);
 
     vec3 brainFloat = vec3(
-      sin(uTime * 1.4 + aBrainTarget.y * 2.0) * 0.012,
-      sin(uTime * 1.6) * 0.035,
-      cos(uTime * 1.4 + aBrainTarget.x * 2.0) * 0.012
+      sin(uTime * 1.4 + aBrainTarget.y * 2.0) * 0.01,
+      sin(uTime * 1.6) * 0.03,
+      cos(uTime * 1.4 + aBrainTarget.x * 2.0) * 0.01
     ) * brainEase;
 
     vec3 portraitBreath = vec3(
@@ -609,10 +645,10 @@ export const morphVertexShader = `
     float activeMorph = max(max(ease, cvEase), brainEase);
     float sphereScale = mix(1.0, max(ease, cvEase), isPortraitOnly);
 
-    // Make key synaptic hub nodes glow larger like bright stars on the cortex (matching image_7c5e37.jpg)
-    float hubBoost = mix(1.0, 1.35 + vPulse * 0.85, brainEase);
+    // Blazing synaptic star hubs on the brain cortex
+    float hubBoost = mix(1.0, 1.55 + vPulse * 1.1, brainEase);
     float pSize = mix(aSize, aSize * hubBoost, activeMorph) * sphereScale;
-    gl_PointSize = clamp(pSize * (16.5 / -viewPosition.z), 0.0, 15.0);
+    gl_PointSize = clamp(pSize * (17.5 / -viewPosition.z), 0.0, 18.0);
   }
 `
 
@@ -633,17 +669,17 @@ export const morphFragmentShader = `
 
     float s = abs(vStrength);
     float dist = length(gl_PointCoord - 0.5);
-    float core = 1.0 - smoothstep(0.04, 0.22, dist);
-    float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.6);
+    float core = 1.0 - smoothstep(0.03, 0.20, dist);
+    float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.4);
 
-    float brainNodeAlpha = mix(1.0, 0.78 + vPulse * 0.35, vBrainEase);
-    float alpha = (core * 0.9 + glow * 0.6) * visibility * brainNodeAlpha;
+    float brainNodeAlpha = mix(1.0, 0.92 + vPulse * 0.35, vBrainEase);
+    float alpha = (core * 0.95 + glow * 0.68) * visibility * brainNodeAlpha;
 
     if (alpha < 0.01) discard;
 
-    vec3 champagne = vec3(1.0, 0.96, 0.86);
-    vec3 baseCol = mix(uColor, champagne, (vPulse * 0.75 + core * 0.35) * vBrainEase);
-    vec3 finalColor = baseCol * (0.95 + core * 1.55) * clamp(s, 0.35, 1.65);
+    vec3 champagne = vec3(1.0, 0.97, 0.88);
+    vec3 baseCol = mix(uColor, champagne, (0.45 + vPulse * 0.55 + core * 0.4) * vBrainEase);
+    vec3 finalColor = baseCol * (1.05 + core * 1.75) * clamp(s, 0.45, 1.85);
     gl_FragColor = vec4(finalColor, alpha);
   }
 `
@@ -667,22 +703,22 @@ export const morphLineFragmentShader = `
     float sphereAlpha = 0.96 * (1.0 - isPortraitOnly);
     float portraitOrCvAlpha = mix(0.42, 0.58, vCvEase) * clamp(s, 0.3, 1.35);
 
-    // Volumetric 3D Brain shading: soft inner sulci (0.14) + glowing golden cortical folds & rim (0.34)
-    float brainShading = (0.13 + vBrainRim * 0.16 + vPulse * 0.18) * clamp(s, 0.45, 1.45);
-    float brainAlpha = brainShading * (1.0 - isPortraitOnly * 0.9);
+    // Rich golden cortex glow: warm amber interior + bright rim + blazing synaptic axons
+    float isSynapticAxon = smoothstep(1.35, 1.65, s);
+    float brainShading = (0.16 + vBrainRim * 0.22 + isSynapticAxon * 0.28 + vPulse * 0.22) * clamp(s, 0.5, 1.65);
+    float brainAlpha = brainShading * (1.0 - isPortraitOnly * 0.88);
     float morphedAlpha = mix(portraitOrCvAlpha, brainAlpha, vBrainEase);
 
     float lineAlpha = mix(sphereAlpha, morphedAlpha, activeMorph) * uFade;
     if (lineAlpha < 0.005) discard;
 
-    vec3 deepAmber = vec3(0.72, 0.46, 0.16);
-    vec3 champagne = vec3(1.0, 0.95, 0.82);
+    vec3 warmBronze = vec3(0.78, 0.50, 0.18);
+    vec3 champagne = vec3(1.0, 0.96, 0.85);
 
     vec3 sphereCol = vColor * 1.15;
     vec3 portraitCol = mix(vColor, uColor * (0.65 + s * 0.55), 0.75);
-    // Rich 3-tone golden cortex color (Deep Amber sulci -> Golden Gyri -> Champagne-White Synaptic Hubs)
-    vec3 brainCol = mix(deepAmber, uColor * 1.25, clamp(vBrainRim * 0.7 + s * 0.35, 0.0, 1.0));
-    brainCol = mix(brainCol, champagne, vPulse * 0.75);
+    vec3 brainCol = mix(warmBronze, uColor * 1.35, clamp(vBrainRim * 0.65 + isSynapticAxon * 0.5, 0.0, 1.0));
+    brainCol = mix(brainCol, champagne, (vPulse * 0.75 + isSynapticAxon * 0.35));
 
     vec3 morphedCol = mix(portraitCol, brainCol, vBrainEase);
     vec3 lineCol = mix(sphereCol, morphedCol, activeMorph);
