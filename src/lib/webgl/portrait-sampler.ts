@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { CORE_COLOR, createCoreGeometry } from './core-geometry'
+import { CORE_COLOR, createCoreGeometry, generateBrainSegments } from './core-geometry'
 
 export interface MorphSystemData {
   lineGeo: THREE.BufferGeometry
@@ -514,6 +514,34 @@ export function samplePortraitAndCore(
     nodeCvTargets[i * 3 + 2] = pt.z
   }
   nodeGeo.setAttribute('aCvTarget', new THREE.BufferAttribute(nodeCvTargets, 3))
+
+  // Populate 3D Brain + Pedestal targets for the Expertise page morph
+  const brainSegs = generateBrainSegments()
+  const brainSegCount = brainSegs.length
+
+  const lineBrainTargets = new Float32Array(linePositions.length)
+  for (let s = 0; s < lineSegTotal; s++) {
+    const bSeg = brainSegs[s % brainSegCount]
+    const i6 = s * 6
+    const jitter = ((s % 5) - 2) * 0.008
+    lineBrainTargets[i6] = bSeg.a.x + jitter
+    lineBrainTargets[i6 + 1] = bSeg.a.y + jitter
+    lineBrainTargets[i6 + 2] = bSeg.a.z
+    lineBrainTargets[i6 + 3] = bSeg.b.x + jitter
+    lineBrainTargets[i6 + 4] = bSeg.b.y + jitter
+    lineBrainTargets[i6 + 5] = bSeg.b.z
+  }
+  lineGeo.setAttribute('aBrainTarget', new THREE.BufferAttribute(lineBrainTargets, 3))
+
+  const nodeBrainTargets = new Float32Array(nodePositions.length)
+  for (let i = 0; i < totalNodeCount; i++) {
+    const bSeg = brainSegs[(i * 7) % brainSegCount]
+    const t = ((i * 13) % 100) / 100
+    nodeBrainTargets[i * 3] = THREE.MathUtils.lerp(bSeg.a.x, bSeg.b.x, t)
+    nodeBrainTargets[i * 3 + 1] = THREE.MathUtils.lerp(bSeg.a.y, bSeg.b.y, t)
+    nodeBrainTargets[i * 3 + 2] = THREE.MathUtils.lerp(bSeg.a.z, bSeg.b.z, t)
+  }
+  nodeGeo.setAttribute('aBrainTarget', new THREE.BufferAttribute(nodeBrainTargets, 3))
 
   return {
     lineGeo,

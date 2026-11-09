@@ -19,7 +19,7 @@ import {
 import { useSceneStore } from '../../store/useSceneStore'
 
 function NeuralCoreMesh() {
-  const { flowState, targetProgress, targetCvProgress, isCvPaperOpen, manualProgress, customImageSrc } = useSceneStore()
+  const { flowState, targetProgress, targetCvProgress, targetBrainProgress, isCvPaperOpen, manualProgress, customImageSrc } = useSceneStore()
   const { size } = useThree()
 
   const rootGroup = useRef<THREE.Group>(null)
@@ -45,6 +45,7 @@ function NeuralCoreMesh() {
     () => ({
       uProgress: { value: 0 },
       uCvProgress: { value: 0 },
+      uBrainProgress: { value: 0 },
       uFade: { value: 1.0 },
       uTime: { value: 0 },
       uColor: { value: new THREE.Color(CORE_COLOR) },
@@ -114,10 +115,11 @@ function NeuralCoreMesh() {
     const elapsed = state.clock.elapsedTime
     uniforms.uTime.value = elapsed
 
-    // 1. Smoothly damp uProgress (0 = Golden Core Sphere, 1 = 3D Portrait) & uCvProgress (1 = 3D Golden CV Hologram)
+    // 1. Smoothly damp uProgress (0 = Golden Core Sphere, 1 = 3D Portrait), uCvProgress (1 = 3D Golden CV Hologram), and uBrainProgress (1 = 3D Golden Brain + Pedestal)
     const desiredProgress = manualProgress !== null ? manualProgress : targetProgress
     uniforms.uProgress.value = THREE.MathUtils.damp(uniforms.uProgress.value, desiredProgress, 3.2, dt)
     uniforms.uCvProgress.value = THREE.MathUtils.damp(uniforms.uCvProgress.value, targetCvProgress, 3.4, dt)
+    uniforms.uBrainProgress.value = THREE.MathUtils.damp(uniforms.uBrainProgress.value, targetBrainProgress, 3.4, dt)
 
     // Pure opacity cross-fade when switching between 3D Golden CV and White CV
     const targetFade = flowState === 'about' && isCvPaperOpen ? 0.0 : 1.0
@@ -128,7 +130,8 @@ function NeuralCoreMesh() {
       morphGroup.current.visible = uniforms.uFade.value > 0.02
     }
 
-    const activeMorph = Math.max(uniforms.uProgress.value, uniforms.uCvProgress.value)
+    const p = uniforms.uProgress.value
+    const activeMorph = Math.max(Math.max(p, uniforms.uCvProgress.value), uniforms.uBrainProgress.value)
     const spherePresence = Math.max(0.0, 1.0 - activeMorph * 1.12)
 
     // 2. Smoothly transition Bloom intensity: rich glow on Sphere, crisp detail on Portrait/CV
@@ -191,6 +194,22 @@ function NeuralCoreMesh() {
         targetScaleY = (rect.height / size.height) * visibleHeight
         targetScaleZ = 1.0
       }
+    } else if (flowState === 'expertise') {
+      const brainAnchor = document.getElementById('brain-stage-anchor')
+      if (brainAnchor) {
+        const rect = brainAnchor.getBoundingClientRect()
+        const cam = state.camera as THREE.PerspectiveCamera
+        const fovRad = THREE.MathUtils.degToRad(cam.fov)
+        const visibleHeight = 2 * Math.tan(fovRad / 2) * cam.position.z
+        const visibleWidth = visibleHeight * (size.width / size.height)
+
+        const centerX = rect.left + rect.width / 2
+        const centerY = rect.top + rect.height / 2
+
+        targetX = (centerX / size.width - 0.5) * visibleWidth
+        targetY = (0.5 - centerY / size.height) * visibleHeight
+        targetScaleX = targetScaleY = targetScaleZ = isDesktop ? 0.92 : 0.75
+      }
     } else if (flowState === 'home' && isDesktop) {
       targetX = 0
       targetY = 0.04
@@ -203,10 +222,6 @@ function NeuralCoreMesh() {
       targetY = 0.95
       targetZ = -1.4
       targetScaleX = targetScaleY = targetScaleZ = 0.92
-    } else if (flowState === 'expertise' && isDesktop) {
-      targetY = 0.05
-      targetZ = -0.8
-      targetScaleX = targetScaleY = targetScaleZ = 0.78
     } else if (flowState === 'contact') {
       targetZ = -1.5
       targetScaleX = targetScaleY = targetScaleZ = 0.62
