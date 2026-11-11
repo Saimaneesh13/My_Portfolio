@@ -17,10 +17,24 @@ import {
   type MorphSystemData,
 } from '../../lib/webgl/portrait-sampler'
 import { useSceneStore } from '../../store/useSceneStore'
+import { PostprocessingErrorBoundary } from '../common/ErrorBoundary'
 
 function NeuralCoreMesh() {
   const { flowState, targetProgress, targetCvProgress, targetBrainProgress, isCvPaperOpen, manualProgress, customImageSrc } = useSceneStore()
-  const { size } = useThree()
+  const { size, gl } = useThree()
+
+  const hasFloatBuffer = useMemo(() => {
+    try {
+      const context = gl.getContext()
+      return !!(
+        context.getExtension('EXT_color_buffer_float') ||
+        context.getExtension('EXT_color_buffer_half_float') ||
+        context.getExtension('WEBGL_color_buffer_float')
+      )
+    } catch {
+      return false
+    }
+  }, [gl])
 
   const rootGroup = useRef<THREE.Group>(null)
   const morphGroup = useRef<THREE.Group>(null)
@@ -366,16 +380,21 @@ function NeuralCoreMesh() {
         </group>
       </group>
 
-      <EffectComposer multisampling={0}>
-        <Bloom
-          ref={bloomRef}
-          intensity={1.35}
-          luminanceThreshold={0.52}
-          luminanceSmoothing={0.65}
-          mipmapBlur
-          radius={0.68}
-        />
-      </EffectComposer>
+      <PostprocessingErrorBoundary>
+        <EffectComposer
+          multisampling={0}
+          frameBufferType={hasFloatBuffer ? THREE.HalfFloatType : THREE.UnsignedByteType}
+        >
+          <Bloom
+            ref={bloomRef}
+            intensity={1.35}
+            luminanceThreshold={0.52}
+            luminanceSmoothing={0.65}
+            mipmapBlur={hasFloatBuffer}
+            radius={0.68}
+          />
+        </EffectComposer>
+      </PostprocessingErrorBoundary>
     </>
   )
 }
@@ -385,7 +404,7 @@ export default function CoreScene() {
     <Canvas
       dpr={[1, 2]}
       camera={{ position: [0, 0, 7.6], fov: 44, near: 0.1, far: 100 }}
-      gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+      gl={{ antialias: true, alpha: true, powerPreference: 'default' }}
     >
       <NeuralCoreMesh />
     </Canvas>
