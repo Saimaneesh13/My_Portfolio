@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useSceneStore, type FlowState } from './store/useSceneStore'
 import CoreScene from './components/canvas/CoreScene'
+import { CanvasErrorBoundary } from './components/common/ErrorBoundary'
 import Navbar from './components/layout/Navbar'
 import GreetOverlay from './components/layout/GreetOverlay'
 import TelemetryHud from './components/layout/TelemetryHud'
@@ -38,7 +39,9 @@ export default function App() {
           isCanvasDimmed ? 'blur-[3px] brightness-[0.42]' : 'blur-0 brightness-100'
         }`}
       >
-        <CoreScene />
+        <CanvasErrorBoundary>
+          <CoreScene />
+        </CanvasErrorBoundary>
       </div>
 
       {/* 2. Top Navigation & Telemetry HUD */}
