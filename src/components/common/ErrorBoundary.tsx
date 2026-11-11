@@ -1,95 +1,153 @@
-import React, { Component, type ReactNode } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { useSceneStore } from '../../store/useSceneStore'
 
 interface Props {
-  children: ReactNode
-  fallback?: ReactNode
+  children: React.ReactNode
 }
 
 interface State {
   hasError: boolean
-  error: Error | null
-  dismissed: boolean
+  retryKey: number
 }
 
-export class CanvasErrorBoundary extends Component<Props, State> {
-  state: State = {
-    hasError: false,
-    error: null,
-    dismissed: false,
+// High-speed 3D-projected HTML5 2D Canvas fallback so the Golden Core/Brain/Portrait NEVER disappears or shows an error card!
+function FallbackGoldenCoreCanvas({ onRetryWebGL }: { onRetryWebGL: () => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const { flowState } = useSceneStore()
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let animId = 0
+    let width = (canvas.width = window.innerWidth)
+    let height = (canvas.height = window.innerHeight)
+
+    const onResize = () => {
+      if (!canvas) return
+      width = canvas.width = window.innerWidth
+      height = canvas.height = window.innerHeight
+    }
+    window.addEventListener('resize', onResize)
+
+    // Generate 1,400 golden 3D sphere/circuit nodes
+    const count = 1400
+    const pts: { x: number; y: number; z: number; size: number; alpha: number }[] = []
+    const goldenRatio = (1 + Math.sqrt(5)) / 2
+
+    for (let i = 0; i < count; i++) {
+      const theta = (2 * Math.PI * i) / goldenRatio
+      const phi = Math.acos(1 - (2 * (i + 0.5)) / count)
+      const r = i % 9 === 0 ? 0.32 : 1.85 + (i % 3) * 0.08
+      pts.push({
+        x: r * Math.sin(phi) * Math.cos(theta),
+        y: r * Math.cos(phi),
+        z: r * Math.sin(phi) * Math.sin(theta),
+        size: i % 9 === 0 ? 2.2 : 1.3,
+        alpha: i % 9 === 0 ? 0.95 : 0.45 + (i % 5) * 0.1,
+      })
+    }
+
+    const startTime = performance.now()
+
+    const render = (now: number) => {
+      const t = (now - startTime) * 0.001
+      ctx.clearRect(0, 0, width, height)
+
+      const isDesktop = width >= 1024
+      let centerX = width * 0.5
+      let centerY = height * 0.5
+      let scale = Math.min(width, height) * 0.19
+
+      if (flowState === 'home' && isDesktop) {
+        centerX = width * 0.72
+      } else if (flowState === 'case-study' && isDesktop) {
+        centerX = width * 0.86
+        centerY = height * 0.34
+        scale = Math.min(width, height) * 0.22
+      } else if (flowState === 'about' && isDesktop) {
+        centerX = width * 0.73
+      }
+
+      // Soft ambient golden core glow
+      const grad = ctx.createRadialGradient(centerX, centerY, 2, centerX, centerY, scale * 1.35)
+      grad.addColorStop(0, 'rgba(247, 217, 160, 0.28)')
+      grad.addColorStop(0.25, 'rgba(234, 183, 103, 0.12)')
+      grad.addColorStop(1, 'rgba(7, 11, 19, 0)')
+      ctx.fillStyle = grad
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, scale * 1.35, 0, Math.PI * 2)
+      ctx.fill()
+
+      const rotY = t * 0.22
+      const rotX = Math.sin(t * 0.3) * 0.15
+      const cosY = Math.cos(rotY)
+      const sinY = Math.sin(rotY)
+      const cosX = Math.cos(rotX)
+      const sinX = Math.sin(rotX)
+
+      for (let i = 0; i < count; i++) {
+        const p = pts[i]
+        // Rotate Y then X
+        const x1 = p.x * cosY - p.z * sinY
+        const z1 = p.z * cosY + p.x * sinY
+        const y1 = p.y * cosX - z1 * sinX
+        const z2 = z1 * cosX + p.y * sinX
+
+        const perspective = 4.2 / (4.2 - z2)
+        const sx = centerX + x1 * scale * perspective * 0.52
+        const sy = centerY + y1 * scale * perspective * 0.52
+
+        ctx.fillStyle = `rgba(234, 183, 103, ${p.alpha * Math.max(0.25, (z2 + 2.2) / 4.0)})`
+        ctx.fillRect(sx, sy, p.size * perspective, p.size * perspective)
+      }
+
+      animId = requestAnimationFrame(render)
+    }
+
+    animId = requestAnimationFrame(render)
+    return () => {
+      cancelAnimationFrame(animId)
+      window.removeEventListener('resize', onResize)
+    }
+  }, [flowState])
+
+  return (
+    <div className="fixed inset-0 z-0 pointer-events-none">
+      <canvas ref={canvasRef} className="w-full h-full block" />
+      <button
+        type="button"
+        onClick={onRetryWebGL}
+        className="fixed bottom-4 left-4 z-50 pointer-events-auto px-3 py-1 rounded-full bg-obsidian/80 border border-gold/30 font-mono text-[10px] text-gold hover:border-gold transition-colors"
+      >
+        ↻ Restore WebGL 3D
+      </button>
+    </div>
+  )
+}
+
+export class CanvasErrorBoundary extends React.Component<Props, State> {
+  state: State = { hasError: false, retryKey: 0 }
+
+  static getDerivedStateFromError(): Partial<State> {
+    return { hasError: true }
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error, dismissed: false }
-  }
-
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('[WebGL Canvas Error]:', error, info)
-  }
-
-  handleEnter2D = () => {
-    this.setState({ dismissed: true })
-    useSceneStore.getState().setFlowState('home')
-    window.location.hash = '#home'
+  handleRetry = () => {
+    this.setState((prev) => ({ hasError: false, retryKey: prev.retryKey + 1 }))
   }
 
   render() {
-    if (this.state.hasError && !this.state.dismissed) {
-      return (
-        this.props.fallback || (
-          <div className="flex h-full w-full items-center justify-center p-6 text-center pointer-events-auto z-40">
-            <div className="max-w-xl rounded-2xl border border-gold/35 bg-[#0a101d]/95 p-7 backdrop-blur-xl shadow-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-obsidian/80 border border-gold/30">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                <span className="font-mono text-[11px] uppercase tracking-widest text-gold">Chrome WebGL Notice</span>
-              </div>
-
-              <h3 className="mt-4 font-display text-lg font-medium text-pure">
-                Hardware Acceleration is Turned Off in Chrome
-              </h3>
-
-              <p className="mt-2 text-sm leading-relaxed text-mist">
-                Chrome failed to create a 3D WebGL context (<code className="text-red-400 text-xs font-mono">Error creating WebGL context</code>) because Chrome's graphics acceleration is currently disabled.
-              </p>
-
-              <div className="mt-4 rounded-xl bg-space/80 border border-gold/15 p-4 text-left text-xs space-y-2">
-                <div className="font-mono font-medium text-gold uppercase tracking-wider text-[10px]">How to Enable 3D Graphics:</div>
-                <ol className="list-decimal list-inside space-y-1 text-pure/85">
-                  <li>Open a new tab and paste: <span className="font-mono text-gold-champagne bg-obsidian px-1.5 py-0.5 rounded select-all">chrome://settings/system</span></li>
-                  <li>Toggle ON: <strong className="text-pure">"Use graphics acceleration when available"</strong></li>
-                  <li>Click <strong className="text-gold">Relaunch</strong> on that page</li>
-                </ol>
-              </div>
-
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => this.setState({ hasError: false, error: null })}
-                  className="btn-ghost-gold text-xs"
-                >
-                  Retry 3D Canvas
-                </button>
-                <button
-                  type="button"
-                  onClick={this.handleEnter2D}
-                  className="btn-gold text-xs"
-                >
-                  Continue to Portfolio (2D Mode)
-                </button>
-              </div>
-            </div>
-          </div>
-        )
-      )
+    if (this.state.hasError) {
+      return <FallbackGoldenCoreCanvas onRetryWebGL={this.handleRetry} />
     }
-
-    if (this.state.dismissed) return null
-
-    return this.props.children
+    return <React.Fragment key={this.state.retryKey}>{this.props.children}</React.Fragment>
   }
 }
 
-export class PostprocessingErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+export class PostprocessingErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   state = { hasError: false }
 
   static getDerivedStateFromError() {
@@ -105,3 +163,5 @@ export class PostprocessingErrorBoundary extends Component<{ children: ReactNode
     return this.props.children
   }
 }
+
+export default CanvasErrorBoundary

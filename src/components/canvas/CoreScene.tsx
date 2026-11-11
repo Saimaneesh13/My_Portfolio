@@ -67,27 +67,41 @@ function NeuralCoreMesh() {
     []
   )
 
-  // Load portrait (custom upload -> /images/maneesh.jpg -> synthetic fallback)
+  // Load portrait (custom upload -> /images/maneesh.jpg -> synthetic fallback) with memory cleanup
   useEffect(() => {
+    let activeGeo: MorphSystemData | null = null
     const src = customImageSrc || '/images/maneesh.jpg'
     const img = new Image()
     img.crossOrigin = 'anonymous'
+
     img.onload = () => {
       try {
         const sampled = samplePortraitAndCore(img, 2, 0.16)
         if (sampled) {
+          activeGeo = sampled
           setMorphData(sampled)
           return
         }
       } catch {
         // Fallback if local file:// CORS blocks pixel read
       }
-      setMorphData(samplePortraitAndCore(createDefaultPortraitCanvas(), 2, 0.16))
+      const fb = samplePortraitAndCore(createDefaultPortraitCanvas(), 2, 0.16)
+      activeGeo = fb
+      setMorphData(fb)
     }
     img.onerror = () => {
-      setMorphData(samplePortraitAndCore(createDefaultPortraitCanvas(), 2, 0.16))
+      const fb = samplePortraitAndCore(createDefaultPortraitCanvas(), 2, 0.16)
+      activeGeo = fb
+      setMorphData(fb)
     }
     img.src = src
+
+    return () => {
+      if (activeGeo) {
+        activeGeo.lineGeo.dispose()
+        activeGeo.nodeGeo.dispose()
+      }
+    }
   }, [customImageSrc])
 
   // Drag rotation state
@@ -400,64 +414,18 @@ function NeuralCoreMesh() {
 }
 
 export default function CoreScene() {
-  const customGL = (canvas: any) => {
-    let statusMsg = ''
-    const onCreationError = (e: any) => {
-      statusMsg = e.statusMessage || ''
-      console.warn('[WebGL Context Creation Error]:', statusMsg)
-    }
-    canvas.addEventListener('webglcontextcreationerror', onCreationError, false)
-
-    const attrs: WebGLContextAttributes = {
-      alpha: true,
-      antialias: true,
-      powerPreference: 'default',
-      failIfMajorPerformanceCaveat: false,
-      preserveDrawingBuffer: false,
-    }
-
-    // 1. Try WebGL2 first
-    let ctx = canvas.getContext('webgl2', attrs)
-    // 2. Fall back to WebGL 1 (Three.js r170 defaults to WebGL2 only, so this restores WebGL1 devices!)
-    if (!ctx) {
-      console.info('[WebGL2 unavailable, falling back to WebGL1...]')
-      ctx = canvas.getContext('webgl', attrs) as any
-    }
-    // 3. Fall back to experimental-webgl
-    if (!ctx) {
-      console.info('[Trying experimental-webgl...]')
-      ctx = canvas.getContext('experimental-webgl', attrs) as any
-    }
-    // 4. Try bare contexts without attributes
-    if (!ctx) {
-      ctx = (canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as any
-    }
-
-    canvas.removeEventListener('webglcontextcreationerror', onCreationError)
-
-    if (!ctx) {
-      throw new Error(
-        statusMsg
-          ? `Chrome WebGL initialization error: ${statusMsg}`
-          : 'Chrome failed to allocate a WebGL context (webgl2 and webgl returned null). Please check chrome://gpu.'
-      )
-    }
-
-    return new THREE.WebGLRenderer({
-      canvas,
-      context: ctx,
-      antialias: true,
-      alpha: true,
-      powerPreference: 'default',
-      failIfMajorPerformanceCaveat: false,
-    })
-  }
-
   return (
     <Canvas
-      dpr={[1, 2]}
       camera={{ position: [0, 0, 7.6], fov: 44, near: 0.1, far: 100 }}
-      gl={customGL}
+      dpr={[1, 1.5]}
+      gl={{
+        antialias: false,
+        alpha: true,
+        stencil: false,
+        depth: true,
+        powerPreference: 'default',
+        failIfMajorPerformanceCaveat: false,
+      }}
     >
       <NeuralCoreMesh />
     </Canvas>
