@@ -1,4 +1,5 @@
 import React, { Component, type ReactNode } from 'react'
+import { useSceneStore } from '../../store/useSceneStore'
 
 interface Props {
   children: ReactNode
@@ -8,54 +9,81 @@ interface Props {
 interface State {
   hasError: boolean
   error: Error | null
+  dismissed: boolean
 }
 
 export class CanvasErrorBoundary extends Component<Props, State> {
   state: State = {
     hasError: false,
     error: null,
+    dismissed: false,
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error }
+    return { hasError: true, error, dismissed: false }
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.error('[WebGL Canvas Error]:', error, info)
   }
 
+  handleEnter2D = () => {
+    this.setState({ dismissed: true })
+    useSceneStore.getState().setFlowState('home')
+    window.location.hash = '#home'
+  }
+
   render() {
-    if (this.state.hasError) {
+    if (this.state.hasError && !this.state.dismissed) {
       return (
         this.props.fallback || (
-          <div className="flex h-full w-full items-center justify-center p-8 text-center pointer-events-auto">
-            <div className="max-w-xl rounded-xl border border-gold/30 bg-space-light/95 p-6 backdrop-blur shadow-2xl">
-              <div className="font-mono text-xs uppercase tracking-widest text-gold">WebGL Notice</div>
-              <p className="mt-2 text-sm text-mist">
-                3D WebGL rendering encountered an issue or hardware acceleration is disabled. The interactive 2D portfolio remains fully operational.
+          <div className="flex h-full w-full items-center justify-center p-6 text-center pointer-events-auto z-40">
+            <div className="max-w-xl rounded-2xl border border-gold/35 bg-[#0a101d]/95 p-7 backdrop-blur-xl shadow-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-obsidian/80 border border-gold/30">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="font-mono text-[11px] uppercase tracking-widest text-gold">Chrome WebGL Notice</span>
+              </div>
+
+              <h3 className="mt-4 font-display text-lg font-medium text-pure">
+                Hardware Acceleration is Turned Off in Chrome
+              </h3>
+
+              <p className="mt-2 text-sm leading-relaxed text-mist">
+                Chrome failed to create a 3D WebGL context (<code className="text-red-400 text-xs font-mono">Error creating WebGL context</code>) because Chrome's graphics acceleration is currently disabled.
               </p>
-              {this.state.error && (
-                <div className="mt-3 text-left">
-                  <div className="font-mono text-xs font-semibold text-red-400">
-                    {this.state.error.name}: {this.state.error.message}
-                  </div>
-                  <pre className="mt-2 max-h-48 overflow-auto rounded bg-space p-2 font-mono text-[10px] leading-tight text-mist/80 select-text">
-                    {this.state.error.stack || 'No stack trace available'}
-                  </pre>
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => this.setState({ hasError: false, error: null })}
-                className="btn-ghost-gold mt-4 text-xs"
-              >
-                Retry 3D Canvas
-              </button>
+
+              <div className="mt-4 rounded-xl bg-space/80 border border-gold/15 p-4 text-left text-xs space-y-2">
+                <div className="font-mono font-medium text-gold uppercase tracking-wider text-[10px]">How to Enable 3D Graphics:</div>
+                <ol className="list-decimal list-inside space-y-1 text-pure/85">
+                  <li>Open a new tab and paste: <span className="font-mono text-gold-champagne bg-obsidian px-1.5 py-0.5 rounded select-all">chrome://settings/system</span></li>
+                  <li>Toggle ON: <strong className="text-pure">"Use graphics acceleration when available"</strong></li>
+                  <li>Click <strong className="text-gold">Relaunch</strong> on that page</li>
+                </ol>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => this.setState({ hasError: false, error: null })}
+                  className="btn-ghost-gold text-xs"
+                >
+                  Retry 3D Canvas
+                </button>
+                <button
+                  type="button"
+                  onClick={this.handleEnter2D}
+                  className="btn-gold text-xs"
+                >
+                  Continue to Portfolio (2D Mode)
+                </button>
+              </div>
             </div>
           </div>
         )
       )
     }
+
+    if (this.state.dismissed) return null
 
     return this.props.children
   }
