@@ -45,9 +45,9 @@ void main() {
   vec3 midFlow = getFlowDisplacement(position, arc * 0.72);
 
   vec3 hologramBreath = vec3(
-    sin(uTime * 1.5 + aTarget.y * 2.2) * 0.01,
-    cos(uTime * 1.2 + aTarget.x * 2.2) * 0.01,
-    sin(uTime * 1.8 + aTarget.x * 3.0) * 0.02
+    sin(uTime * 1.5 + aTarget.y * 2.2) * 0.008,
+    cos(uTime * 1.2 + aTarget.x * 2.2) * 0.008,
+    sin(uTime * 1.8 + aTarget.x * 3.0) * 0.015
   ) * activeMorph;
 
   vec3 basePos = mix(position, aTarget, ease);
@@ -60,9 +60,9 @@ void main() {
   float isPortraitOnly = step(0.0, -aStrength);
   float sphereScale = mix(1.0, activeMorph, isPortraitOnly);
 
-  // Scale points in Brain mode by their actual brain.png pixel brightness (aBrainStrength)!
-  float brainSizeMult = 0.65 + clamp(aBrainStrength, 0.2, 1.8) * 0.75;
-  float targetSize = mix(aSize * 1.25, aSize * brainSizeMult, brainEase);
+  // Fine, crisp point size (0.55x) in Brain mode so the 90-degree circuit lines look razor-sharp, not blurry blobs!
+  float brainSizeMult = 0.45 + clamp(aBrainStrength, 0.2, 1.8) * 0.45;
+  float targetSize = mix(aSize * 1.2, aSize * brainSizeMult, brainEase);
   float pSize = mix(aSize, targetSize, activeMorph) * sphereScale;
-  gl_PointSize = clamp(pSize * (19.0 / -viewPosition.z), 0.0, 16.0);
+  gl_PointSize = clamp(pSize * (17.0 / -viewPosition.z), 0.0, 14.0);
 }

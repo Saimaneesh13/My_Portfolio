@@ -237,8 +237,8 @@ function CoreParticles() {
         const centerY = rect.top + rect.height / 2
 
         targetX = (centerX / size.width - 0.5) * visibleWidth
-        targetY = (0.5 - centerY / size.height) * visibleHeight
-        targetScaleX = targetScaleY = targetScaleZ = isDesktop ? 0.88 : 0.72
+        targetY = (0.5 - centerY / size.height) * visibleHeight + 0.06
+        targetScaleX = targetScaleY = targetScaleZ = isDesktop ? 0.78 : 0.65
       }
     } else if (flowState === 'home' && isDesktop) {
       targetX = 0
@@ -298,16 +298,21 @@ function CoreParticles() {
     if (kernelGroup.current) {
       kernelGroup.current.rotation.z = elapsed * 0.18
       kernelGroup.current.rotation.y = -elapsed * 0.11
-      // Align kernel with the glowing sun in the middle of brain.png (slightly above center: y = 0.08)
-      kernelGroup.current.position.x = THREE.MathUtils.damp(kernelGroup.current.position.x, 0, 4.0, dt)
+      // Aligns 1:1 with the glowing thalamic sun in brain.png
+      kernelGroup.current.position.x = THREE.MathUtils.damp(
+        kernelGroup.current.position.x,
+        -0.02 * brainPresence,
+        4.0,
+        dt
+      )
       kernelGroup.current.position.y = THREE.MathUtils.damp(
         kernelGroup.current.position.y,
-        0.08 * brainPresence,
+        0.09 * brainPresence,
         4.0,
         dt
       )
       const kernelPulse = 1 + Math.sin(elapsed * 1.4) * 0.04
-      const kernelScale = THREE.MathUtils.lerp(1.0, 0.58, brainPresence) * Math.max(0.001, kernelVisibility)
+      const kernelScale = THREE.MathUtils.lerp(1.0, 0.46, brainPresence) * Math.max(0.001, kernelVisibility)
       kernelGroup.current.scale.setScalar(kernelPulse * kernelScale)
     }
   })
