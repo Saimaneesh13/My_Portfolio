@@ -582,9 +582,11 @@ export const morphVertexShader = `
   attribute vec3 aBrainTarget;
   attribute float aDelay;
   attribute float aStrength;
+  attribute float aBrainStrength;
   attribute float aSize;
 
   varying float vStrength;
+  varying float vBrainStrength;
   varying vec3 vColor;
   varying float vEase;
   varying float vCvEase;
@@ -597,6 +599,7 @@ export const morphVertexShader = `
 
   void main() {
     vStrength = aStrength;
+    vBrainStrength = aBrainStrength;
     vColor = color;
 
     float localProgress = clamp((uProgress - aDelay * 0.5) / 0.65, 0.0, 1.0);
@@ -607,7 +610,7 @@ export const morphVertexShader = `
     float cvEase = smoothstep(0.0, 1.0, localCv);
     vCvEase = cvEase;
 
-    float localBrain = clamp((uBrainProgress - aDelay * 0.5) / 0.65, 0.0, 1.0);
+    float localBrain = clamp((uBrainProgress - aDelay * 0.45) / 0.65, 0.0, 1.0);
     float brainEase = smoothstep(0.0, 1.0, localBrain);
     vBrainEase = brainEase;
 
@@ -616,9 +619,9 @@ export const morphVertexShader = `
     vec3 midFlow = getFlowDisplacement(position, arc * 0.72);
 
     vec3 hologramBreath = vec3(
-      sin(uTime * 1.5 + aTarget.y * 2.2) * 0.012,
-      cos(uTime * 1.2 + aTarget.x * 2.2) * 0.012,
-      sin(uTime * 1.8 + aTarget.x * 3.0) * 0.025
+      sin(uTime * 1.5 + aTarget.y * 2.2) * 0.01,
+      cos(uTime * 1.2 + aTarget.x * 2.2) * 0.01,
+      sin(uTime * 1.8 + aTarget.x * 3.0) * 0.02
     ) * activeMorph;
 
     vec3 basePos = mix(position, aTarget, ease);
@@ -631,8 +634,11 @@ export const morphVertexShader = `
     float isPortraitOnly = step(0.0, -aStrength);
     float sphereScale = mix(1.0, activeMorph, isPortraitOnly);
 
-    float pSize = mix(aSize, aSize * 1.25, activeMorph) * sphereScale;
-    gl_PointSize = clamp(pSize * (20.0 / -viewPosition.z), 0.0, 16.0);
+    // Scale points in Brain mode by their actual brain.png pixel brightness (aBrainStrength)!
+    float brainSizeMult = 0.65 + clamp(aBrainStrength, 0.2, 1.8) * 0.75;
+    float targetSize = mix(aSize * 1.25, aSize * brainSizeMult, brainEase);
+    float pSize = mix(aSize, targetSize, activeMorph) * sphereScale;
+    gl_PointSize = clamp(pSize * (19.0 / -viewPosition.z), 0.0, 16.0);
   }
 `
 
@@ -640,6 +646,7 @@ export const morphFragmentShader = `
   uniform vec3 uColor;
   uniform float uFade;
   varying float vStrength;
+  varying float vBrainStrength;
   varying float vEase;
   varying float vCvEase;
   varying float vBrainEase;
@@ -650,15 +657,22 @@ export const morphFragmentShader = `
     float visibility = mix(1.0, activeMorph, isPortraitOnly) * uFade;
     if (visibility < 0.02) discard;
 
-    float s = abs(vStrength);
+    // Blend between Portrait strength and Brain.png pixel strength!
+    float s = mix(abs(vStrength), vBrainStrength, vBrainEase);
+
     float dist = length(gl_PointCoord - 0.5);
     float core = 1.0 - smoothstep(0.04, 0.22, dist);
     float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.8);
-    float alpha = (core * 0.85 + glow * 0.58) * visibility;
+    float alpha = (core * 0.88 + glow * 0.58) * visibility * clamp(s, 0.25, 1.5);
 
     if (alpha < 0.02) discard;
 
-    vec3 finalColor = uColor * (0.88 + core * 1.4) * clamp(s, 0.28, 1.5);
+    // Hot champagne-white highlights on the brightest brain circuit junctions & central core
+    vec3 champagne = vec3(1.0, 0.96, 0.84);
+    float hotSpot = smoothstep(1.05, 1.65, s) * vBrainEase;
+    vec3 baseCol = mix(uColor, champagne, hotSpot * 0.65);
+
+    vec3 finalColor = baseCol * (0.9 + core * 1.45) * clamp(s, 0.3, 1.75);
     gl_FragColor = vec4(finalColor, alpha);
   }
 `
@@ -668,6 +682,7 @@ export const morphLineFragmentShader = `
   uniform float uFade;
   varying vec3 vColor;
   varying float vStrength;
+  varying float vBrainStrength;
   varying float vEase;
   varying float vCvEase;
   varying float vBrainEase;
@@ -675,16 +690,22 @@ export const morphLineFragmentShader = `
   void main() {
     float isPortraitOnly = step(0.0, -vStrength);
     float activeMorph = max(max(vEase, vCvEase), vBrainEase);
-    float s = abs(vStrength);
+    float s = mix(abs(vStrength), vBrainStrength, vBrainEase);
 
     float sphereAlpha = 0.96 * (1.0 - isPortraitOnly);
-    float morphedAlpha = 0.44 * clamp(s, 0.3, 1.3);
+    // In Brain mode, make high-strength circuit lines (s > 0.9) pop sharply while dim background wires fade back
+    float brainWireAlpha = pow(clamp(s / 1.35, 0.15, 1.25), 1.4) * 0.58;
+    float morphedAlpha = mix(0.44 * clamp(s, 0.3, 1.3), brainWireAlpha, vBrainEase);
     float lineAlpha = mix(sphereAlpha, morphedAlpha, activeMorph) * uFade;
 
     if (lineAlpha < 0.01) discard;
 
+    vec3 champagne = vec3(1.0, 0.95, 0.82);
+    float hotWire = smoothstep(1.1, 1.65, s) * vBrainEase;
+
     vec3 sphereCol = vColor * 1.15;
-    vec3 morphedCol = mix(vColor, uColor * (0.58 + s * 0.65), 0.68);
+    vec3 morphedCol = mix(vColor, uColor * (0.6 + s * 0.72), 0.72);
+    morphedCol = mix(morphedCol, champagne, hotWire * 0.55);
     vec3 lineCol = mix(sphereCol, morphedCol, activeMorph);
 
     gl_FragColor = vec4(lineCol, lineAlpha);

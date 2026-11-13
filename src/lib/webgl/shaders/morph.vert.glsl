@@ -1,60 +1,68 @@
-/**
- * Neural Core - Morph Vertex Shader
- * Interpolates between primary neural lattice (position) and morphed topology (aTargetPosition).
- * Applies continuous harmonic oscillations and audio-reactive micro-turbulence.
- */
+uniform float uProgress;
+uniform float uCvProgress;
+uniform float uBrainProgress;
+uniform float uTime;
 
-uniform float uProgress;          // Morph progress: 0.0 (sphere core) -> 1.0 (morphed biometric profile)
-uniform float uTime;              // Continuous animation time in seconds
-uniform float uAudioReactivity;   // Audio intensity factor from microphone / voice module
-uniform float uNoiseStrength;     // Magnitude of procedural displacement
+attribute vec3 aTarget;
+attribute vec3 aCvTarget;
+attribute vec3 aBrainTarget;
+attribute float aDelay;
+attribute float aStrength;
+attribute float aBrainStrength;
+attribute float aSize;
 
-attribute vec3 aTargetPosition;   // Destination geometry coordinates
-attribute vec4 aRandom;           // Per-particle attributes: [phase, speed, sizeScale, randomId]
+varying float vStrength;
+varying float vBrainStrength;
+varying vec3 vColor;
+varying float vEase;
+varying float vCvEase;
+varying float vBrainEase;
 
-varying vec3 vPosition;
-varying float vNoise;
-varying float vAlpha;
-varying vec2 vUv;
-
-// Simple 3D procedural noise hash
-float hash(vec3 p) {
-  p = fract(p * 0.3183099 + 0.1);
-  p *= 17.0;
-  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+vec3 getFlowDisplacement(vec3 pos, float factor) {
+  float wave = sin(pos.y * 3.0 + uTime * 2.0) * cos(pos.x * 2.5);
+  return vec3(-sin(pos.z * 2.0 + uTime * 1.4), wave, cos(pos.y * 2.0 + uTime * 1.2)) * factor;
 }
 
 void main() {
-  vUv = uv;
+  vStrength = aStrength;
+  vBrainStrength = aBrainStrength;
+  vColor = color;
 
-  // Non-linear ease-in-out morph transition
-  float t = smoothstep(0.0, 1.0, uProgress);
+  float localProgress = clamp((uProgress - aDelay * 0.5) / 0.65, 0.0, 1.0);
+  float ease = smoothstep(0.0, 1.0, localProgress);
+  vEase = ease;
 
-  // Linear position blend between resting state and target morph state
-  vec3 mixedPos = mix(position, aTargetPosition, t);
+  float localCv = clamp((uCvProgress - aDelay * 0.45) / 0.65, 0.0, 1.0);
+  float cvEase = smoothstep(0.0, 1.0, localCv);
+  vCvEase = cvEase;
 
-  // Compute undulating orbital noise
-  float phase = aRandom.x;
-  float speed = aRandom.y;
-  float wave = sin(uTime * speed + phase) * cos(uTime * 0.5 + mixedPos.y * 2.0);
+  float localBrain = clamp((uBrainProgress - aDelay * 0.45) / 0.65, 0.0, 1.0);
+  float brainEase = smoothstep(0.0, 1.0, localBrain);
+  vBrainEase = brainEase;
 
-  // Audio reactivity pulse
-  float audioPulse = uAudioReactivity * 0.4 * sin(uTime * 8.0 + aRandom.w * 6.28);
+  float activeMorph = max(max(ease, cvEase), brainEase);
+  float arc = max(max(sin(ease * 3.14159265), sin(cvEase * 3.14159265)), sin(brainEase * 3.14159265));
+  vec3 midFlow = getFlowDisplacement(position, arc * 0.72);
 
-  // Total displacement offset
-  vec3 displacement = normalize(mixedPos + vec3(0.001)) * (wave * uNoiseStrength + audioPulse);
-  vec3 finalPosition = mixedPos + displacement;
+  vec3 hologramBreath = vec3(
+    sin(uTime * 1.5 + aTarget.y * 2.2) * 0.01,
+    cos(uTime * 1.2 + aTarget.x * 2.2) * 0.01,
+    sin(uTime * 1.8 + aTarget.x * 3.0) * 0.02
+  ) * activeMorph;
 
-  vPosition = finalPosition;
-  vNoise = wave;
-  vAlpha = 0.6 + 0.4 * sin(uTime * 2.0 + phase);
+  vec3 basePos = mix(position, aTarget, ease);
+  basePos = mix(basePos, aCvTarget, cvEase);
+  vec3 blendedPosition = mix(basePos, aBrainTarget, brainEase) + midFlow + hologramBreath;
 
-  vec4 mvPosition = modelViewMatrix * vec4(finalPosition, 1.0);
+  vec4 viewPosition = modelViewMatrix * vec4(blendedPosition, 1.0);
+  gl_Position = projectionMatrix * viewPosition;
 
-  // Point size attenuation with distance and particle scale
-  float basePointSize = 32.0 * aRandom.z;
-  gl_PointSize = (basePointSize / -mvPosition.z) * (1.0 + audioPulse * 1.5);
+  float isPortraitOnly = step(0.0, -aStrength);
+  float sphereScale = mix(1.0, activeMorph, isPortraitOnly);
 
-  gl_Position = projectionMatrix * mvPosition;
+  // Scale points in Brain mode by their actual brain.png pixel brightness (aBrainStrength)!
+  float brainSizeMult = 0.65 + clamp(aBrainStrength, 0.2, 1.8) * 0.75;
+  float targetSize = mix(aSize * 1.25, aSize * brainSizeMult, brainEase);
+  float pSize = mix(aSize, targetSize, activeMorph) * sphereScale;
+  gl_PointSize = clamp(pSize * (19.0 / -viewPosition.z), 0.0, 16.0);
 }
-

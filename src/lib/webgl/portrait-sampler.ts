@@ -8,7 +8,7 @@ export interface MorphSystemData {
   totalNodes: number
 }
 
-export function createDefaultPortraitCanvas(): HTMLCanvasElement {
+export function createProceduralPortraitCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
   const w = (canvas.width = 360)
   const h = (canvas.height = 440)
@@ -26,77 +26,20 @@ export function createDefaultPortraitCanvas(): HTMLCanvasElement {
   ctx.fillStyle = bgGrad
   ctx.fillRect(0, 0, w, h)
 
-  // Suit & Lapels
   ctx.save()
   ctx.beginPath()
-  ctx.moveTo(cx - 145, h)
-  ctx.quadraticCurveTo(cx - 125, cy + 125, cx - 42, cy + 102)
-  ctx.lineTo(cx + 42, cy + 102)
-  ctx.quadraticCurveTo(cx + 125, cy + 125, cx + 145, h)
-  ctx.closePath()
-  const suitGrad = ctx.createLinearGradient(cx - 140, cy + 100, cx + 140, h)
-  suitGrad.addColorStop(0, '#5a5a5a')
-  suitGrad.addColorStop(0.5, '#8c8c8c')
-  suitGrad.addColorStop(1, '#454545')
-  ctx.fillStyle = suitGrad
+  ctx.arc(cx, cy, 100, 0, Math.PI * 2)
+  ctx.fillStyle = '#b8b8b8'
   ctx.fill()
-  ctx.lineWidth = 3
-  ctx.strokeStyle = '#d8d8d8'
-  ctx.stroke()
-
-  ctx.beginPath()
-  ctx.moveTo(cx - 42, cy + 100)
-  ctx.lineTo(cx, cy + 185)
-  ctx.lineTo(cx + 42, cy + 100)
-  ctx.closePath()
-  ctx.fillStyle = '#e8e8e8'
-  ctx.fill()
-  ctx.restore()
-
-  // Neck
-  ctx.save()
-  ctx.fillStyle = '#8c8c8c'
-  ctx.fillRect(cx - 28, cy + 68, 56, 44)
-  ctx.restore()
-
-  // Head contour
-  ctx.save()
-  ctx.beginPath()
-  ctx.moveTo(cx - 68, cy - 25)
-  ctx.quadraticCurveTo(cx - 70, cy + 45, cx - 38, cy + 76)
-  ctx.quadraticCurveTo(cx, cy + 98, cx + 38, cy + 76)
-  ctx.quadraticCurveTo(cx + 70, cy + 45, cx + 68, cy - 25)
-  ctx.quadraticCurveTo(cx + 66, cy - 92, cx, cy - 95)
-  ctx.quadraticCurveTo(cx - 66, cy - 92, cx - 68, cy - 25)
-  ctx.closePath()
-  const faceGrad = ctx.createRadialGradient(cx - 10, cy - 10, 12, cx, cy, 90)
-  faceGrad.addColorStop(0, '#fcfcfc')
-  faceGrad.addColorStop(0.55, '#c6c6c6')
-  faceGrad.addColorStop(1, '#3b3b3b')
-  ctx.fillStyle = faceGrad
-  ctx.fill()
-  ctx.lineWidth = 2.5
-  ctx.strokeStyle = '#efefef'
-  ctx.stroke()
-  ctx.restore()
-
-  // Hair & Facial features
   ctx.strokeStyle = '#ffffff'
   ctx.lineWidth = 3
-  ctx.beginPath()
-  ctx.moveTo(cx - 46, cy - 16)
-  ctx.quadraticCurveTo(cx - 28, cy - 24, cx - 13, cy - 17)
-  ctx.moveTo(cx + 13, cy - 17)
-  ctx.quadraticCurveTo(cx + 28, cy - 24, cx + 46, cy - 16)
-  ctx.moveTo(cx, cy - 15)
-  ctx.lineTo(cx - 2, cy + 22)
-  ctx.lineTo(cx + 8, cy + 26)
-  ctx.moveTo(cx - 22, cy + 48)
-  ctx.quadraticCurveTo(cx, cy + 55, cx + 22, cy + 48)
   ctx.stroke()
+  ctx.restore()
 
   return canvas
 }
+
+export const createDefaultPortraitCanvas = createProceduralPortraitCanvas
 
 export function createCvHologramCanvas(): HTMLCanvasElement {
   const canvas = document.createElement('canvas')
@@ -107,12 +50,10 @@ export function createCvHologramCanvas(): HTMLCanvasElement {
   ctx.fillStyle = '#000000'
   ctx.fillRect(0, 0, w, h)
 
-  // Flush outer border (0 to w, 0 to h) so 3D edge = HTML card edge 1:1
   ctx.strokeStyle = '#ffffff'
   ctx.lineWidth = 4
   ctx.strokeRect(2, 2, w - 4, h - 4)
 
-  // Name & Contact block
   ctx.fillStyle = '#ffffff'
   ctx.font = 'bold 21px sans-serif'
   ctx.fillText('Gorrela Sai Maneesh', 28, 44)
@@ -184,18 +125,16 @@ export function samplePortraitAndCore(
   const aspect = width / height
   const scale = 4.75
 
-  interface PortraitFeature {
+  interface SampledFeature {
     x: number
     y: number
     z: number
-    gx: number
-    gy: number
     strength: number
     gridX: number
     gridY: number
   }
 
-  const portraitFeatures: PortraitFeature[] = []
+  const portraitFeatures: SampledFeature[] = []
   const pixelGrid = new Int32Array(width * height).fill(-1)
 
   const lumGrid = new Float32Array(width * height)
@@ -238,8 +177,6 @@ export function samplePortraitAndCore(
           x: px,
           y: py,
           z: pz,
-          gx,
-          gy,
           strength: Math.max(0.25, combinedStrength),
           gridX: x,
           gridY: y,
@@ -260,7 +197,7 @@ export function samplePortraitAndCore(
     buckets[by * BUCKET_RES + bx].push(idx)
   })
 
-  function findNearestFeature(u: number, v: number, hashSeed: number): PortraitFeature {
+  function findNearestFeature(u: number, v: number, hashSeed: number): SampledFeature {
     const targetBx = Math.min(BUCKET_RES - 1, Math.max(0, Math.floor(u * BUCKET_RES)))
     const targetBy = Math.min(BUCKET_RES - 1, Math.max(0, Math.floor(v * BUCKET_RES)))
 
@@ -273,15 +210,12 @@ export function samplePortraitAndCore(
           const ny = targetBy + dy
           if (nx >= 0 && nx < BUCKET_RES && ny >= 0 && ny < BUCKET_RES) {
             const cell = buckets[ny * BUCKET_RES + nx]
-            if (cell.length > 0) {
-              for (let k = 0; k < cell.length; k++) candidates.push(cell[k])
-            }
+            for (let k = 0; k < cell.length; k++) candidates.push(cell[k])
           }
         }
       }
       if (candidates.length > 0) {
-        const chosenIdx = candidates[Math.abs(hashSeed) % candidates.length]
-        return portraitFeatures[chosenIdx]
+        return portraitFeatures[candidates[Math.abs(hashSeed) % candidates.length]]
       }
     }
     return portraitFeatures[Math.abs(hashSeed) % portraitFeatures.length]
@@ -385,7 +319,6 @@ export function samplePortraitAndCore(
 
         const delay = THREE.MathUtils.clamp((featA.y / scale + 0.5) * 0.42 + (idxA % 11) * 0.014, 0, 0.65)
         lineDelays.push(delay, delay)
-        // Negative sign tells the shader this wire belongs ONLY to the portrait, keeping the sphere 100% pure circuitry
         lineStrengths.push(-featA.strength, -featB.strength)
         lineSizes.push(1.0, 1.0)
       }
@@ -448,7 +381,6 @@ export function samplePortraitAndCore(
 
     nodePositions.push(sx, sy, sz)
     nodeSizes.push(0.65 + feat.strength * 1.35)
-    // Negative sign tells the shader this Fibonacci node belongs ONLY to the portrait, keeping the sphere free of dot clutter
     nodeStrengths.push(-feat.strength)
     nodeTargets.push(feat.x, feat.y, feat.z)
     nodeDelays.push(THREE.MathUtils.clamp((feat.y / scale + 0.5) * 0.42 + (i % 19) * 0.01, 0, 0.65))
@@ -463,7 +395,9 @@ export function samplePortraitAndCore(
   nodeGeo.setAttribute('aTarget', new THREE.Float32BufferAttribute(nodeTargets, 3))
   nodeGeo.setAttribute('aDelay', new THREE.Float32BufferAttribute(nodeDelays, 1))
 
-  // Sample the high-res CV Hologram Canvas so the 3D CV looks like a real glowing document hologram
+  // =========================================================================
+  // 2. CV HOLOGRAM TARGETS (Normalized 1.0 x 1.0 unit box for DOM alignment)
+  // =========================================================================
   const cvCanvas = createCvHologramCanvas()
   const cvW = 190
   const cvH = 200
@@ -475,12 +409,10 @@ export function samplePortraitAndCore(
   const cvImg = tmpCtx.getImageData(0, 0, cvW, cvH).data
 
   const cvPoints: { x: number; y: number; z: number }[] = []
-
   for (let y = 0; y < cvH; y++) {
     for (let x = 0; x < cvW; x++) {
       const lum = cvImg[(y * cvW + x) * 4] / 255
       if (lum > 0.15) {
-        // Normalized 1.0 x 1.0 unit coordinates (-0.5 to +0.5)
         cvPoints.push({
           x: x / cvW - 0.5,
           y: 0.5 - y / cvH,
@@ -497,10 +429,10 @@ export function samplePortraitAndCore(
   for (let s = 0; s < lineSegTotal; s++) {
     const pt = cvPoints[(s * 7) % cvCount]
     const i6 = s * 6
-    lineCvTargets[i6] = pt.x - 0.0035
+    lineCvTargets[i6] = pt.x - 0.008
     lineCvTargets[i6 + 1] = pt.y
     lineCvTargets[i6 + 2] = pt.z
-    lineCvTargets[i6 + 3] = pt.x + 0.0035
+    lineCvTargets[i6 + 3] = pt.x + 0.008
     lineCvTargets[i6 + 4] = pt.y
     lineCvTargets[i6 + 5] = pt.z
   }
@@ -516,7 +448,9 @@ export function samplePortraitAndCore(
   }
   nodeGeo.setAttribute('aCvTarget', new THREE.BufferAttribute(nodeCvTargets, 3))
 
-  // Populate 3D Brain targets by spatial sampling brain image or fallback
+  // =========================================================================
+  // 3. HIGH-CONTRAST BRAIN.PNG SPATIAL CIRCUITRY MAPPER
+  // =========================================================================
   const bSrc = brainImageSource || imageSource
   const bCanvas = document.createElement('canvas')
   const bCtx = bCanvas.getContext('2d', { willReadFrequently: true })!
@@ -524,8 +458,8 @@ export function samplePortraitAndCore(
   const bSrcW = (bSrc as HTMLImageElement).naturalWidth || bSrc.width || 500
   const bSrcH = (bSrc as HTMLImageElement).naturalHeight || bSrc.height || 380
 
-  // High resolution (240px max dim) to capture all crisp 90-degree circuit lines & central core from brain image
-  const bTargetMaxDim = 240
+  // Sample at 235px max dimension so the 90-degree circuit lines and central core are crystal clear
+  const bTargetMaxDim = 235
   const bMaxDim = Math.max(bSrcW, bSrcH)
   const bStep = Math.max(1, bMaxDim / bTargetMaxDim) * (sampleStep / 2)
 
@@ -536,18 +470,9 @@ export function samplePortraitAndCore(
   const bImgData = bCtx.getImageData(0, 0, bW, bH).data
 
   const bAspect = bW / bH
-  const bScale = 3.85
+  const bScale = 3.65
 
-  interface BrainFeature {
-    x: number
-    y: number
-    z: number
-    strength: number
-    gridX: number
-    gridY: number
-  }
-
-  const brainFeatures: BrainFeature[] = []
+  const brainFeatures: SampledFeature[] = []
   const bPixelGrid = new Int32Array(bW * bH).fill(-1)
   const bLumGrid = new Float32Array(bW * bH)
   let bMinLum = 1.0
@@ -560,7 +485,8 @@ export function samplePortraitAndCore(
       const r = (bImgData[idx] / 255) * a
       const g = (bImgData[idx + 1] / 255) * a
       const b = (bImgData[idx + 2] / 255) * a
-      const lum = 0.299 * r + 0.587 * g + 0.114 * b
+      // Weight warm red/gold channels strongly so golden circuit traces pop against dark areas
+      const lum = 0.42 * r + 0.48 * g + 0.10 * b
       bLumGrid[y * bW + x] = lum
       if (lum < bMinLum) bMinLum = lum
       if (lum > bMaxLum) bMaxLum = lum
@@ -568,31 +494,34 @@ export function samplePortraitAndCore(
   }
 
   const bLumRange = Math.max(0.05, bMaxLum - bMinLum)
-  const bThreshold = 0.14
+  // Higher threshold (0.22) + gamma contrast curve (1.45) strips away the dusty background haze
+  // so ONLY the bright golden circuit lines, cortical rim, and central core are sampled!
+  const bThreshold = 0.22
 
   for (let y = 1; y < bH - 1; y++) {
     for (let x = 1; x < bW - 1; x++) {
       const rawLum = bLumGrid[y * bW + x]
-      const normLum = (rawLum - bMinLum) / bLumRange
+      const linearLum = Math.max(0, (rawLum - bMinLum) / bLumRange)
+      // Gamma 1.45 crushes dim background noise and boosts bright circuit paths
+      const normLum = Math.pow(linearLum, 1.45)
 
       const gx = bLumGrid[y * bW + (x + 1)] - bLumGrid[y * bW + (x - 1)]
-      const gy = bLumGrid[(y + 1) * bW + x] - bLumGrid[(y - 1) * bW + x]
-      const edge = Math.min(1.0, Math.sqrt(gx * gx + gy * gy) * 2.8)
+      const gy = bLumGrid[(y + 1) * width + x] - bLumGrid[(y - 1) * width + x]
+      const edge = Math.min(1.0, Math.sqrt(gx * gx + gy * gy) * 3.4)
 
-      const combinedStrength = Math.min(1.5, normLum * 0.82 + edge * 0.72)
+      const combinedStrength = Math.min(1.75, normLum * 0.95 + edge * 0.85)
 
       if (combinedStrength > bThreshold) {
         const px = (x / bW - 0.5) * bScale * bAspect
         const py = (0.5 - y / bH) * bScale
-        // 3D relief based on pixel brightness & circuit edges
-        const pz = (normLum - 0.35) * 0.48 + edge * 0.16
+        const pz = (normLum - 0.35) * 0.32 + edge * 0.14
 
         const fIdx = brainFeatures.length
         brainFeatures.push({
           x: px,
           y: py,
           z: pz,
-          strength: Math.max(0.25, combinedStrength),
+          strength: Math.max(0.28, combinedStrength),
           gridX: x,
           gridY: y,
         })
@@ -601,9 +530,8 @@ export function samplePortraitAndCore(
     }
   }
 
-  // Fallback if image is completely blank
   if (brainFeatures.length === 0) {
-    brainFeatures.push({ x: 0, y: 0, z: 0, strength: 1, gridX: 0, gridY: 0 })
+    brainFeatures.push({ x: 0, y: 0, z: 0, strength: 1.0, gridX: 0, gridY: 0 })
   }
 
   const B_BUCKET_RES = 24
@@ -615,7 +543,7 @@ export function samplePortraitAndCore(
     bBuckets[by * B_BUCKET_RES + bx].push(idx)
   })
 
-  function findNearestBrainFeature(u: number, v: number, hashSeed: number): BrainFeature {
+  function findNearestBrainFeature(u: number, v: number, hashSeed: number): SampledFeature {
     const targetBx = Math.min(B_BUCKET_RES - 1, Math.max(0, Math.floor(u * B_BUCKET_RES)))
     const targetBy = Math.min(B_BUCKET_RES - 1, Math.max(0, Math.floor(v * B_BUCKET_RES)))
 
@@ -639,8 +567,18 @@ export function samplePortraitAndCore(
     return brainFeatures[Math.abs(hashSeed) % brainFeatures.length]
   }
 
-  // Build connected neighbor traces from brain image pixels so circuit lines are razor-sharp
-  const brainNeighborSegs: { ax: number; ay: number; az: number; bx: number; by: number; bz: number }[] = []
+  // Extract connected horizontal & vertical 90-degree circuit segments directly from brain.png
+  const brainNeighborSegs: {
+    ax: number
+    ay: number
+    az: number
+    bx: number
+    by: number
+    bz: number
+    sA: number
+    sB: number
+  }[] = []
+
   for (let y = 1; y < bH - 1; y++) {
     for (let x = 1; x < bW - 1; x++) {
       const idxA = bPixelGrid[y * bW + x]
@@ -653,25 +591,35 @@ export function samplePortraitAndCore(
       if (idxR !== -1) {
         const fB = brainFeatures[idxR]
         if (Math.hypot(fB.x - fA.x, fB.y - fA.y) <= 0.14) {
-          brainNeighborSegs.push({ ax: fA.x, ay: fA.y, az: fA.z, bx: fB.x, by: fB.y, bz: fB.z })
+          brainNeighborSegs.push({
+            ax: fA.x, ay: fA.y, az: fA.z,
+            bx: fB.x, by: fB.y, bz: fB.z,
+            sA: fA.strength, sB: fB.strength,
+          })
         }
       }
       if (idxD !== -1) {
         const fB = brainFeatures[idxD]
         if (Math.hypot(fB.x - fA.x, fB.y - fA.y) <= 0.14) {
-          brainNeighborSegs.push({ ax: fA.x, ay: fA.y, az: fA.z, bx: fB.x, by: fB.y, bz: fB.z })
+          brainNeighborSegs.push({
+            ax: fA.x, ay: fA.y, az: fA.z,
+            bx: fB.x, by: fB.y, bz: fB.z,
+            sA: fA.strength, sB: fB.strength,
+          })
         }
       }
     }
   }
 
   const lineBrainTargets = new Float32Array(linePositions.length)
+  const lineBrainStrengths = new Float32Array(lineSegTotal * 2)
   const bNeighborCount = brainNeighborSegs.length
 
   for (let s = 0; s < lineSegTotal; s++) {
     const i6 = s * 6
-    if (bNeighborCount > 0 && s >= lineSegTotal - bNeighborCount) {
-      // Map contour wires directly to adjacent pixel segments of brain image
+    const i2 = s * 2
+    if (bNeighborCount > 0 && s >= lineSegTotal - bNeighborCount * 2) {
+      // Map directly to the connected 90-degree circuit lines of brain.png!
       const nSeg = brainNeighborSegs[s % bNeighborCount]
       lineBrainTargets[i6] = nSeg.ax
       lineBrainTargets[i6 + 1] = nSeg.ay
@@ -679,62 +627,62 @@ export function samplePortraitAndCore(
       lineBrainTargets[i6 + 3] = nSeg.bx
       lineBrainTargets[i6 + 4] = nSeg.by
       lineBrainTargets[i6 + 5] = nSeg.bz
+      lineBrainStrengths[i2] = nSeg.sA * 1.15
+      lineBrainStrengths[i2 + 1] = nSeg.sB * 1.15
     } else {
-      // Map sphere segments via tear-free 24x24 spatial bucketing
-      const ax = linePositions[i6], ay = linePositions[i6 + 1], az = linePositions[i6 + 2]
-      const bx = linePositions[i6 + 3], by = linePositions[i6 + 4], bz = linePositions[i6 + 5]
+      const ax = linePositions[i6], ay = linePositions[i6 + 1]
+      const bx = linePositions[i6 + 3], by = linePositions[i6 + 4]
       const mx = (ax + bx) * 0.5
       const my = (ay + by) * 0.5
       const u = THREE.MathUtils.clamp((mx / coreRadius) * 0.5 + 0.5, 0, 1)
       const v = THREE.MathUtils.clamp(0.5 - (my / coreRadius) * 0.5, 0, 1)
       const feat = findNearestBrainFeature(u, v, s * 31 + 17)
 
-      let dx = (bx - ax) * 0.14
-      let dy = (by - ay) * 0.14
-      let dz = (bz - az) * 0.08
-      const segLen = Math.hypot(dx, dy, dz)
-      if (segLen > 0.08) {
-        const c = 0.08 / segLen
-        dx *= c
-        dy *= c
-        dz *= c
-      }
+      // Snap sphere segments strictly Horizontal or Vertical (90-degree PCB orientation)
+      const isHoriz = Math.abs(bx - ax) >= Math.abs(by - ay)
+      const segHalf = 0.032
+      const dx = isHoriz ? segHalf : 0.0
+      const dy = isHoriz ? 0.0 : segHalf
 
-      lineBrainTargets[i6] = feat.x - dx * 0.5
-      lineBrainTargets[i6 + 1] = feat.y - dy * 0.5
-      lineBrainTargets[i6 + 2] = feat.z - dz * 0.5
-      lineBrainTargets[i6 + 3] = feat.x + dx * 0.5
-      lineBrainTargets[i6 + 4] = feat.y + dy * 0.5
-      lineBrainTargets[i6 + 5] = feat.z + dz * 0.5
+      lineBrainTargets[i6] = feat.x - dx
+      lineBrainTargets[i6 + 1] = feat.y - dy
+      lineBrainTargets[i6 + 2] = feat.z
+      lineBrainTargets[i6 + 3] = feat.x + dx
+      lineBrainTargets[i6 + 4] = feat.y + dy
+      lineBrainTargets[i6 + 5] = feat.z
+      lineBrainStrengths[i2] = feat.strength
+      lineBrainStrengths[i2 + 1] = feat.strength
     }
   }
   lineGeo.setAttribute('aBrainTarget', new THREE.BufferAttribute(lineBrainTargets, 3))
+  lineGeo.setAttribute('aBrainStrength', new THREE.BufferAttribute(lineBrainStrengths, 1))
 
   const nodeBrainTargets = new Float32Array(nodePositions.length)
+  const nodeBrainStrengths = new Float32Array(totalNodeCount)
   const bFeatCount = brainFeatures.length
+
   for (let i = 0; i < totalNodeCount; i++) {
-    if (i < coreNodeCount) {
-      const nx = nodePositions[i * 3]
-      const ny = nodePositions[i * 3 + 1]
-      const u = THREE.MathUtils.clamp((nx / coreRadius) * 0.5 + 0.5, 0, 1)
-      const v = THREE.MathUtils.clamp(0.5 - (ny / coreRadius) * 0.5, 0, 1)
-      const feat = findNearestBrainFeature(u, v, i * 47 + 13)
-      nodeBrainTargets[i * 3] = feat.x
-      nodeBrainTargets[i * 3 + 1] = feat.y
-      nodeBrainTargets[i * 3 + 2] = feat.z
-    } else {
-      const feat = brainFeatures[(i - coreNodeCount) % bFeatCount]
-      nodeBrainTargets[i * 3] = feat.x
-      nodeBrainTargets[i * 3 + 1] = feat.y
-      nodeBrainTargets[i * 3 + 2] = feat.z
-    }
+    const feat =
+      i < coreNodeCount
+        ? findNearestBrainFeature(
+            THREE.MathUtils.clamp((nodePositions[i * 3] / coreRadius) * 0.5 + 0.5, 0, 1),
+            THREE.MathUtils.clamp(0.5 - (nodePositions[i * 3 + 1] / coreRadius) * 0.5, 0, 1),
+            i * 47 + 13
+          )
+        : brainFeatures[(i - coreNodeCount) % bFeatCount]
+
+    nodeBrainTargets[i * 3] = feat.x
+    nodeBrainTargets[i * 3 + 1] = feat.y
+    nodeBrainTargets[i * 3 + 2] = feat.z
+    nodeBrainStrengths[i] = feat.strength
   }
   nodeGeo.setAttribute('aBrainTarget', new THREE.BufferAttribute(nodeBrainTargets, 3))
+  nodeGeo.setAttribute('aBrainStrength', new THREE.BufferAttribute(nodeBrainStrengths, 1))
 
   return {
     lineGeo,
     nodeGeo,
     featureCount: featCount,
-    totalNodes: nodePositions.length / 3,
+    totalNodes: totalNodeCount,
   }
 }

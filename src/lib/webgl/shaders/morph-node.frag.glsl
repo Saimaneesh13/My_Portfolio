@@ -1,39 +1,32 @@
-/**
- * Neural Core - Point Node Fragment Shader
- * Renders anti-aliased luminous synaptic points with core glow and luxury gold aesthetics.
- */
-
-uniform vec3 uColorGold;          // Base brand gold (#EAB767)
-uniform vec3 uColorCyan;          // Secondary accent cyan (#00F0FF)
-uniform float uInspectIntensity;  // Boost when user triggers inspect mode
-
-varying vec3 vPosition;
-varying float vNoise;
-varying float vAlpha;
+uniform vec3 uColor;
+uniform float uFade;
+varying float vStrength;
+varying float vBrainStrength;
+varying float vEase;
+varying float vCvEase;
+varying float vBrainEase;
 
 void main() {
-  // Convert square point coord into centered circle space [-1, 1]
-  vec2 coord = gl_PointCoord * 2.0 - 1.0;
-  float dist = length(coord);
+  float isPortraitOnly = step(0.0, -vStrength);
+  float activeMorph = max(max(vEase, vCvEase), vBrainEase);
+  float visibility = mix(1.0, activeMorph, isPortraitOnly) * uFade;
+  if (visibility < 0.02) discard;
 
-  // Soft circular alpha falloff
-  if (dist > 1.0) {
-    discard;
-  }
+  // Blend between Portrait strength and Brain.png pixel strength!
+  float s = mix(abs(vStrength), vBrainStrength, vBrainEase);
 
-  // Radial soft glow falloff
-  float glow = 1.0 - smoothstep(0.0, 1.0, dist);
-  float innerCore = 1.0 - smoothstep(0.0, 0.35, dist);
+  float dist = length(gl_PointCoord - 0.5);
+  float core = 1.0 - smoothstep(0.04, 0.22, dist);
+  float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.8);
+  float alpha = (core * 0.88 + glow * 0.58) * visibility * clamp(s, 0.25, 1.5);
 
-  // Blend gold base with secondary cyber luminescence based on noise/altitude
-  vec3 baseColor = mix(uColorGold, uColorCyan, clamp(vNoise * 0.5 + 0.2, 0.0, 1.0));
+  if (alpha < 0.02) discard;
 
-  // Add bright center core highlight
-  vec3 finalColor = mix(baseColor, vec3(1.0, 0.96, 0.88), innerCore * 0.8);
-  finalColor += baseColor * uInspectIntensity * 0.5;
+  // Hot champagne-white highlights on the brightest brain circuit junctions & central core
+  vec3 champagne = vec3(1.0, 0.96, 0.84);
+  float hotSpot = smoothstep(1.05, 1.65, s) * vBrainEase;
+  vec3 baseCol = mix(uColor, champagne, hotSpot * 0.65);
 
-  float finalAlpha = glow * vAlpha * (0.85 + uInspectIntensity * 0.15);
-
-  gl_FragColor = vec4(finalColor, finalAlpha);
+  vec3 finalColor = baseCol * (0.9 + core * 1.45) * clamp(s, 0.3, 1.75);
+  gl_FragColor = vec4(finalColor, alpha);
 }
-
