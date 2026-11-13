@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { CORE_COLOR, createCoreGeometry, generateBrainSegments } from './core-geometry'
+import { CORE_COLOR, createCoreGeometry } from './core-geometry'
 
 export interface MorphSystemData {
   lineGeo: THREE.BufferGeometry
@@ -162,7 +162,8 @@ export function createCvHologramCanvas(): HTMLCanvasElement {
 export function samplePortraitAndCore(
   imageSource: HTMLImageElement | HTMLCanvasElement,
   sampleStep = 2,
-  threshold = 0.16
+  threshold = 0.16,
+  brainImageSource?: HTMLImageElement | HTMLCanvasElement | null
 ): MorphSystemData | null {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!
@@ -515,31 +516,218 @@ export function samplePortraitAndCore(
   }
   nodeGeo.setAttribute('aCvTarget', new THREE.BufferAttribute(nodeCvTargets, 3))
 
-  // Populate 3D Brain + Pedestal targets for the Expertise page morph
-  const brainSegs = generateBrainSegments()
-  const brainSegCount = brainSegs.length
+  // Populate 3D Brain targets by spatial sampling brain image or fallback
+  const bSrc = brainImageSource || imageSource
+  const bCanvas = document.createElement('canvas')
+  const bCtx = bCanvas.getContext('2d', { willReadFrequently: true })!
+
+  const bSrcW = (bSrc as HTMLImageElement).naturalWidth || bSrc.width || 500
+  const bSrcH = (bSrc as HTMLImageElement).naturalHeight || bSrc.height || 380
+
+  // High resolution (240px max dim) to capture all crisp 90-degree circuit lines & central core from brain image
+  const bTargetMaxDim = 240
+  const bMaxDim = Math.max(bSrcW, bSrcH)
+  const bStep = Math.max(1, bMaxDim / bTargetMaxDim) * (sampleStep / 2)
+
+  const bW = (bCanvas.width = Math.max(64, Math.floor(bSrcW / bStep)))
+  const bH = (bCanvas.height = Math.max(64, Math.floor(bSrcH / bStep)))
+
+  bCtx.drawImage(bSrc, 0, 0, bW, bH)
+  const bImgData = bCtx.getImageData(0, 0, bW, bH).data
+
+  const bAspect = bW / bH
+  const bScale = 3.85
+
+  interface BrainFeature {
+    x: number
+    y: number
+    z: number
+    strength: number
+    gridX: number
+    gridY: number
+  }
+
+  const brainFeatures: BrainFeature[] = []
+  const bPixelGrid = new Int32Array(bW * bH).fill(-1)
+  const bLumGrid = new Float32Array(bW * bH)
+  let bMinLum = 1.0
+  let bMaxLum = 0.0
+
+  for (let y = 0; y < bH; y++) {
+    for (let x = 0; x < bW; x++) {
+      const idx = (y * bW + x) * 4
+      const a = bImgData[idx + 3] / 255
+      const r = (bImgData[idx] / 255) * a
+      const g = (bImgData[idx + 1] / 255) * a
+      const b = (bImgData[idx + 2] / 255) * a
+      const lum = 0.299 * r + 0.587 * g + 0.114 * b
+      bLumGrid[y * bW + x] = lum
+      if (lum < bMinLum) bMinLum = lum
+      if (lum > bMaxLum) bMaxLum = lum
+    }
+  }
+
+  const bLumRange = Math.max(0.05, bMaxLum - bMinLum)
+  const bThreshold = 0.14
+
+  for (let y = 1; y < bH - 1; y++) {
+    for (let x = 1; x < bW - 1; x++) {
+      const rawLum = bLumGrid[y * bW + x]
+      const normLum = (rawLum - bMinLum) / bLumRange
+
+      const gx = bLumGrid[y * bW + (x + 1)] - bLumGrid[y * bW + (x - 1)]
+      const gy = bLumGrid[(y + 1) * bW + x] - bLumGrid[(y - 1) * bW + x]
+      const edge = Math.min(1.0, Math.sqrt(gx * gx + gy * gy) * 2.8)
+
+      const combinedStrength = Math.min(1.5, normLum * 0.82 + edge * 0.72)
+
+      if (combinedStrength > bThreshold) {
+        const px = (x / bW - 0.5) * bScale * bAspect
+        const py = (0.5 - y / bH) * bScale
+        // 3D relief based on pixel brightness & circuit edges
+        const pz = (normLum - 0.35) * 0.48 + edge * 0.16
+
+        const fIdx = brainFeatures.length
+        brainFeatures.push({
+          x: px,
+          y: py,
+          z: pz,
+          strength: Math.max(0.25, combinedStrength),
+          gridX: x,
+          gridY: y,
+        })
+        bPixelGrid[y * bW + x] = fIdx
+      }
+    }
+  }
+
+  // Fallback if image is completely blank
+  if (brainFeatures.length === 0) {
+    brainFeatures.push({ x: 0, y: 0, z: 0, strength: 1, gridX: 0, gridY: 0 })
+  }
+
+  const B_BUCKET_RES = 24
+  const bBuckets: number[][] = Array.from({ length: B_BUCKET_RES * B_BUCKET_RES }, () => [])
+
+  brainFeatures.forEach((feat, idx) => {
+    const bx = Math.min(B_BUCKET_RES - 1, Math.max(0, Math.floor((feat.gridX / bW) * B_BUCKET_RES)))
+    const by = Math.min(B_BUCKET_RES - 1, Math.max(0, Math.floor((feat.gridY / bH) * B_BUCKET_RES)))
+    bBuckets[by * B_BUCKET_RES + bx].push(idx)
+  })
+
+  function findNearestBrainFeature(u: number, v: number, hashSeed: number): BrainFeature {
+    const targetBx = Math.min(B_BUCKET_RES - 1, Math.max(0, Math.floor(u * B_BUCKET_RES)))
+    const targetBy = Math.min(B_BUCKET_RES - 1, Math.max(0, Math.floor(v * B_BUCKET_RES)))
+
+    for (let radius = 0; radius <= B_BUCKET_RES; radius++) {
+      const candidates: number[] = []
+      for (let dy = -radius; dy <= radius; dy++) {
+        for (let dx = -radius; dx <= radius; dx++) {
+          if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) continue
+          const nx = targetBx + dx
+          const ny = targetBy + dy
+          if (nx >= 0 && nx < B_BUCKET_RES && ny >= 0 && ny < B_BUCKET_RES) {
+            const cell = bBuckets[ny * B_BUCKET_RES + nx]
+            for (let k = 0; k < cell.length; k++) candidates.push(cell[k])
+          }
+        }
+      }
+      if (candidates.length > 0) {
+        return brainFeatures[candidates[Math.abs(hashSeed) % candidates.length]]
+      }
+    }
+    return brainFeatures[Math.abs(hashSeed) % brainFeatures.length]
+  }
+
+  // Build connected neighbor traces from brain image pixels so circuit lines are razor-sharp
+  const brainNeighborSegs: { ax: number; ay: number; az: number; bx: number; by: number; bz: number }[] = []
+  for (let y = 1; y < bH - 1; y++) {
+    for (let x = 1; x < bW - 1; x++) {
+      const idxA = bPixelGrid[y * bW + x]
+      if (idxA === -1) continue
+      const fA = brainFeatures[idxA]
+
+      const idxR = bPixelGrid[y * bW + (x + 1)]
+      const idxD = bPixelGrid[(y + 1) * bW + x]
+
+      if (idxR !== -1) {
+        const fB = brainFeatures[idxR]
+        if (Math.hypot(fB.x - fA.x, fB.y - fA.y) <= 0.14) {
+          brainNeighborSegs.push({ ax: fA.x, ay: fA.y, az: fA.z, bx: fB.x, by: fB.y, bz: fB.z })
+        }
+      }
+      if (idxD !== -1) {
+        const fB = brainFeatures[idxD]
+        if (Math.hypot(fB.x - fA.x, fB.y - fA.y) <= 0.14) {
+          brainNeighborSegs.push({ ax: fA.x, ay: fA.y, az: fA.z, bx: fB.x, by: fB.y, bz: fB.z })
+        }
+      }
+    }
+  }
 
   const lineBrainTargets = new Float32Array(linePositions.length)
+  const bNeighborCount = brainNeighborSegs.length
+
   for (let s = 0; s < lineSegTotal; s++) {
-    const bSeg = brainSegs[s % brainSegCount]
     const i6 = s * 6
-    lineBrainTargets[i6] = bSeg.a.x
-    lineBrainTargets[i6 + 1] = bSeg.a.y
-    lineBrainTargets[i6 + 2] = bSeg.a.z
-    lineBrainTargets[i6 + 3] = bSeg.b.x
-    lineBrainTargets[i6 + 4] = bSeg.b.y
-    lineBrainTargets[i6 + 5] = bSeg.b.z
+    if (bNeighborCount > 0 && s >= lineSegTotal - bNeighborCount) {
+      // Map contour wires directly to adjacent pixel segments of brain image
+      const nSeg = brainNeighborSegs[s % bNeighborCount]
+      lineBrainTargets[i6] = nSeg.ax
+      lineBrainTargets[i6 + 1] = nSeg.ay
+      lineBrainTargets[i6 + 2] = nSeg.az
+      lineBrainTargets[i6 + 3] = nSeg.bx
+      lineBrainTargets[i6 + 4] = nSeg.by
+      lineBrainTargets[i6 + 5] = nSeg.bz
+    } else {
+      // Map sphere segments via tear-free 24x24 spatial bucketing
+      const ax = linePositions[i6], ay = linePositions[i6 + 1], az = linePositions[i6 + 2]
+      const bx = linePositions[i6 + 3], by = linePositions[i6 + 4], bz = linePositions[i6 + 5]
+      const mx = (ax + bx) * 0.5
+      const my = (ay + by) * 0.5
+      const u = THREE.MathUtils.clamp((mx / coreRadius) * 0.5 + 0.5, 0, 1)
+      const v = THREE.MathUtils.clamp(0.5 - (my / coreRadius) * 0.5, 0, 1)
+      const feat = findNearestBrainFeature(u, v, s * 31 + 17)
+
+      let dx = (bx - ax) * 0.14
+      let dy = (by - ay) * 0.14
+      let dz = (bz - az) * 0.08
+      const segLen = Math.hypot(dx, dy, dz)
+      if (segLen > 0.08) {
+        const c = 0.08 / segLen
+        dx *= c
+        dy *= c
+        dz *= c
+      }
+
+      lineBrainTargets[i6] = feat.x - dx * 0.5
+      lineBrainTargets[i6 + 1] = feat.y - dy * 0.5
+      lineBrainTargets[i6 + 2] = feat.z - dz * 0.5
+      lineBrainTargets[i6 + 3] = feat.x + dx * 0.5
+      lineBrainTargets[i6 + 4] = feat.y + dy * 0.5
+      lineBrainTargets[i6 + 5] = feat.z + dz * 0.5
+    }
   }
   lineGeo.setAttribute('aBrainTarget', new THREE.BufferAttribute(lineBrainTargets, 3))
 
   const nodeBrainTargets = new Float32Array(nodePositions.length)
+  const bFeatCount = brainFeatures.length
   for (let i = 0; i < totalNodeCount; i++) {
-    // Snap nodes directly onto cortical vertices so they form crisp glowing synaptic stars on the gyri!
-    const bSeg = brainSegs[(i * 19) % brainSegCount]
-    const pt = i % 2 === 0 ? bSeg.a : bSeg.b
-    nodeBrainTargets[i * 3] = pt.x
-    nodeBrainTargets[i * 3 + 1] = pt.y
-    nodeBrainTargets[i * 3 + 2] = pt.z
+    if (i < coreNodeCount) {
+      const nx = nodePositions[i * 3]
+      const ny = nodePositions[i * 3 + 1]
+      const u = THREE.MathUtils.clamp((nx / coreRadius) * 0.5 + 0.5, 0, 1)
+      const v = THREE.MathUtils.clamp(0.5 - (ny / coreRadius) * 0.5, 0, 1)
+      const feat = findNearestBrainFeature(u, v, i * 47 + 13)
+      nodeBrainTargets[i * 3] = feat.x
+      nodeBrainTargets[i * 3 + 1] = feat.y
+      nodeBrainTargets[i * 3 + 2] = feat.z
+    } else {
+      const feat = brainFeatures[(i - coreNodeCount) % bFeatCount]
+      nodeBrainTargets[i * 3] = feat.x
+      nodeBrainTargets[i * 3 + 1] = feat.y
+      nodeBrainTargets[i * 3 + 2] = feat.z
+    }
   }
   nodeGeo.setAttribute('aBrainTarget', new THREE.BufferAttribute(nodeBrainTargets, 3))
 

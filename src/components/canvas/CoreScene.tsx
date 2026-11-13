@@ -19,6 +19,9 @@ import {
 import { useSceneStore } from '../../store/useSceneStore'
 import { PostprocessingErrorBoundary } from '../common/ErrorBoundary'
 
+const DEFAULT_PORTRAIT_URL = '/images/maneesh.jpg'
+const DEFAULT_BRAIN_URL = '/images/brain.png'
+
 function NeuralCoreMesh() {
   const { flowState, targetProgress, targetCvProgress, targetBrainProgress, isCvPaperOpen, manualProgress, customImageSrc } = useSceneStore()
   const { size, gl } = useThree()
@@ -49,7 +52,9 @@ function NeuralCoreMesh() {
   // Smoothly interpolated frustum offset so switching from Home -> Projects -> Case Studies never snaps!
   const smoothViewOffsetRef = useRef(0)
 
-  const [morphData, setMorphData] = useState<MorphSystemData | null>(null)
+  const [morphData, setMorphData] = useState<MorphSystemData | null>(() =>
+    samplePortraitAndCore(createDefaultPortraitCanvas(), 2, 0.16)
+  )
 
   const outerOrbitGeo = useMemo(() => createOrbitGeometry(false), [])
   const innerOrbitGeo = useMemo(() => createOrbitGeometry(true), [])
@@ -67,36 +72,35 @@ function NeuralCoreMesh() {
     []
   )
 
-  // Load portrait (custom upload -> /images/maneesh.jpg -> synthetic fallback) with memory cleanup
+  // Load portrait & brain targets asynchronously and replace geometry
   useEffect(() => {
     let activeGeo: MorphSystemData | null = null
-    const src = customImageSrc || '/images/maneesh.jpg'
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
+    let isCancelled = false
 
-    img.onload = () => {
-      try {
-        const sampled = samplePortraitAndCore(img, 2, 0.16)
-        if (sampled) {
-          activeGeo = sampled
-          setMorphData(sampled)
-          return
-        }
-      } catch {
-        // Fallback if local file:// CORS blocks pixel read
+    const loadImageElement = (url: string): Promise<HTMLImageElement | null> =>
+      new Promise((resolve) => {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => resolve(img)
+        img.onerror = () => resolve(null)
+        img.src = url
+      })
+
+    Promise.all([
+      loadImageElement(customImageSrc || DEFAULT_PORTRAIT_URL),
+      loadImageElement(DEFAULT_BRAIN_URL),
+    ]).then(([portraitImg, brainImg]) => {
+      if (isCancelled) return
+      const pSource = portraitImg || createDefaultPortraitCanvas()
+      const sampled = samplePortraitAndCore(pSource, 2, 0.16, brainImg)
+      if (sampled) {
+        activeGeo = sampled
+        setMorphData(sampled)
       }
-      const fb = samplePortraitAndCore(createDefaultPortraitCanvas(), 2, 0.16)
-      activeGeo = fb
-      setMorphData(fb)
-    }
-    img.onerror = () => {
-      const fb = samplePortraitAndCore(createDefaultPortraitCanvas(), 2, 0.16)
-      activeGeo = fb
-      setMorphData(fb)
-    }
-    img.src = src
+    })
 
     return () => {
+      isCancelled = true
       if (activeGeo) {
         activeGeo.lineGeo.dispose()
         activeGeo.nodeGeo.dispose()
@@ -425,6 +429,12 @@ export default function CoreScene() {
         depth: true,
         powerPreference: 'default',
         failIfMajorPerformanceCaveat: false,
+      }}
+      onCreated={({ gl }) => {
+        gl.domElement.addEventListener('webglcontextlost', (e) => {
+          e.preventDefault()
+          console.warn('[WebGL]: WebGL context lost prevented')
+        })
       }}
     >
       <NeuralCoreMesh />

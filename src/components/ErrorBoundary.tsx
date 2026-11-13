@@ -67,7 +67,7 @@ function FallbackGoldenCoreCanvas({ onRetryWebGL }: { onRetryWebGL: () => void }
         centerX = width * 0.86
         centerY = height * 0.34
         scale = Math.min(width, height) * 0.22
-      } else if (flowState === 'about' && isDesktop) {
+      } else if ((flowState === 'about' || flowState === 'expertise') && isDesktop) {
         centerX = width * 0.73
       }
 
@@ -135,6 +135,10 @@ export class CanvasErrorBoundary extends React.Component<Props, State> {
     return { hasError: true }
   }
 
+  componentDidCatch(error: any) {
+    console.warn('[Canvas WebGL]: WebGL context failed or lost. Rendering high-speed 2D Golden Core fallback.', error)
+  }
+
   handleRetry = () => {
     this.setState((prev) => ({ hasError: false, retryKey: prev.retryKey + 1 }))
   }
@@ -165,3 +169,4 @@ export class PostprocessingErrorBoundary extends React.Component<{ children: Rea
 }
 
 export default CanvasErrorBoundary
+

@@ -589,8 +589,6 @@ export const morphVertexShader = `
   varying float vEase;
   varying float vCvEase;
   varying float vBrainEase;
-  varying float vPulse;
-  varying float vBrainRim;
 
   vec3 getFlowDisplacement(vec3 pos, float factor) {
     float wave = sin(pos.y * 3.0 + uTime * 2.0) * cos(pos.x * 2.5);
@@ -609,46 +607,32 @@ export const morphVertexShader = `
     float cvEase = smoothstep(0.0, 1.0, localCv);
     vCvEase = cvEase;
 
-    float localBrain = clamp((uBrainProgress - aDelay * 0.45) / 0.65, 0.0, 1.0);
+    float localBrain = clamp((uBrainProgress - aDelay * 0.5) / 0.65, 0.0, 1.0);
     float brainEase = smoothstep(0.0, 1.0, localBrain);
     vBrainEase = brainEase;
 
+    float activeMorph = max(max(ease, cvEase), brainEase);
     float arc = max(max(sin(ease * 3.14159265), sin(cvEase * 3.14159265)), sin(brainEase * 3.14159265));
-    vec3 midFlow = getFlowDisplacement(position, arc * 0.68);
+    vec3 midFlow = getFlowDisplacement(position, arc * 0.72);
 
-    float wavePhase = sin(uTime * 2.8 - aBrainTarget.x * 2.6 + aBrainTarget.y * 2.4 + aDelay * 9.0);
-    vPulse = pow(max(0.0, wavePhase), 4.0) * brainEase;
-
-    float radialRim = clamp(length((aBrainTarget.xy - vec2(0.0, 0.22)) * vec2(0.74, 0.96)), 0.0, 1.3);
-    vBrainRim = smoothstep(0.25, 1.08, radialRim);
-
-    vec3 brainFloat = vec3(
-      sin(uTime * 1.4 + aBrainTarget.y * 2.0) * 0.01,
-      sin(uTime * 1.6) * 0.03,
-      cos(uTime * 1.4 + aBrainTarget.x * 2.0) * 0.01
-    ) * brainEase;
-
-    vec3 portraitBreath = vec3(
+    vec3 hologramBreath = vec3(
       sin(uTime * 1.5 + aTarget.y * 2.2) * 0.012,
       cos(uTime * 1.2 + aTarget.x * 2.2) * 0.012,
       sin(uTime * 1.8 + aTarget.x * 3.0) * 0.025
-    ) * max(ease, cvEase);
+    ) * activeMorph;
 
     vec3 basePos = mix(position, aTarget, ease);
     basePos = mix(basePos, aCvTarget, cvEase);
-    vec3 blendedPosition = mix(basePos, aBrainTarget, brainEase) + midFlow + portraitBreath + brainFloat;
+    vec3 blendedPosition = mix(basePos, aBrainTarget, brainEase) + midFlow + hologramBreath;
 
     vec4 viewPosition = modelViewMatrix * vec4(blendedPosition, 1.0);
     gl_Position = projectionMatrix * viewPosition;
 
     float isPortraitOnly = step(0.0, -aStrength);
-    float activeMorph = max(max(ease, cvEase), brainEase);
-    float sphereScale = mix(1.0, max(ease, cvEase), isPortraitOnly);
+    float sphereScale = mix(1.0, activeMorph, isPortraitOnly);
 
-    // Blazing synaptic star hubs on the brain cortex
-    float hubBoost = mix(1.0, 1.55 + vPulse * 1.1, brainEase);
-    float pSize = mix(aSize, aSize * hubBoost, activeMorph) * sphereScale;
-    gl_PointSize = clamp(pSize * (17.5 / -viewPosition.z), 0.0, 18.0);
+    float pSize = mix(aSize, aSize * 1.25, activeMorph) * sphereScale;
+    gl_PointSize = clamp(pSize * (20.0 / -viewPosition.z), 0.0, 16.0);
   }
 `
 
@@ -659,27 +643,22 @@ export const morphFragmentShader = `
   varying float vEase;
   varying float vCvEase;
   varying float vBrainEase;
-  varying float vPulse;
-  varying float vBrainRim;
 
   void main() {
     float isPortraitOnly = step(0.0, -vStrength);
-    float visibility = mix(1.0, max(vEase, vCvEase), isPortraitOnly) * uFade;
-    if (visibility < 0.01) discard;
+    float activeMorph = max(max(vEase, vCvEase), vBrainEase);
+    float visibility = mix(1.0, activeMorph, isPortraitOnly) * uFade;
+    if (visibility < 0.02) discard;
 
     float s = abs(vStrength);
     float dist = length(gl_PointCoord - 0.5);
-    float core = 1.0 - smoothstep(0.03, 0.20, dist);
-    float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.4);
+    float core = 1.0 - smoothstep(0.04, 0.22, dist);
+    float glow = pow(max(0.0, 1.0 - dist * 2.0), 2.8);
+    float alpha = (core * 0.85 + glow * 0.58) * visibility;
 
-    float brainNodeAlpha = mix(1.0, 0.92 + vPulse * 0.35, vBrainEase);
-    float alpha = (core * 0.95 + glow * 0.68) * visibility * brainNodeAlpha;
+    if (alpha < 0.02) discard;
 
-    if (alpha < 0.01) discard;
-
-    vec3 champagne = vec3(1.0, 0.97, 0.88);
-    vec3 baseCol = mix(uColor, champagne, (0.45 + vPulse * 0.55 + core * 0.4) * vBrainEase);
-    vec3 finalColor = baseCol * (1.05 + core * 1.75) * clamp(s, 0.45, 1.85);
+    vec3 finalColor = uColor * (0.88 + core * 1.4) * clamp(s, 0.28, 1.5);
     gl_FragColor = vec4(finalColor, alpha);
   }
 `
@@ -692,8 +671,6 @@ export const morphLineFragmentShader = `
   varying float vEase;
   varying float vCvEase;
   varying float vBrainEase;
-  varying float vPulse;
-  varying float vBrainRim;
 
   void main() {
     float isPortraitOnly = step(0.0, -vStrength);
@@ -701,26 +678,13 @@ export const morphLineFragmentShader = `
     float s = abs(vStrength);
 
     float sphereAlpha = 0.96 * (1.0 - isPortraitOnly);
-    float portraitOrCvAlpha = mix(0.42, 0.58, vCvEase) * clamp(s, 0.3, 1.35);
-
-    // Rich golden cortex glow: warm amber interior + bright rim + blazing synaptic axons
-    float isSynapticAxon = smoothstep(1.35, 1.65, s);
-    float brainShading = (0.16 + vBrainRim * 0.22 + isSynapticAxon * 0.28 + vPulse * 0.22) * clamp(s, 0.5, 1.65);
-    float brainAlpha = brainShading * (1.0 - isPortraitOnly * 0.88);
-    float morphedAlpha = mix(portraitOrCvAlpha, brainAlpha, vBrainEase);
-
+    float morphedAlpha = 0.44 * clamp(s, 0.3, 1.3);
     float lineAlpha = mix(sphereAlpha, morphedAlpha, activeMorph) * uFade;
-    if (lineAlpha < 0.005) discard;
 
-    vec3 warmBronze = vec3(0.78, 0.50, 0.18);
-    vec3 champagne = vec3(1.0, 0.96, 0.85);
+    if (lineAlpha < 0.01) discard;
 
     vec3 sphereCol = vColor * 1.15;
-    vec3 portraitCol = mix(vColor, uColor * (0.65 + s * 0.55), 0.75);
-    vec3 brainCol = mix(warmBronze, uColor * 1.35, clamp(vBrainRim * 0.65 + isSynapticAxon * 0.5, 0.0, 1.0));
-    brainCol = mix(brainCol, champagne, (vPulse * 0.75 + isSynapticAxon * 0.35));
-
-    vec3 morphedCol = mix(portraitCol, brainCol, vBrainEase);
+    vec3 morphedCol = mix(vColor, uColor * (0.58 + s * 0.65), 0.68);
     vec3 lineCol = mix(sphereCol, morphedCol, activeMorph);
 
     gl_FragColor = vec4(lineCol, lineAlpha);
