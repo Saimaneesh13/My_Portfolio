@@ -8,15 +8,16 @@ import {
   Maximize2,
   Minimize2,
   GraduationCap,
-  BarChart2,
   Briefcase,
   ExternalLink,
   Sparkles,
   ShieldCheck,
+  MapPin,
 } from 'lucide-react'
 import { useSceneStore } from '../../store/useSceneStore'
 import {
   CERTIFICATES,
+  EDUCATION_DATA,
   INTERNSHIP_DATA,
   PROFILE_DATA,
 } from '../../lib/portfolio-data'
@@ -70,11 +71,11 @@ const TECH_PILLS = [
   { name: 'Streamlit & Plotly', icon: '👑' },
 ]
 
-// Directional vertical fade-up / fade-down variants
+// Full-column directional vertical fade-up / fade-down variants
 const verticalFadeVariants = {
   enter: (direction: number) => ({
     opacity: 0,
-    y: direction > 0 ? 32 : -32,
+    y: direction > 0 ? 40 : -40,
     filter: 'blur(4px)',
   }),
   center: {
@@ -84,7 +85,7 @@ const verticalFadeVariants = {
   },
   exit: (direction: number) => ({
     opacity: 0,
-    y: direction > 0 ? -32 : 32,
+    y: direction > 0 ? -40 : 40,
     filter: 'blur(4px)',
   }),
 }
@@ -104,7 +105,6 @@ export default function AboutView() {
     setTabState([nextTab, dir])
   }
 
-  // Optional smooth mouse-wheel switching on the left column (unless scrolling inside the certificates list)
   const handleLeftWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('.cert-scroll-box')) return
     const now = Date.now()
@@ -128,15 +128,15 @@ export default function AboutView() {
     <div className="h-screen max-w-[1380px] mx-auto px-4 sm:px-8 pt-20 pb-10 flex items-center overflow-hidden pointer-events-none select-none">
       <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         {/* ============================================================
-            LEFT COLUMN: FAR-LEFT VERTICAL RAIL + FADE UP/DOWN CONTENT
+            LEFT COLUMN: FAR-LEFT VERTICAL RAIL + FULL-HEIGHT FADE STAGE
            ============================================================ */}
         <div
           onWheel={handleLeftWheel}
-          className="lg:col-span-6 flex items-stretch gap-4 sm:gap-5 pointer-events-auto"
+          className="lg:col-span-6 flex items-center gap-4 sm:gap-5 h-[550px] pointer-events-auto"
         >
           {/* 1. VERTICAL SIDE RAIL FOR 01 / 02 / 03 BUTTONS */}
           <div className="flex flex-col items-center justify-center gap-3 py-2 shrink-0">
-            <div className="w-[1px] h-6 bg-gradient-to-b from-transparent to-gold/35" />
+            <div className="w-[1px] h-8 bg-gradient-to-b from-transparent to-gold/35" />
 
             {VERTICAL_NAV_ITEMS.map((item) => {
               const active = leftTab === item.id
@@ -146,12 +146,11 @@ export default function AboutView() {
                   type="button"
                   onClick={() => switchTab(item.id)}
                   title={item.fullTitle}
-                  className={`relative group w-14 py-3 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all duration-300 ${active
+                  className={`relative group w-14 py-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all duration-300 ${active
                     ? 'bg-gold/20 border-gold text-gold shadow-[0_0_25px_rgba(234,183,103,0.3)] scale-105'
                     : 'bg-obsidian/75 border-gold/20 text-mist hover:text-pure hover:border-gold/50'
                     }`}
                 >
-                  {/* Active Left Gold Bar Indicator */}
                   {active && (
                     <motion.span
                       layoutId="about-vertical-active-pill"
@@ -170,273 +169,318 @@ export default function AboutView() {
               )
             })}
 
-            <div className="w-[1px] h-6 bg-gradient-to-t from-transparent to-gold/35" />
+            <div className="w-[1px] h-8 bg-gradient-to-t from-transparent to-gold/35" />
           </div>
 
-          {/* 2. MAIN LEFT CONTENT AREA (Static Header + Fade Up/Down Dynamic Viewport) */}
-          <div className="flex-1 min-w-0 flex flex-col justify-between space-y-4">
-            {/* Top Identity Header */}
-            <div className="space-y-1">
-              <div className="font-mono text-[10.5px] uppercase tracking-[2px] text-gold">
-                05 // ABOUT, EXPERIENCE &amp; CREDENTIALS
-              </div>
-              <h1 className="font-display text-3xl sm:text-[42px] font-bold tracking-tight text-pure leading-[1.06]">
-                {PROFILE_DATA.name}
-              </h1>
-              <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                <span className="font-display text-base sm:text-lg font-semibold text-gold">
-                  {PROFILE_DATA.role}
-                </span>
-                <span className="text-gold/50">•</span>
-                <span className="font-sans text-xs font-medium text-pure/90">
-                  {PROFILE_DATA.subRoles.join(' • ')}
-                </span>
-              </div>
-              <p className="text-xs text-mist leading-relaxed pt-1 max-w-xl">
-                {PROFILE_DATA.bio}
-              </p>
-            </div>
-
-            {/* 4 Clickable Counter Metrics */}
-            <div className="grid grid-cols-4 gap-2.5 py-1.5 border-y border-gold/15">
-              {[
-                { icon: Code2, val: '3', label: 'Flagship Projects', tab: 'overview' as const },
-                { icon: Layers, val: '18+', label: 'Technologies', tab: 'overview' as const },
-                { icon: Trophy, val: '1', label: 'Best Intern Award', tab: 'internship' as const },
-                { icon: Award, val: '9', label: 'Certificates (2 Spec.)', tab: 'certificates' as const },
-              ].map((item, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => switchTab(item.tab)}
-                  className="flex items-center gap-2 text-left group hover:bg-gold/5 p-1 rounded-lg transition-colors"
+          {/* 2. FULL-HEIGHT (550px) DIRECTIONAL FADE STAGE — NAME FADES WITH TAB! */}
+          <div className="flex-1 min-w-0 h-[550px] relative overflow-hidden">
+            <AnimatePresence mode="wait" custom={direction}>
+              {/* ========================================================
+                  STAGE 01: OVERVIEW (NAME + BIO + STACK + 2 EDUCATIONS)
+                 ======================================================== */}
+              {leftTab === 'overview' && (
+                <motion.div
+                  key="tab-overview"
+                  custom={direction}
+                  variants={verticalFadeVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full flex flex-col justify-between py-1"
                 >
-                  <item.icon className="w-4 h-4 text-gold shrink-0 group-hover:scale-110 transition-transform" />
-                  <div>
-                    <div className="font-display text-base sm:text-lg font-bold text-pure leading-none group-hover:text-gold transition-colors">
-                      {item.val}
+                  {/* Top Identity Header */}
+                  <div className="space-y-1.5">
+                    <div className="font-mono text-[10.5px] uppercase tracking-[2px] text-gold">
+                      05 // ABOUT, EXPERIENCE &amp; CREDENTIALS
                     </div>
-                    <div className="font-sans text-[10px] text-mist mt-0.5">{item.label}</div>
+                    <h1 className="font-display text-3xl sm:text-[42px] font-bold tracking-tight text-pure leading-[1.06]">
+                      {PROFILE_DATA.name}
+                    </h1>
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <span className="font-display text-base sm:text-lg font-semibold text-gold">
+                        {PROFILE_DATA.role}
+                      </span>
+                      <span className="text-gold/50">•</span>
+                      <span className="font-sans text-xs font-medium text-pure/90">
+                        {PROFILE_DATA.subRoles.join(' • ')}
+                      </span>
+                    </div>
+                    <p className="text-xs text-mist leading-relaxed pt-1 max-w-xl">
+                      {PROFILE_DATA.bio}
+                    </p>
                   </div>
-                </button>
-              ))}
-            </div>
 
-            {/* FADE UP / FADE DOWN STAGE (335px Tall Clean Viewport) */}
-            <div className="relative h-[335px] overflow-hidden">
-              <AnimatePresence mode="wait" custom={direction}>
-                {leftTab === 'overview' && (
-                  <motion.div
-                    key="tab-overview"
-                    custom={direction}
-                    variants={verticalFadeVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-                    className="h-full flex flex-col justify-between space-y-3"
-                  >
-                    {/* Technical Expertise Pills */}
-                    <div className="space-y-2">
+                  {/* 4 Clickable Counter Metrics */}
+                  <div className="grid grid-cols-4 gap-2.5 py-2 border-y border-gold/15">
+                    {[
+                      { icon: Code2, val: '3', label: 'Flagship Projects', tab: 'overview' as const },
+                      { icon: Layers, val: '18+', label: 'Technologies', tab: 'overview' as const },
+                      { icon: Trophy, val: '1', label: 'Best Intern Award', tab: 'internship' as const },
+                      { icon: Award, val: '9', label: 'Certificates (2 Spec.)', tab: 'certificates' as const },
+                    ].map((item, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => switchTab(item.tab)}
+                        className="flex items-center gap-2 text-left group hover:bg-gold/5 p-1 rounded-lg transition-colors"
+                      >
+                        <item.icon className="w-4 h-4 text-gold shrink-0 group-hover:scale-110 transition-transform" />
+                        <div>
+                          <div className="font-display text-base sm:text-lg font-bold text-pure leading-none group-hover:text-gold transition-colors">
+                            {item.val}
+                          </div>
+                          <div className="font-sans text-[10px] text-mist mt-0.5">{item.label}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Technical Expertise Pills */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 font-display text-xs sm:text-sm font-semibold text-pure">
+                      <span className="text-gold font-mono">&lt;/&gt;</span>
+                      <span>Core Stack &amp; Frameworks</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {TECH_PILLS.map((t) => (
+                        <div
+                          key={t.name}
+                          className="px-2.5 py-1 rounded-lg bg-[#111827]/90 border border-gold/20 flex items-center gap-1.5 text-[11px] font-medium text-pure"
+                        >
+                          <span>{t.icon}</span>
+                          <span>{t.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Bottom Split: ONLY 2 Education Items (LPU & Narayana) | Verified Highlights */}
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 pt-1">
+                    {/* Education (Strictly LPU & Narayana Junior College) */}
+                    <div className="sm:col-span-6 space-y-2.5">
                       <div className="flex items-center gap-2 font-display text-xs sm:text-sm font-semibold text-pure">
-                        <span className="text-gold font-mono">&lt;/&gt;</span>
-                        <span>Core Stack &amp; Frameworks</span>
+                        <GraduationCap className="w-4 h-4 text-gold" />
+                        <span>Education</span>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {TECH_PILLS.map((t) => (
-                          <div
-                            key={t.name}
-                            className="px-2.5 py-1 rounded-lg bg-[#111827]/90 border border-gold/20 flex items-center gap-1.5 text-[11px] font-medium text-pure"
-                          >
-                            <span>{t.icon}</span>
-                            <span>{t.name}</span>
+
+                      <div className="relative pl-4 border-l border-gold/45 space-y-4">
+                        {EDUCATION_DATA.map((edu, i) => (
+                          <div key={i} className="relative text-xs">
+                            <span className="absolute -left-[20px] top-1 w-2.5 h-2.5 rounded-full bg-gold shadow-[0_0_8px_#EAB767]" />
+                            <div className="font-mono text-[10px] font-bold text-gold leading-none">
+                              {edu.period}
+                            </div>
+                            <div className="text-pure font-semibold leading-snug mt-1">
+                              {edu.institution}
+                            </div>
+                            <div className="text-[11px] text-pure/85 leading-snug">
+                              {edu.degree}
+                            </div>
+                            <div className="text-[10px] text-mist flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-2.5 h-2.5 text-gold" />
+                              <span>{edu.location}</span>
+                            </div>
                           </div>
                         ))}
                       </div>
                     </div>
 
-                    {/* Split: Education & Career Journey | Verified Highlights */}
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 pt-1">
-                      <div className="sm:col-span-6 space-y-2">
-                        <div className="flex items-center gap-2 font-display text-xs sm:text-sm font-semibold text-pure">
-                          <BarChart2 className="w-3.5 h-3.5 text-gold" />
-                          <span>Education &amp; Career Journey</span>
-                        </div>
-
-                        <div className="relative pl-3.5 border-l border-gold/45 space-y-2.5">
-                          {[
-                            {
-                              year: 'Apr 2021 – Mar 2023',
-                              title: 'Narayana Junior College (PCM)',
-                              sub: 'Intermediate • Bhimavaram, AP',
-                            },
-                            {
-                              year: 'Aug 2023 – Present',
-                              title: 'B.Tech CSE (AI & ML)',
-                              sub: 'Lovely Professional University, Punjab',
-                            },
-                            {
-                              year: 'Dec 2025 – Feb 2026',
-                              title: 'ML Intern @ EduExpose',
-                              sub: '★ Best Internship Performance Award',
-                            },
-                            {
-                              year: 'Jan 2026 – May 2026',
-                              title: '3 End-to-End AI/ML Systems',
-                              sub: 'AgroDetect, Face CV & Disaster NLP',
-                            },
-                          ].map((step, i) => (
-                            <div key={i} className="relative text-[11px]">
-                              <span className="absolute -left-[18px] top-1 w-2 h-2 rounded-full bg-gold shadow-[0_0_8px_#EAB767]" />
-                              <div className="font-mono text-[9.5px] font-bold text-gold leading-none">
-                                {step.year}
-                              </div>
-                              <div className="text-pure/95 font-medium leading-tight mt-0.5">
-                                {step.title}
-                              </div>
-                              <div className="text-[10px] text-mist leading-tight">{step.sub}</div>
-                            </div>
-                          ))}
-                        </div>
+                    {/* Verified Highlights */}
+                    <div className="sm:col-span-6 sm:pl-5 sm:border-l border-gold/15 space-y-2.5">
+                      <div className="flex items-center gap-2 font-display text-xs sm:text-sm font-semibold text-pure">
+                        <Trophy className="w-4 h-4 text-gold" />
+                        <span>Verified Highlights</span>
                       </div>
 
-                      <div className="sm:col-span-6 sm:pl-5 sm:border-l border-gold/15 space-y-2.5">
-                        <div className="flex items-center gap-2 font-display text-xs sm:text-sm font-semibold text-pure">
-                          <Trophy className="w-3.5 h-3.5 text-gold" />
-                          <span>Verified Highlights</span>
+                      <div className="space-y-2.5 text-[11px]">
+                        <div
+                          onClick={() => switchTab('internship')}
+                          className="flex items-start gap-2.5 cursor-pointer group"
+                        >
+                          <Award className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-pure group-hover:text-gold transition-colors">
+                              Best Performance Award
+                            </div>
+                            <div className="text-[10px] text-mist">
+                              3-Month ML Internship at EduExpose →
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="space-y-2.5 text-[11px]">
-                          <div
-                            onClick={() => switchTab('internship')}
-                            className="flex items-start gap-2.5 cursor-pointer group"
-                          >
-                            <Award className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-semibold text-pure group-hover:text-gold transition-colors">
-                                Best Performance Award
-                              </div>
-                              <div className="text-[10px] text-mist">
-                                3-Month ML Internship at EduExpose →
-                              </div>
+                        <div
+                          onClick={() => switchTab('certificates')}
+                          className="flex items-start gap-2.5 cursor-pointer group"
+                        >
+                          <Layers className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-pure group-hover:text-gold transition-colors">
+                              2 Coursera Specializations (8 Courses)
+                            </div>
+                            <div className="text-[10px] text-mist">
+                              Computer Comms &amp; C++ Unreal – UCCS →
                             </div>
                           </div>
+                        </div>
 
-                          <div
-                            onClick={() => switchTab('certificates')}
-                            className="flex items-start gap-2.5 cursor-pointer group"
-                          >
-                            <Layers className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-semibold text-pure group-hover:text-gold transition-colors">
-                                2 Coursera Specializations (8 Courses)
-                              </div>
-                              <div className="text-[10px] text-mist">
-                                Computer Comms &amp; C++ Unreal – UCCS →
-                              </div>
+                        <div
+                          onClick={() => switchTab('certificates')}
+                          className="flex items-start gap-2.5 cursor-pointer group"
+                        >
+                          <Sparkles className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-pure group-hover:text-gold transition-colors">
+                              9 Verified Industry Certificates
+                            </div>
+                            <div className="text-[10px] text-mist">
+                              Rice Univ, Infosys, LPU Java GUI &amp; Udemy GenAI →
                             </div>
                           </div>
+                        </div>
 
-                          <div
-                            onClick={() => switchTab('certificates')}
-                            className="flex items-start gap-2.5 cursor-pointer group"
-                          >
-                            <Sparkles className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-semibold text-pure group-hover:text-gold transition-colors">
-                                9 Verified Industry Certificates
-                              </div>
-                              <div className="text-[10px] text-mist">
-                                Rice Univ, Infosys, LPU Java GUI &amp; Udemy GenAI →
-                              </div>
+                        <div className="flex items-start gap-2.5">
+                          <Code2 className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
+                          <div>
+                            <div className="font-semibold text-pure">
+                              3 End-to-End AI/ML Systems
                             </div>
-                          </div>
-
-                          <div className="flex items-start gap-2.5">
-                            <GraduationCap className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
-                            <div>
-                              <div className="font-semibold text-pure">
-                                B.Tech CSE (AI &amp; ML) • LPU
-                              </div>
-                              <div className="text-[10px] text-mist">
-                                Punjab, India (Aug 2023 – Present)
-                              </div>
+                            <div className="text-[10px] text-mist">
+                              Disaster NLP, Face CV &amp; AgroDetect (90%+ CNN)
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </motion.div>
-                )}
+                  </div>
+                </motion.div>
+              )}
 
-                {leftTab === 'internship' && (
-                  <motion.div
-                    key="tab-internship"
-                    custom={direction}
-                    variants={verticalFadeVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-                    className="glass-panel rounded-2xl p-5 border border-gold/40 h-full flex flex-col justify-between"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <Briefcase className="w-4 h-4 text-gold" />
-                          <h3 className="font-display text-base sm:text-lg font-bold text-pure">
-                            {INTERNSHIP_DATA.role} — {INTERNSHIP_DATA.company}
-                          </h3>
-                        </div>
-                        <span className="px-3 py-0.5 rounded-full bg-gold/15 border border-gold/40 font-mono text-[10px] text-gold">
-                          {INTERNSHIP_DATA.period}
-                        </span>
+              {/* ========================================================
+                  STAGE 02: FULL-HEIGHT ML INTERNSHIP SPOTLIGHT (EDUEXPOSE)
+                 ======================================================== */}
+              {leftTab === 'internship' && (
+                <motion.div
+                  key="tab-internship"
+                  custom={direction}
+                  variants={verticalFadeVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full flex flex-col justify-between py-1"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10.5px] uppercase tracking-[2px] text-gold">
+                        05.02 // INDUSTRY EXPERIENCE SPOTLIGHT
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => switchTab('overview')}
+                        className="font-mono text-[10px] text-mist hover:text-gold transition-colors"
+                      >
+                        ← Back to Overview
+                      </button>
+                    </div>
+                    <h2 className="font-display text-2xl sm:text-3xl font-bold text-pure">
+                      {INTERNSHIP_DATA.role}
+                    </h2>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="font-display text-lg font-semibold text-gold">
+                        {INTERNSHIP_DATA.company}
+                      </span>
+                      <span className="px-3 py-0.5 rounded-full bg-gold/15 border border-gold/40 font-mono text-[10.5px] text-gold">
+                        {INTERNSHIP_DATA.period}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Best Performance Award Banner */}
+                  <div className="glass-panel rounded-2xl p-4 border border-gold/50 bg-gold/10 flex items-center gap-3.5 shadow-gold-glow">
+                    <div className="w-11 h-11 rounded-xl bg-gold/20 border border-gold flex items-center justify-center text-gold shrink-0">
+                      <Trophy className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-mono text-[9.5px] uppercase tracking-wider text-gold">
+                        HONOR &amp; RECOGNITION
                       </div>
-
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gold/20 border border-gold/50 text-xs font-semibold text-gold">
-                        <Trophy className="w-3.5 h-3.5" />
-                        <span>Recipient: {INTERNSHIP_DATA.award}</span>
+                      <div className="font-display text-sm sm:text-base font-bold text-pure">
+                        {INTERNSHIP_DATA.award}
+                      </div>
+                      <div className="text-[11px] text-mist">
+                        Awarded for outstanding, result-oriented engineering performance across the 3-month ML internship.
                       </div>
                     </div>
+                  </div>
 
-                    <ul className="space-y-2.5 text-xs text-pure/90 leading-relaxed pl-1">
+                  {/* Full Internship Lifecycle Bullets */}
+                  <div className="glass-panel rounded-2xl p-5 border border-gold/30 space-y-3">
+                    <div className="font-mono text-[10px] uppercase tracking-wider text-gold">
+                      KEY ENGINEERING CONTRIBUTIONS &amp; MODEL LIFECYCLE
+                    </div>
+                    <ul className="space-y-3 text-xs sm:text-[13px] text-pure/95 leading-relaxed">
                       {INTERNSHIP_DATA.bullets.map((b, i) => (
-                        <li key={i} className="flex items-start gap-2.5">
-                          <span className="text-gold font-mono font-bold mt-0.5">0{i + 1}.</span>
+                        <li key={i} className="flex items-start gap-3">
+                          <span className="px-2 py-0.5 rounded bg-gold/15 border border-gold/35 font-mono text-[10px] font-bold text-gold shrink-0 mt-0.5">
+                            0{i + 1}
+                          </span>
                           <span>{b}</span>
                         </li>
                       ))}
                     </ul>
+                  </div>
 
-                    <div className="pt-2.5 border-t border-gold/20 flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-[9.5px] text-gold uppercase mr-1">
-                        Applied ML Stack:
+                  {/* Skills & Frameworks Applied */}
+                  <div className="glass-panel rounded-2xl p-4 border border-gold/25 flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-[10px] text-gold uppercase mr-1">
+                      Applied Internship Stack:
+                    </span>
+                    {INTERNSHIP_DATA.skillsUsed.map((sk) => (
+                      <span
+                        key={sk}
+                        className="px-2.5 py-1 rounded-lg bg-obsidian border border-gold/25 font-mono text-[10px] text-pure"
+                      >
+                        {sk}
                       </span>
-                      {INTERNSHIP_DATA.skillsUsed.map((sk) => (
-                        <span
-                          key={sk}
-                          className="px-2.5 py-0.5 rounded bg-obsidian border border-gold/25 font-mono text-[9.5px] text-mist"
-                        >
-                          {sk}
-                        </span>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
-                {leftTab === 'certificates' && (
-                  <motion.div
-                    key="tab-certificates"
-                    custom={direction}
-                    variants={verticalFadeVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-                    className="glass-panel rounded-2xl p-4 border border-gold/35 h-full flex flex-col justify-between space-y-2.5"
-                  >
-                    {/* Category Filter Pills */}
-                    <div className="flex items-center justify-between gap-2 border-b border-gold/20 pb-2">
+              {/* ========================================================
+                  STAGE 03: FULL-HEIGHT CERTIFICATIONS VAULT (ALL 9 CLEAR)
+                 ======================================================== */}
+              {leftTab === 'certificates' && (
+                <motion.div
+                  key="tab-certificates"
+                  custom={direction}
+                  variants={verticalFadeVariants}
+                  initial="enter"
+                  animate="center"
+                  exit="exit"
+                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full flex flex-col justify-between py-1 space-y-3"
+                >
+                  {/* Top Vault Header + Category Filters */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-[10.5px] uppercase tracking-[2px] text-gold">
+                        05.03 // VERIFIED CERTIFICATIONS &amp; SPECIALIZATIONS
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => switchTab('overview')}
+                        className="font-mono text-[10px] text-mist hover:text-gold transition-colors"
+                      >
+                        ← Back to Overview
+                      </button>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h2 className="font-display text-2xl font-bold text-pure">
+                        Credentials Vault ({filteredCerts.length} of 9)
+                      </h2>
                       <div className="flex flex-wrap gap-1">
                         {['All', 'Specialization', 'AI & GenAI', 'Software & CS', 'Leadership'].map(
                           (cat) => (
@@ -444,9 +488,9 @@ export default function AboutView() {
                               key={cat}
                               type="button"
                               onClick={() => setCertFilter(cat)}
-                              className={`px-2.5 py-0.5 rounded-lg font-mono text-[9.5px] transition-all ${certFilter === cat
-                                ? 'bg-gold text-space font-bold'
-                                : 'bg-obsidian/80 text-mist hover:text-pure border border-gold/20'
+                              className={`px-2.5 py-1 rounded-lg font-mono text-[9.5px] transition-all ${certFilter === cat
+                                ? 'bg-gold text-space font-bold shadow-gold-glow'
+                                : 'bg-obsidian/85 text-mist hover:text-pure border border-gold/20'
                                 }`}
                             >
                               {cat}
@@ -454,63 +498,62 @@ export default function AboutView() {
                           )
                         )}
                       </div>
-                      <span className="font-mono text-[9.5px] text-gold shrink-0">
-                        {filteredCerts.length} Verified
-                      </span>
                     </div>
+                  </div>
 
-                    {/* Scrollable 9-Certificate Vault */}
-                    <div className="cert-scroll-box overflow-y-auto space-y-2 pr-1 flex-1">
-                      {filteredCerts.map((cert) => (
-                        <div
-                          key={cert.id}
-                          className="p-2.5 rounded-xl bg-obsidian/85 border border-gold/25 hover:border-gold/60 transition-all flex flex-col justify-between gap-1"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="px-2 py-0.5 rounded bg-gold/15 border border-gold/35 font-mono text-[8.5px] text-gold">
-                                  {cert.badgeText}
-                                </span>
-                                <span className="font-mono text-[9px] text-mist">{cert.date}</span>
-                              </div>
-                              <h4 className="font-display text-xs font-bold text-pure mt-1 leading-snug">
-                                {cert.title}
-                              </h4>
-                              <div className="text-[10px] text-mist">{cert.issuer}</div>
+                  {/* Full-Height Scrollable Certificate Cards (Spans 450px height clearly!) */}
+                  <div className="cert-scroll-box flex-1 overflow-y-auto space-y-2.5 pr-1.5">
+                    {filteredCerts.map((cert) => (
+                      <div
+                        key={cert.id}
+                        className="glass-panel p-3.5 rounded-2xl border border-gold/30 hover:border-gold transition-all flex flex-col justify-between gap-1.5"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="px-2.5 py-0.5 rounded-md bg-gold/15 border border-gold/40 font-mono text-[9px] text-gold font-semibold">
+                                {cert.badgeText}
+                              </span>
+                              <span className="font-mono text-[10px] text-pure/80">
+                                {cert.date}
+                              </span>
                             </div>
-
-                            <a
-                              href={cert.verifyUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="px-2.5 py-1 rounded-lg bg-gold/15 hover:bg-gold hover:text-space border border-gold/40 font-mono text-[9px] text-gold flex items-center gap-1 shrink-0 transition-colors"
-                            >
-                              <span>Verify</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
+                            <h3 className="font-display text-sm font-bold text-pure mt-1.5 leading-snug">
+                              {cert.title}
+                            </h3>
+                            <div className="text-xs text-mist mt-0.5">{cert.issuer}</div>
                           </div>
 
-                          {cert.subCourses && (
-                            <div className="pl-2 border-l border-gold/30 text-[9.5px] text-mist/90 grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-0.5 mt-0.5">
-                              {cert.subCourses.map((sc, idx) => (
-                                <div key={idx} className="truncate">
-                                  • {sc}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          <div className="font-mono text-[8.5px] text-mist/70">
-                            Credential ID: {cert.credentialId}
-                          </div>
+                          <a
+                            href={cert.verifyUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="px-3 py-1.5 rounded-xl bg-gold/15 hover:bg-gold hover:text-space border border-gold/45 font-mono text-[10px] text-gold font-semibold flex items-center gap-1.5 shrink-0 transition-colors"
+                          >
+                            <span>Verify</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
                         </div>
-                      ))}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+
+                        {cert.subCourses && (
+                          <div className="pl-3 border-l-2 border-gold/35 text-[10.5px] text-pure/85 grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 mt-1">
+                            {cert.subCourses.map((sc, idx) => (
+                              <div key={idx} className="truncate">
+                                • {sc}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="font-mono text-[9px] text-mist/75 pt-0.5">
+                          Credential ID: <span className="text-pure/90">{cert.credentialId}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 
