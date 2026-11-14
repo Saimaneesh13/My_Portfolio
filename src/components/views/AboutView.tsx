@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Code2,
@@ -96,28 +96,97 @@ export default function AboutView() {
   const [[leftTab, direction], setTabState] = useState<[AboutLeftTab, number]>(['overview', 1])
   const [certFilter, setCertFilter] = useState<string>('All')
   const wheelCooldownRef = useRef<number>(0)
+  const touchStartYRef = useRef<number | null>(null)
 
-  const switchTab = (nextTab: AboutLeftTab) => {
-    if (nextTab === leftTab) return
-    const currIdx = TAB_ORDER.indexOf(leftTab)
-    const nextIdx = TAB_ORDER.indexOf(nextTab)
-    const dir = nextIdx > currIdx ? 1 : -1
-    setTabState([nextTab, dir])
-  }
+  const switchTab = useCallback(
+    (nextTab: AboutLeftTab) => {
+      setTabState(([currTab, currDir]) => {
+        if (nextTab === currTab) return [currTab, currDir]
+        const currIdx = TAB_ORDER.indexOf(currTab)
+        const nextIdx = TAB_ORDER.indexOf(nextTab)
+        const dir = nextIdx > currIdx ? 1 : -1
+        return [nextTab, dir]
+      })
+    },
+    []
+  )
 
-  const handleLeftWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if ((e.target as HTMLElement).closest('.cert-scroll-box')) return
+  const stepTabByDirection = useCallback((delta: 1 | -1) => {
     const now = Date.now()
-    if (now - wheelCooldownRef.current < 480) return
-    const currIdx = TAB_ORDER.indexOf(leftTab)
-    if (e.deltaY > 25 && currIdx < TAB_ORDER.length - 1) {
+    if (now - wheelCooldownRef.current < 520) return
+
+    setTabState(([currTab, currDir]) => {
+      const currIdx = TAB_ORDER.indexOf(currTab)
+      const nextIdx = currIdx + delta
+      if (nextIdx < 0 || nextIdx >= TAB_ORDER.length) return [currTab, currDir]
       wheelCooldownRef.current = now
-      switchTab(TAB_ORDER[currIdx + 1])
-    } else if (e.deltaY < -25 && currIdx > 0) {
-      wheelCooldownRef.current = now
-      switchTab(TAB_ORDER[currIdx - 1])
+      return [TAB_ORDER[nextIdx], delta]
+    })
+  }, [])
+
+  // Global anywhere-on-screen Mouse Wheel, Touch Swipe & Up/Down Arrow Key listener
+  useEffect(() => {
+    const onGlobalWheel = (e: WheelEvent) => {
+      // Do not switch tabs if fullscreen CV modal is open and scrolling
+      if (isFullscreen) return
+
+      // If cursor is inside the scrollable certificates list, let it scroll internally first,
+      // and automatically hand off to tab-switching when at the top or bottom edge!
+      const scrollBox = (e.target as HTMLElement | null)?.closest('.cert-scroll-box') as HTMLElement | null
+      if (scrollBox) {
+        const atTop = scrollBox.scrollTop <= 2
+        const atBottom =
+          Math.ceil(scrollBox.scrollTop + scrollBox.clientHeight) >= scrollBox.scrollHeight - 2
+        if (e.deltaY < 0 && !atTop) return
+        if (e.deltaY > 0 && !atBottom) return
+      }
+
+      if (Math.abs(e.deltaY) < 18) return
+      if (e.deltaY > 0) {
+        stepTabByDirection(1)
+      } else {
+        stepTabByDirection(-1)
+      }
     }
-  }
+
+    const onGlobalKeyDown = (e: KeyboardEvent) => {
+      if (isFullscreen) return
+      if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+        e.preventDefault()
+        stepTabByDirection(1)
+      } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault()
+        stepTabByDirection(-1)
+      }
+    }
+
+    const onGlobalTouchStart = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        touchStartYRef.current = e.touches[0].clientY
+      }
+    }
+
+    const onGlobalTouchEnd = (e: TouchEvent) => {
+      if (touchStartYRef.current === null || e.changedTouches.length === 0) return
+      const deltaY = touchStartYRef.current - e.changedTouches[0].clientY
+      touchStartYRef.current = null
+      if (Math.abs(deltaY) > 40) {
+        stepTabByDirection(deltaY > 0 ? 1 : -1)
+      }
+    }
+
+    window.addEventListener('wheel', onGlobalWheel, { passive: true })
+    window.addEventListener('keydown', onGlobalKeyDown)
+    window.addEventListener('touchstart', onGlobalTouchStart, { passive: true })
+    window.addEventListener('touchend', onGlobalTouchEnd, { passive: true })
+
+    return () => {
+      window.removeEventListener('wheel', onGlobalWheel)
+      window.removeEventListener('keydown', onGlobalKeyDown)
+      window.removeEventListener('touchstart', onGlobalTouchStart)
+      window.removeEventListener('touchend', onGlobalTouchEnd)
+    }
+  }, [isFullscreen, stepTabByDirection])
 
   const filteredCerts =
     certFilter === 'All'
@@ -130,10 +199,7 @@ export default function AboutView() {
         {/* ============================================================
             LEFT COLUMN: FAR-LEFT VERTICAL RAIL + FULL-HEIGHT FADE STAGE
            ============================================================ */}
-        <div
-          onWheel={handleLeftWheel}
-          className="lg:col-span-6 flex items-center gap-4 sm:gap-5 h-[550px] pointer-events-auto"
-        >
+        <div className="lg:col-span-6 flex items-center gap-4 sm:gap-5 h-[550px] pointer-events-auto">
           {/* 1. VERTICAL SIDE RAIL FOR 01 / 02 / 03 BUTTONS */}
           <div className="flex flex-col items-center justify-center gap-3 py-2 shrink-0">
             <div className="w-[1px] h-8 bg-gradient-to-b from-transparent to-gold/35" />
