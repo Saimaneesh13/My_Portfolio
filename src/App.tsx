@@ -35,9 +35,8 @@ export default function App() {
     <div className="relative min-h-screen w-screen overflow-x-hidden bg-space text-pure select-none">
       {/* 1. Persistent 3D WebGL Canvas */}
       <div
-        className={`fixed inset-0 z-0 transition-all duration-1000 ${
-          isCanvasDimmed ? 'blur-[3px] brightness-[0.42]' : 'blur-0 brightness-100'
-        }`}
+        className={`fixed inset-0 z-0 transition-all duration-1000 ${isCanvasDimmed ? 'blur-[3px] brightness-[0.42]' : 'blur-0 brightness-100'
+          }`}
       >
         <CanvasErrorBoundary>
           <CoreScene />

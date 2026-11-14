@@ -41,7 +41,7 @@ export default function HomeView() {
 
             {/* Clean Single-Row / Compact Proof Pills */}
             <div className="flex flex-wrap gap-2 pt-1">
-              {PERSONAL_BRAND.proofBadges.map((badge) => (
+              {PERSONAL_BRAND.proofBadges.map((badge: string) => (
                 <span
                   key={badge}
                   className="font-mono text-[10px] tracking-wider px-3 py-1.5 rounded-md bg-obsidian/80 border border-gold/20 text-gold-champagne"

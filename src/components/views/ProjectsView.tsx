@@ -1,753 +1,490 @@
-import { useEffect, useState, useCallback } from 'react'
-import { motion, AnimatePresence, type PanInfo } from 'framer-motion'
+import { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import {
   ChevronLeft,
   ChevronRight,
-  ArrowUpRight,
+  ExternalLink,
   Github,
-  Star,
-  Database,
-  Target,
-  Zap,
   Play,
-  Layers,
   Sparkles,
-  CheckCircle2,
-  Cpu,
+  Layers,
 } from 'lucide-react'
+import { PROJECTS, type ProjectItem } from '../../lib/portfolio-data'
 import { useSceneStore } from '../../store/useSceneStore'
+import DisasterNlpSim from '../simulators/DisasterNlpSim'
+import AgroDetectSim from '../simulators/AgroDetectSim'
+import FaceAttendanceSim from '../simulators/FaceAttendanceSim'
 
-type FilterCategory = 'All Projects' | 'NLP' | 'Computer Vision' | 'Deep Learning' | 'Full-Stack' | 'Experiments'
-
-interface CoverflowProject {
-  id: 'disaster-nlp' | 'face-attendance' | 'agrodetect' | 'core-morph' | 'rag-engine'
-  indexLabel: string
-  domainLabel: string
-  title: string
-  description: string
-  featured?: boolean
-  categories: FilterCategory[]
-  tags: string[]
-  githubUrl: string
-  imageUrl: string
-  stats: {
-    icon: 'db' | 'target' | 'zap'
-    value: string
-    label: string
-  }[]
+interface CarouselItem extends ProjectItem {
+  isExperiment?: boolean
 }
 
-// 5 Projects (Odd count guarantees symmetric [-2, -1, 0, +1, +2] Coverflow wings on both sides!)
-const CAROUSEL_PROJECTS: CoverflowProject[] = [
+const CAROUSEL_ITEMS: CarouselItem[] = [
+  ...PROJECTS,
   {
-    id: 'disaster-nlp',
-    indexLabel: '01',
-    domainLabel: 'NLP • UNSUPERVISED LEARNING',
-    title: 'AI-Based Disaster Intelligence System',
-    description:
-      'Unsupervised topic discovery and real-time urgency classification from social media data during disasters.',
-    featured: true,
-    categories: ['All Projects', 'NLP', 'Deep Learning'],
-    tags: ['BERTopic', 'Sentence-BERT', 'UMAP', 'HDBSCAN', 'LDA'],
-    githubUrl: 'https://github.com/Saimaneesh13',
-    imageUrl:
-      'https://images.unsplash.com/photo-1527482797697-8795b05a13fe?auto=format&fit=crop&w=900&q=80',
-    stats: [
-      { icon: 'db', value: '81K+', label: 'Tweets Processed' },
-      { icon: 'target', value: '20', label: 'Disaster Topics' },
-      { icon: 'zap', value: 'Real-time', label: 'Urgency Detection' },
-    ],
-  },
-  {
-    id: 'agrodetect',
-    indexLabel: '03',
-    domainLabel: 'DEEP LEARNING',
-    title: 'AgroDetect AI',
-    description:
-      'Crop leaf disease detection with >90% validation accuracy using a CNN model and FastAPI.',
+    id: 'golden-core-webgl',
+    index: '04',
+    title: 'Golden Core 3D WebGL Engine',
+    subtitle: 'Tear-Free Spatial Morph & GLSL Shader System',
+    period: '2026',
+    category: 'Experiments',
     featured: false,
-    categories: ['All Projects', 'Deep Learning', 'Computer Vision', 'Full-Stack'],
-    tags: ['CNN', 'TensorFlow', 'Keras', 'FastAPI'],
-    githubUrl: 'https://github.com/Saimaneesh13',
-    imageUrl:
-      'https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=900&q=80',
-    stats: [
-      { icon: 'target', value: '90%+', label: 'Validation Accuracy' },
-      { icon: 'zap', value: '38ms', label: 'FastAPI Latency' },
-      { icon: 'db', value: '224×224', label: 'RGB Tensor Input' },
+    isExperiment: true,
+    tagline:
+      'Custom Three.js & GLSL particle/wireframe architecture morphing 26,400+ segments between a 3D Neural Sphere, Portrait, CV Hologram, and Circuit Brain.',
+    problem: '',
+    objectives: [],
+    workflow: [],
+    features: [],
+    outcomes: [],
+    tags: ['Three.js', 'WebGL', 'GLSL Shaders', 'React Three Fiber', 'Spatial Hashing', 'UnrealBloom'],
+    metrics: [
+      { value: '26.4K', label: 'Morph Segments' },
+      { value: '24×24', label: 'Spatial Buckets' },
+      { value: '60 FPS', label: 'GLSL Pipeline' },
     ],
-  },
-  {
-    id: 'core-morph',
-    indexLabel: '04',
-    domainLabel: 'WEBGL • GLSL SHADERS',
-    title: 'Golden Core Morph Engine',
-    description:
-      'Custom GLSL curl-noise vertex shader and 24×24 spatial bucket mapper transitioning 26,000+ wire segments into a 3D hologram.',
-    featured: false,
-    categories: ['All Projects', 'Experiments'],
-    tags: ['Three.js', 'GLSL', 'Spatial Hashing', 'UnrealBloom'],
     githubUrl: 'https://github.com/Saimaneesh13',
-    imageUrl:
-      'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=900&q=80',
-    stats: [
-      { icon: 'db', value: '26.4K', label: 'Wire Segments' },
-      { icon: 'target', value: '24×24', label: 'Spatial Buckets' },
-      { icon: 'zap', value: '60 FPS', label: 'WebGL Pipeline' },
-    ],
-  },
-  {
-    id: 'rag-engine',
-    indexLabel: '05',
-    domainLabel: 'NLP • DATA PIPELINES',
-    title: 'EduExpose ML Research Suite',
-    description:
-      'Award-winning machine learning evaluation pipeline and feature engineering workflow developed during EduExpose internship.',
-    featured: false,
-    categories: ['All Projects', 'NLP', 'Full-Stack'],
-    tags: ['Scikit-learn', 'Pandas', 'NumPy', 'Plotly', 'Streamlit'],
-    githubUrl: 'https://github.com/Saimaneesh13',
-    imageUrl:
-      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=900&q=80',
-    stats: [
-      { icon: 'target', value: 'Best Award', label: 'EduExpose Internship' },
-      { icon: 'db', value: 'End-to-End', label: 'Feature Pipeline' },
-      { icon: 'zap', value: 'Interactive', label: 'Streamlit Telemetry' },
-    ],
-  },
-  {
-    id: 'face-attendance',
-    indexLabel: '02',
-    domainLabel: 'COMPUTER VISION',
-    title: 'Face Recognition Attendance System',
-    description:
-      'Real-time biometric attendance using face recognition with a Flask backend and SQLite database.',
-    featured: false,
-    categories: ['All Projects', 'Computer Vision', 'Full-Stack'],
-    tags: ['OpenCV', 'Flask', 'SQLite', 'Python'],
-    githubUrl: 'https://github.com/Saimaneesh13',
-    imageUrl:
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=80',
-    stats: [
-      { icon: 'zap', value: '<85ms', label: 'Frame Match' },
-      { icon: 'target', value: '128-D', label: 'Face Embeddings' },
-      { icon: 'db', value: 'SQLite', label: 'Auto Audit Ledger' },
-    ],
   },
 ]
 
-const FILTER_TABS: FilterCategory[] = [
-  'All Projects',
-  'NLP',
-  'Computer Vision',
-  'Deep Learning',
-  'Full-Stack',
-  'Experiments',
-]
+const CATEGORIES = ['All Projects', 'NLP', 'Computer Vision', 'Deep Learning', 'Experiments']
 
-const TECH_STACK_DOCK = [
-  { name: 'Python', color: '#3776AB', badge: 'Py' },
-  { name: 'TensorFlow', color: '#FF6F00', badge: 'TF' },
-  { name: 'OpenCV', color: '#5C3EE8', badge: 'CV' },
-  { name: 'PyTorch', color: '#EE4C2C', badge: 'Pt' },
-  { name: 'scikit-learn', color: '#F7931E', badge: 'SK' },
-  { name: 'FastAPI', color: '#009688', badge: 'FA' },
-  { name: 'SQLite', color: '#003B57', badge: 'SQL' },
-  { name: 'Streamlit', color: '#FF4B4B', badge: 'St' },
-]
-
-// Photographic Cover + HUD Reticle Overlay matching reference design
-function ProjectVisualBanner({ project, isActive }: { project: CoverflowProject; isActive: boolean }) {
-  return (
-    <div className="relative h-36 sm:h-40 w-full overflow-hidden rounded-xl border border-gold/30 bg-[#050912]">
-      <img
-        src={project.imageUrl}
-        alt={project.title}
-        className="w-full h-full object-cover object-center opacity-85 transition-transform duration-700 group-hover:scale-105"
-      />
-      {/* Dark luxury gradient vignette */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(180deg, rgba(7,11,19,0.2) 0%, rgba(7,11,19,0.15) 55%, rgba(7,11,19,0.88) 100%)',
-        }}
-      />
-
-      {/* Golden HUD Corner Target Brackets */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 180">
-        <path d="M125,30 L105,30 L105,50" fill="none" stroke="rgba(234,183,103,0.75)" strokeWidth="1.8" />
-        <path d="M275,30 L295,30 L295,50" fill="none" stroke="rgba(234,183,103,0.75)" strokeWidth="1.8" />
-        <path d="M125,150 L105,150 L105,130" fill="none" stroke="rgba(234,183,103,0.75)" strokeWidth="1.8" />
-        <path d="M275,150 L295,150 L295,130" fill="none" stroke="rgba(234,183,103,0.75)" strokeWidth="1.8" />
-        {project.id === 'disaster-nlp' && (
-          <g transform="translate(200,90)">
-            <circle r="38" fill="none" stroke="rgba(234,183,103,0.45)" strokeWidth="1" strokeDasharray="4 4" />
-            <circle cx="-28" cy="-14" r="3" fill="#EAB767" />
-            <circle cx="32" cy="18" r="3" fill="#EAB767" />
-            <circle cx="18" cy="-26" r="3" fill="#EAB767" />
-            <circle cx="-22" cy="24" r="3" fill="#EAB767" />
-          </g>
-        )}
-        {project.id === 'face-attendance' && (
-          <g>
-            <circle cx="182" cy="78" r="2.5" fill="#7DD3FC" />
-            <circle cx="218" cy="78" r="2.5" fill="#7DD3FC" />
-            <circle cx="200" cy="96" r="2.5" fill="#EAB767" />
-            <circle cx="186" cy="114" r="2.5" fill="#7DD3FC" />
-            <circle cx="214" cy="114" r="2.5" fill="#7DD3FC" />
-          </g>
-        )}
-      </svg>
-
-      {/* Top-Right Quick Launch Icon */}
-      {isActive && (
-        <div className="absolute top-2.5 right-2.5 w-7 h-7 rounded-lg bg-space/75 border border-gold/45 flex items-center justify-center text-gold">
-          <ArrowUpRight className="w-3.5 h-3.5" />
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Inline Live Simulator inside the active card
-function InlineLiveSimulator({ id }: { id: CoverflowProject['id'] }) {
-  const { setManualProgress, toggleInspect3D } = useSceneStore()
-  const [sampleIdx, setSampleIdx] = useState(0)
-
-  if (id === 'disaster-nlp' || id === 'rag-engine') {
-    const tweets = [
-      {
-        raw: 'URGENT: Flood water rising over bridge in Sector 4, 12 residents stranded on roof!',
-        topic: 'Topic #04: Flood Rescue',
-        umap: '[-2.41, 1.88]',
-        tier: 'CRITICAL (96.4%)',
-      },
-      {
-        raw: 'Substation transformer down near City Hospital, backup diesel needed within 2 hrs.',
-        topic: 'Topic #07: Grid & Medical',
-        umap: '[1.92, -0.74]',
-        tier: 'CRITICAL (94.1%)',
-      },
-      {
-        raw: 'Weather advisory: heavy rain expected to clear by tomorrow afternoon.',
-        topic: 'Topic #12: Weather Advisory',
-        umap: '[4.15, 3.10]',
-        tier: 'LOW (91.8%)',
-      },
-    ]
-    const active = tweets[sampleIdx % tweets.length]
+function ProjectBannerArtwork({ id }: { id: string }) {
+  if (id === 'disaster-nlp') {
     return (
-      <div className="h-36 sm:h-40 w-full rounded-xl border border-gold/60 bg-[#070b13]/95 p-3 flex flex-col justify-between font-mono text-xs">
-        <div className="flex items-center justify-between border-b border-gold/20 pb-1.5">
-          <span className="text-[10px] text-gold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-gold animate-ping" />
-            LIVE BERTOPIC + UMAP STREAM
+      <div className="relative h-40 w-full rounded-xl bg-gradient-to-br from-[#0e1726] via-[#090d16] to-[#1a1410] border border-gold/25 overflow-hidden flex flex-col justify-between p-4">
+        <div className="flex justify-between items-center z-10">
+          <span className="px-2.5 py-0.5 rounded-full bg-gold/20 border border-gold/45 font-mono text-[9.5px] text-gold font-semibold">
+            ★ FEATURED NLP SYSTEM
           </span>
-          <div className="flex gap-1">
-            {[0, 1, 2].map((i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSampleIdx(i)
-                }}
-                className={`px-2 py-0.5 rounded text-[9px] ${
-                  sampleIdx === i ? 'bg-gold text-space font-semibold' : 'bg-obsidian text-mist border border-gold/20'
-                }`}
-              >
-                #{i + 1}
-              </button>
-            ))}
-          </div>
+          <span className="font-mono text-[10px] text-pure/80 bg-space/70 px-2.5 py-0.5 rounded-md border border-gold/20">
+            Apr 2026 – May 2026
+          </span>
         </div>
-        <div className="text-[10px] text-pure bg-obsidian/90 px-2.5 py-1.5 rounded border border-gold/15 truncate">
-          "{active.raw}"
-        </div>
-        <div className="grid grid-cols-3 gap-1.5 text-[9px]">
-          <div className="bg-obsidian/70 p-1.5 rounded border border-gold/20 truncate">
-            <span className="text-mist block">Topic</span>
-            <span className="text-pure">{active.topic}</span>
-          </div>
-          <div className="bg-obsidian/70 p-1.5 rounded border border-gold/20">
-            <span className="text-mist block">UMAP</span>
-            <span className="text-gold">{active.umap}</span>
-          </div>
-          <div className="bg-obsidian/70 p-1.5 rounded border border-gold/20">
-            <span className="text-mist block">Urgency</span>
-            <span className="text-gold font-semibold">{active.tier}</span>
-          </div>
+
+        <svg className="w-full h-20 my-auto" viewBox="0 0 320 75" fill="none">
+          <circle cx="45" cy="38" r="22" stroke="#EAB767" strokeDasharray="3 3" strokeOpacity="0.6" />
+          <circle cx="38" cy="32" r="3.5" fill="#EAB767" />
+          <circle cx="52" cy="44" r="4" fill="#F7D9A0" />
+          <circle cx="48" cy="28" r="2.5" fill="#38BDF8" />
+          <path d="M72 38 H112" stroke="#EAB767" strokeWidth="1.5" />
+          <rect x="112" y="14" width="96" height="48" rx="8" fill="#0b101b" stroke="#EAB767" strokeWidth="1.4" />
+          <text x="160" y="33" textAnchor="middle" fill="#EAB767" fontFamily="JetBrains Mono" fontSize="9" fontWeight="bold">
+            BERTopic + LDA
+          </text>
+          <text x="160" y="47" textAnchor="middle" fill="#A7B0C0" fontFamily="JetBrains Mono" fontSize="7.5">
+            UMAP · HDBSCAN · FAISS
+          </text>
+          <path d="M208 38 H244" stroke="#EAB767" strokeWidth="1.5" />
+          <rect x="244" y="20" width="58" height="36" rx="6" fill="rgba(234,183,103,0.16)" stroke="#EAB767" />
+          <text x="273" y="41" textAnchor="middle" fill="#F7D9A0" fontFamily="JetBrains Mono" fontSize="8" fontWeight="bold">
+            URGENCY
+          </text>
+        </svg>
+
+        <div className="font-mono text-[9.5px] text-mist flex justify-between">
+          <span>Sentence-Transformers + spaCy</span>
+          <span className="text-gold">FastAPI + Streamlit + Plotly</span>
         </div>
       </div>
     )
   }
 
   if (id === 'face-attendance') {
-    const scans = [
-      { id: 'LPU-CSE-01', user: 'Gorrela Sai Maneesh', dist: '0.312', status: 'VERIFIED & LOGGED' },
-      { id: 'LPU-CSE-02', user: 'Verified Faculty #04', dist: '0.348', status: 'VERIFIED & LOGGED' },
-    ]
-    const active = scans[sampleIdx % scans.length]
     return (
-      <div className="h-36 sm:h-40 w-full rounded-xl border border-gold/60 bg-[#070b13]/95 p-3 flex flex-col justify-between font-mono text-xs">
-        <div className="flex items-center justify-between border-b border-gold/20 pb-1.5">
-          <span className="text-[10px] text-gold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-gold animate-ping" />
-            OPENCV + SQLITE LIVE MATCHER
+      <div className="relative h-40 w-full rounded-xl bg-gradient-to-br from-[#0d1624] via-[#090d16] to-[#121c2d] border border-gold/25 overflow-hidden flex flex-col justify-between p-4">
+        <div className="flex justify-between items-center z-10">
+          <span className="px-2.5 py-0.5 rounded-full bg-gold/20 border border-gold/45 font-mono text-[9.5px] text-gold font-semibold">
+            ★ REAL-TIME COMPUTER VISION
           </span>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              setSampleIdx((p) => p + 1)
-            }}
-            className="px-2 py-0.5 rounded bg-gold text-space text-[9px] font-semibold"
-          >
-            Scan Next Frame
-          </button>
+          <span className="font-mono text-[10px] text-pure/80 bg-space/70 px-2.5 py-0.5 rounded-md border border-gold/20">
+            Feb 2026 – Mar 2026
+          </span>
         </div>
-        <div className="space-y-1 text-[10px]">
-          <div className="flex justify-between text-mist">
-            <span>Identity:</span>
-            <span className="text-pure font-medium">{active.user}</span>
-          </div>
-          <div className="flex justify-between text-mist">
-            <span>128-D L2 Distance:</span>
-            <span className="text-gold">{active.dist} (≤ 0.45)</span>
-          </div>
-          <div className="flex justify-between text-mist">
-            <span>SQLite Status:</span>
-            <span className="text-emerald-400 flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" /> {active.status}
-            </span>
-          </div>
-        </div>
-        <div className="text-[9px] text-gold-champagne bg-obsidian/80 px-2 py-1 rounded border border-gold/20 truncate">
-          INSERT INTO attendance VALUES ('{active.id}', '{active.user}', CURRENT_TIMESTAMP);
+
+        <svg className="w-full h-20 my-auto" viewBox="0 0 320 75" fill="none">
+          <path d="M118,16 L104,16 L104,30" stroke="#EAB767" strokeWidth="2" />
+          <path d="M202,16 L216,16 L216,30" stroke="#EAB767" strokeWidth="2" />
+          <path d="M118,62 L104,62 L104,48" stroke="#EAB767" strokeWidth="2" />
+          <path d="M202,62 L216,62 L216,48" stroke="#EAB767" strokeWidth="2" />
+          <circle cx="160" cy="39" r="22" stroke="#EAB767" strokeWidth="1.4" strokeDasharray="4 3" />
+          <circle cx="151" cy="33" r="2.8" fill="#F7D9A0" />
+          <circle cx="169" cy="33" r="2.8" fill="#F7D9A0" />
+          <path d="M150 46 Q160 53 170 46" stroke="#EAB767" strokeWidth="1.6" />
+        </svg>
+
+        <div className="font-mono text-[9.5px] text-mist flex justify-between">
+          <span>OpenCV + face_recognition (128-D)</span>
+          <span className="text-gold">Flask + SQLite + Bootstrap 5</span>
         </div>
       </div>
     )
   }
 
   if (id === 'agrodetect') {
-    const leaves = [
-      { label: 'Early Blight', conf: '94.6%', latency: '38ms', status: 'Fungicide Protocol A' },
-      { label: 'Late Blight', conf: '92.8%', latency: '41ms', status: 'Isolate Canopy Plot' },
-      { label: 'Healthy Leaf', conf: '98.2%', latency: '34ms', status: 'Optimal Foliage' },
-    ]
-    const active = leaves[sampleIdx % leaves.length]
     return (
-      <div className="h-36 sm:h-40 w-full rounded-xl border border-gold/60 bg-[#070b13]/95 p-3 flex flex-col justify-between font-mono text-xs">
-        <div className="flex items-center justify-between border-b border-gold/20 pb-1.5">
-          <span className="text-[10px] text-gold flex items-center gap-1.5">
-            <Cpu className="w-3 h-3 text-gold" />
-            KERAS CNN + FASTAPI LIVE
+      <div className="relative h-40 w-full rounded-xl bg-gradient-to-br from-[#0d1917] via-[#090d16] to-[#17150e] border border-gold/25 overflow-hidden flex flex-col justify-between p-4">
+        <div className="flex justify-between items-center z-10">
+          <span className="px-2.5 py-0.5 rounded-full bg-gold/20 border border-gold/45 font-mono text-[9.5px] text-gold font-semibold">
+            ★ 90%+ ACCURACY DEEP LEARNING
           </span>
-          <div className="flex gap-1">
-            {['Early', 'Late', 'Healthy'].map((lbl, i) => (
-              <button
-                key={lbl}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setSampleIdx(i)
-                }}
-                className={`px-2 py-0.5 rounded text-[9px] ${
-                  sampleIdx % 3 === i ? 'bg-gold text-space font-semibold' : 'bg-obsidian text-mist border border-gold/20'
-                }`}
-              >
-                {lbl}
-              </button>
-            ))}
-          </div>
+          <span className="font-mono text-[10px] text-pure/80 bg-space/70 px-2.5 py-0.5 rounded-md border border-gold/20">
+            Jan 2026 – Feb 2026
+          </span>
         </div>
-        <div className="grid grid-cols-2 gap-2 text-[10px]">
-          <div className="bg-obsidian/80 p-1.5 rounded border border-gold/20">
-            <span className="text-mist text-[9px] block">Diagnosis</span>
-            <span className="text-pure font-medium">{active.label}</span>
-          </div>
-          <div className="bg-obsidian/80 p-1.5 rounded border border-gold/20">
-            <span className="text-mist text-[9px] block">Confidence</span>
-            <span className="text-gold font-semibold">
-              {active.conf} ({active.latency})
-            </span>
-          </div>
-        </div>
-        <div className="text-[9px] text-gold-champagne bg-obsidian/80 px-2 py-1 rounded border border-gold/20 truncate">
-          FastAPI 200 OK → {active.status}
+
+        <svg className="w-full h-20 my-auto" viewBox="0 0 320 75" fill="none">
+          <rect x="36" y="16" width="26" height="44" rx="4" fill="#0b101b" stroke="#EAB767" />
+          <rect x="82" y="22" width="26" height="32" rx="4" fill="#0b101b" stroke="#EAB767" />
+          <path d="M62 38 H82 M108 38 H138" stroke="#EAB767" strokeWidth="1.5" />
+          <rect x="138" y="14" width="144" height="48" rx="8" fill="#0b101b" stroke="#EAB767" strokeWidth="1.5" />
+          <text x="210" y="34" textAnchor="middle" fill="#EAB767" fontFamily="JetBrains Mono" fontSize="9.5" fontWeight="bold">
+            TensorFlow / Keras CNN
+          </text>
+          <text x="210" y="48" textAnchor="middle" fill="#F5F5F5" fontFamily="JetBrains Mono" fontSize="8">
+            90%+ Leaf Disease Accuracy
+          </text>
+        </svg>
+
+        <div className="font-mono text-[9.5px] text-mist flex justify-between">
+          <span>Scikit-learn + Pandas Augmentation</span>
+          <span className="text-gold">FastAPI + Streamlit UI</span>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="h-36 sm:h-40 w-full rounded-xl border border-gold/60 bg-[#070b13]/95 p-3 flex flex-col items-center justify-center text-center gap-2">
-      <Sparkles className="w-5 h-5 text-gold animate-pulse" />
-      <p className="text-[11px] text-mist max-w-xs">
-        Unblur the WebGL canvas to inspect the 26,400 neural core segments in fullscreen.
-      </p>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation()
-          setManualProgress(1)
-          toggleInspect3D()
-        }}
-        className="btn-gold !text-[11px] !py-1 !px-3"
-      >
-        Inspect Fullscreen 3D
-      </button>
+    <div className="relative h-40 w-full rounded-xl bg-gradient-to-br from-[#19140c] via-[#090d16] to-[#0f172a] border border-gold/25 overflow-hidden flex flex-col justify-between p-4">
+      <div className="flex justify-between items-center z-10">
+        <span className="px-2.5 py-0.5 rounded-full bg-gold/15 border border-gold/40 font-mono text-[9.5px] text-gold">
+          CREATIVE WEBGL EXPERIMENT
+        </span>
+        <span className="font-mono text-[10px] text-gold">GLSL Shaders</span>
+      </div>
+      <div className="my-auto text-center font-display text-lg font-bold text-gold tracking-wide">
+        26,400+ Spatial Morph Segments
+      </div>
+      <div className="font-mono text-[9.5px] text-mist flex justify-between">
+        <span>Core ↔ Portrait ↔ CV ↔ Brain</span>
+        <span className="text-gold">Three.js + Postprocessing</span>
+      </div>
     </div>
   )
 }
 
 export default function ProjectsView() {
-  const { setActiveCaseStudy, setManualProgress, toggleInspect3D } = useSceneStore()
-  const [activeCategory, setActiveCategory] = useState<FilterCategory>('All Projects')
+  const { setActiveCaseStudy, toggleInspect3D } = useSceneStore()
+  const [selectedCategory, setSelectedCategory] = useState('All Projects')
   const [activeIndex, setActiveIndex] = useState(0)
-  const [liveModeId, setLiveModeId] = useState<CoverflowProject['id'] | null>(null)
-  const [viewportWidth, setViewportWidth] = useState(
-    typeof window !== 'undefined' ? window.innerWidth : 1280
-  )
+  const [liveSimId, setLiveSimId] = useState<string | null>(null)
+  const [dragStartX, setDragStartX] = useState<number | null>(null)
 
-  useEffect(() => {
-    const onResize = () => setViewportWidth(window.innerWidth)
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
-  }, [])
+  const filteredItems =
+    selectedCategory === 'All Projects'
+      ? CAROUSEL_ITEMS
+      : CAROUSEL_ITEMS.filter((item) => item.category === selectedCategory)
 
-  const filteredProjects = CAROUSEL_PROJECTS.filter((p) =>
-    p.categories.includes(activeCategory)
-  )
-
-  useEffect(() => {
-    setActiveIndex(0)
-    setLiveModeId(null)
-  }, [activeCategory])
-
-  const count = filteredProjects.length
-
-  const handleNext = useCallback(() => {
-    if (count <= 1) return
-    setActiveIndex((prev) => (prev + 1) % count)
-  }, [count])
+  const safeIndex = activeIndex % Math.max(1, filteredItems.length)
 
   const handlePrev = useCallback(() => {
-    if (count <= 1) return
-    setActiveIndex((prev) => (prev - 1 + count) % count)
-  }, [count])
+    setLiveSimId(null)
+    setActiveIndex((prev) => (prev - 1 + filteredItems.length) % filteredItems.length)
+  }, [filteredItems.length])
+
+  const handleNext = useCallback(() => {
+    setLiveSimId(null)
+    setActiveIndex((prev) => (prev + 1) % filteredItems.length)
+  }, [filteredItems.length])
 
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') handleNext()
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') handlePrev()
+      if (e.key === 'ArrowRight') handleNext()
     }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [handleNext, handlePrev])
-
-  // Symmetric signed circular offset
-  const getSignedOffset = (index: number) => {
-    if (count <= 1) return 0
-    let diff = index - activeIndex
-    const half = Math.floor(count / 2)
-    if (diff > half) diff -= count
-    if (diff < -half) diff += count
-    return diff
-  }
-
-  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    const swipeThreshold = 45
-    if (info.offset.x < -swipeThreshold || info.velocity.x < -300) {
-      handleNext()
-    } else if (info.offset.x > swipeThreshold || info.velocity.x > 300) {
-      handlePrev()
-    }
-  }
-
-  const isMobile = viewportWidth < 768
-  const xStride = isMobile ? 240 : 340
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [handlePrev, handleNext])
 
   return (
-    <div
-      className="h-screen w-full max-w-[1340px] mx-auto px-4 sm:px-8 pt-20 pb-4 flex flex-col justify-between overflow-hidden pointer-events-auto select-none"
-      role="region"
-      aria-roledescription="carousel"
-      aria-label="AI, Machine Learning and Computer Vision Projects"
-    >
-      {/* 1. COMPACT HEADER & FILTER PILLS */}
-      <div className="text-center space-y-1.5 z-20">
-        <div className="mono-label text-gold !text-[10px]">02 // PROJECTS</div>
-        <h1 className="font-display text-2xl sm:text-4xl font-semibold tracking-tight text-pure">
-          AI, Machine Learning & Computer Vision Projects
+    <div className="h-screen max-w-[1380px] mx-auto px-4 sm:px-8 pt-20 pb-8 flex flex-col justify-between overflow-hidden pointer-events-none select-none">
+      {/* 1. Header & Category Filter Pills */}
+      <div className="text-center space-y-2.5 pointer-events-auto">
+        <div className="mono-label text-gold">// 02 // PROJECTS ARCHIVE</div>
+        <h1 className="font-display text-2xl sm:text-4xl font-bold text-pure tracking-tight">
+          AI, Machine Learning &amp; Computer Vision Projects
         </h1>
-        <p className="text-mist text-xs max-w-xl mx-auto">
-          Real-world AI/ML systems built for impact — swipe to explore my work.
+        <p className="text-xs text-mist max-w-xl mx-auto">
+          End-to-end production AI/ML systems built with verifiable architectures — swipe or use arrow keys to explore.
         </p>
 
-        <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1" role="tablist">
-          {FILTER_TABS.map((tab) => {
-            const active = activeCategory === tab
-            return (
-              <button
-                key={tab}
-                role="tab"
-                aria-selected={active}
-                onClick={() => setActiveCategory(tab)}
-                className={`px-3.5 py-1 rounded-full text-[11px] font-medium transition-all ${
-                  active
-                    ? 'bg-gold/20 text-gold border border-gold shadow-gold-glow'
-                    : 'bg-obsidian/70 text-mist border border-gold/20 hover:border-gold/45 hover:text-pure'
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => {
+                setSelectedCategory(cat)
+                setActiveIndex(0)
+                setLiveSimId(null)
+              }}
+              className={`px-3.5 py-1 rounded-full font-mono text-[11px] border transition-all ${selectedCategory === cat
+                ? 'bg-gold/20 border-gold text-gold shadow-gold-glow font-semibold'
+                : 'bg-obsidian/70 border-gold/20 text-mist hover:text-pure hover:border-gold/45'
                 }`}
-              >
-                {tab}
-              </button>
-            )
-          })}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* 2. 3D COVERFLOW STAGE (No CSS filter on 3D children so preserve-3d works flawlessly) */}
-      <div className="relative w-full h-[405px] sm:h-[425px] flex items-center justify-center">
-        {/* Left Navigation Arrow */}
-        {count > 1 && (
-          <button
-            onClick={handlePrev}
-            aria-label="Previous project"
-            className="absolute left-1 sm:left-4 z-40 w-10 h-10 rounded-full glass-panel border border-gold/50 flex items-center justify-center text-gold hover:bg-gold/20 hover:scale-105 active:scale-95 transition-all shadow-gold-glow"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-        )}
+      {/* 2. 3D Coverflow Carousel Stage */}
+      <div
+        className="relative flex-1 flex items-center justify-center my-2 pointer-events-auto"
+        onMouseDown={(e) => setDragStartX(e.clientX)}
+        onMouseUp={(e) => {
+          if (dragStartX !== null) {
+            const delta = e.clientX - dragStartX
+            if (delta > 50) handlePrev()
+            else if (delta < -50) handleNext()
+            setDragStartX(null)
+          }
+        }}
+      >
+        {/* Left / Right Carousel Arrow Buttons */}
+        <button
+          type="button"
+          onClick={handlePrev}
+          className="absolute left-2 sm:left-6 z-40 w-10 h-10 rounded-full glass-panel border border-gold/40 flex items-center justify-center text-gold hover:bg-gold hover:text-space transition-all shadow-gold-glow"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
 
-        <div className="relative w-full h-full flex items-center justify-center">
-          <AnimatePresence initial={false}>
-            {filteredProjects.map((project, idx) => {
-              const offset = getSignedOffset(idx)
-              const absOffset = Math.abs(offset)
-              const isActive = offset === 0
-              const isLive = liveModeId === project.id
+        <button
+          type="button"
+          onClick={handleNext}
+          className="absolute right-2 sm:right-6 z-40 w-10 h-10 rounded-full glass-panel border border-gold/40 flex items-center justify-center text-gold hover:bg-gold hover:text-space transition-all shadow-gold-glow"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
 
-              if (absOffset > 2) return null
+        <div className="relative w-full max-w-[540px] h-[430px] flex items-center justify-center">
+          {filteredItems.map((item, idx) => {
+            let offset = idx - safeIndex
+            const total = filteredItems.length
+            if (offset > total / 2) offset -= total
+            if (offset < -total / 2) offset += total
 
-              const translateX = offset * xStride
-              const rotateY = isActive ? 0 : offset < 0 ? 22 : -22
-              const scale = isActive ? 1 : absOffset === 1 ? 0.84 : 0.72
-              const opacity = isActive ? 1 : absOffset === 1 ? 0.72 : 0.35
-              const zIndex = 30 - absOffset * 10
+            const isCenter = offset === 0
+            const isVisible = Math.abs(offset) <= 1
 
-              return (
-                <motion.article
-                  key={project.id}
-                  role="group"
-                  aria-roledescription="slide"
-                  aria-label={`${idx + 1} of ${count}: ${project.title}`}
-                  aria-hidden={!isActive}
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.18}
-                  onDragEnd={handleDragEnd}
-                  onClick={() => {
-                    if (!isActive) setActiveIndex(idx)
-                  }}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{
-                    x: translateX,
-                    rotateY,
-                    scale,
-                    opacity,
-                    zIndex,
-                  }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{
-                    type: 'spring',
-                    stiffness: 250,
-                    damping: 28,
-                    mass: 0.9,
-                  }}
-                  style={{
-                    transformPerspective: 1200,
-                  }}
-                  className={`group absolute w-[min(88vw,450px)] rounded-2xl p-4 sm:p-5 transition-colors ${
-                    isActive
-                      ? 'bg-[#0c1322]/95 backdrop-blur-xl border-2 border-gold shadow-[0_0_55px_rgba(234,183,103,0.32)] cursor-grab active:cursor-grabbing'
-                      : 'bg-[#090e1a]/90 border border-gold/30 cursor-pointer hover:border-gold/55 shadow-2xl'
+            if (!isVisible) return null
+
+            return (
+              <motion.div
+                key={item.id}
+                initial={false}
+                animate={{
+                  x: offset * 340,
+                  scale: isCenter ? 1 : 0.84,
+                  opacity: isCenter ? 1 : 0.42,
+                  rotateY: offset * -18,
+                  zIndex: isCenter ? 30 : 10,
+                }}
+                transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+                onClick={() => {
+                  if (!isCenter) {
+                    setLiveSimId(null)
+                    setActiveIndex(idx)
+                  }
+                }}
+                className={`absolute w-full rounded-2xl p-5 flex flex-col justify-between transition-colors ${isCenter
+                  ? 'bg-[#0b111e]/95 backdrop-blur-xl border-2 border-gold shadow-[0_20px_65px_rgba(0,0,0,0.85),0_0_40px_rgba(234,183,103,0.2)]'
+                  : 'bg-[#090d16]/85 border border-gold/25 cursor-pointer hover:border-gold/50'
                   }`}
-                >
-                  {/* Visual Header */}
-                  <div className="relative mb-3">
-                    {project.featured && (
-                      <div className="absolute top-2.5 left-2.5 z-20 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-gradient-to-r from-[#F7D9A0] to-[#EAB767] text-space font-mono text-[9px] font-semibold uppercase tracking-wider shadow">
-                        <Star className="w-2.5 h-2.5 fill-space" />
-                        <span>FEATURED</span>
-                      </div>
-                    )}
-
-                    {isActive && (
+                style={{ minHeight: '420px' }}
+              >
+                {liveSimId === item.id && isCenter ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-gold/25 pb-2">
+                      <span className="font-mono text-[10px] text-gold uppercase">
+                        ▶ Live Interactive Simulator // {item.title}
+                      </span>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation()
-                          setLiveModeId(isLive ? null : project.id)
+                          setLiveSimId(null)
                         }}
-                        className={`absolute top-2.5 right-11 z-20 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-mono text-[9px] uppercase tracking-wider border transition-all ${
-                          isLive
-                            ? 'bg-gold text-space border-gold font-semibold shadow-gold-glow'
-                            : 'bg-space/85 text-gold border-gold/45 hover:bg-gold/15'
-                        }`}
+                        className="font-mono text-xs text-gold hover:underline"
                       >
-                        <Play className="w-2.5 h-2.5 fill-current" />
-                        <span>{isLive ? 'Exit Live' : 'Live Mode'}</span>
+                        ✕ Close Demo
                       </button>
-                    )}
-
-                    {isActive && isLive ? (
-                      <InlineLiveSimulator id={project.id} />
-                    ) : (
-                      <ProjectVisualBanner project={project} isActive={isActive} />
-                    )}
-                  </div>
-
-                  {/* Domain & Title */}
-                  <div className="space-y-1">
-                    <div className="font-mono text-[9px] tracking-[2px] uppercase text-gold">
-                      {project.indexLabel} // {project.domainLabel}
                     </div>
-                    <h2 className="font-display text-lg sm:text-xl font-semibold text-pure leading-snug">
-                      {project.title}
-                    </h2>
-                    <p className="text-xs text-mist leading-relaxed line-clamp-2">
-                      {project.description}
-                    </p>
+                    {item.id === 'disaster-nlp' && <DisasterNlpSim />}
+                    {item.id === 'agrodetect' && <AgroDetectSim />}
+                    {item.id === 'face-attendance' && <FaceAttendanceSim />}
                   </div>
+                ) : (
+                  <>
+                    <div className="space-y-3">
+                      <ProjectBannerArtwork id={item.id} />
 
-                  {/* Tech Tags */}
-                  <div className="flex flex-wrap gap-1.5 my-2.5">
-                    {project.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="font-mono text-[9px] px-2 py-0.5 rounded bg-obsidian/90 border border-gold/25 text-pure"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Key Metrics Row (Active Card) */}
-                  {isActive && (
-                    <div className="grid grid-cols-3 gap-2 py-2.5 mb-3 border-y border-gold/20">
-                      {project.stats.map((st, i) => (
-                        <div key={i} className="flex items-center gap-1.5">
-                          <div className="w-6 h-6 rounded-md bg-gold/10 border border-gold/30 flex items-center justify-center text-gold shrink-0">
-                            {st.icon === 'db' && <Database className="w-3 h-3" />}
-                            {st.icon === 'target' && <Target className="w-3 h-3" />}
-                            {st.icon === 'zap' && <Zap className="w-3 h-3" />}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="font-display text-xs font-semibold text-pure truncate">
-                              {st.value}
-                            </div>
-                            <div className="font-mono text-[8px] text-mist truncate">{st.label}</div>
-                          </div>
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="font-mono text-[10px] text-gold uppercase tracking-wider">
+                          {item.index} // {item.category} · {item.subtitle}
                         </div>
-                      ))}
+                      </div>
+
+                      <h2 className="font-display text-xl sm:text-2xl font-bold text-pure leading-tight">
+                        {item.title}
+                      </h2>
+
+                      <p className="text-xs text-mist leading-relaxed">
+                        {item.tagline}
+                      </p>
+
+                      {/* Complete CV Tech Stack Pills */}
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {item.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2 py-0.5 rounded-md bg-obsidian/90 border border-gold/25 font-mono text-[9.5px] text-pure"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  )}
 
-                  {/* Card Actions */}
-                  <div className="flex items-center gap-2.5">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        if (project.id === 'core-morph') {
-                          setManualProgress(1)
-                          toggleInspect3D()
-                        } else if (project.id === 'rag-engine') {
-                          setActiveCaseStudy('disaster-nlp')
-                        } else {
-                          setActiveCaseStudy(project.id)
-                        }
-                      }}
-                      className="btn-gold !py-1.5 !px-3.5 !text-xs flex items-center gap-1.5"
-                    >
-                      <span>{project.id === 'core-morph' ? 'Inspect 3D Core' : 'View Case Study'}</span>
-                      <ArrowUpRight className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Metrics & Action Buttons */}
+                    <div className="space-y-3 pt-3 mt-2 border-t border-gold/15">
+                      <div className="grid grid-cols-3 gap-2">
+                        {item.metrics.map((m, mIdx) => (
+                          <div
+                            key={mIdx}
+                            className="px-2.5 py-1.5 rounded-lg bg-space/80 border border-gold/15"
+                          >
+                            <div className="font-display text-xs font-bold text-gold">
+                              {m.value}
+                            </div>
+                            <div className="font-mono text-[9px] text-mist">{m.label}</div>
+                          </div>
+                        ))}
+                      </div>
 
-                    <a
-                      href={project.githubUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="btn-ghost-gold !py-1.5 !px-3.5 !text-xs flex items-center gap-1.5"
-                    >
-                      <Github className="w-3.5 h-3.5" />
-                      <span>GitHub</span>
-                    </a>
-                  </div>
-                </motion.article>
-              )
-            })}
-          </AnimatePresence>
-        </div>
+                      <div className="flex items-center justify-between gap-2">
+                        {item.isExperiment ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleInspect3D()
+                            }}
+                            className="btn-gold !py-2 !px-4 !text-xs flex-1 flex items-center justify-center gap-1.5"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Inspect 3D Core Live</span>
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setActiveCaseStudy(item.id)
+                              }}
+                              className="btn-gold !py-2 !px-4 !text-xs flex-1 flex items-center justify-center gap-1.5"
+                            >
+                              <span>View Case Study</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </button>
 
-        {/* Right Navigation Arrow */}
-        {count > 1 && (
-          <button
-            onClick={handleNext}
-            aria-label="Next project"
-            className="absolute right-1 sm:right-4 z-40 w-10 h-10 rounded-full glass-panel border border-gold/50 flex items-center justify-center text-gold hover:bg-gold/20 hover:scale-105 active:scale-95 transition-all shadow-gold-glow"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        )}
-      </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setLiveSimId(item.id)
+                              }}
+                              className="px-3 py-2 rounded-xl bg-gold/15 hover:bg-gold/25 border border-gold/45 font-mono text-[10.5px] text-gold flex items-center gap-1 transition-colors"
+                            >
+                              <Play className="w-3 h-3 fill-gold" />
+                              <span>Live Mode</span>
+                            </button>
+                          </>
+                        )}
 
-      {/* 3. PAGINATION DOTS & TECH STACK DOCK (Visible at the bottom of the screen) */}
-      <div className="space-y-2.5 z-20 max-w-4xl mx-auto w-full">
-        <div className="flex items-center justify-center gap-2" role="tablist">
-          {filteredProjects.map((proj, idx) => {
-            const active = idx === activeIndex
-            return (
-              <button
-                key={proj.id}
-                onClick={() => setActiveIndex(idx)}
-                aria-label={`Go to ${proj.title}`}
-                aria-selected={active}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  active ? 'w-6 bg-gold shadow-gold-glow' : 'w-2 bg-gold/25 hover:bg-gold/50'
-                }`}
-              />
+                        <a
+                          href={item.githubUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="px-3 py-2 rounded-xl bg-obsidian hover:border-gold border border-gold/25 font-mono text-[10.5px] text-pure flex items-center gap-1.5 transition-colors"
+                        >
+                          <Github className="w-3.5 h-3.5 text-gold" />
+                          <span>GitHub</span>
+                        </a>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </motion.div>
             )
           })}
         </div>
+      </div>
 
-        <div className="glass-panel rounded-2xl px-5 py-2.5 flex flex-col md:flex-row items-center justify-between gap-3 border border-gold/25">
-          <div className="flex items-center gap-2.5 pr-4 md:border-r border-gold/20">
-            <div className="w-8 h-8 rounded-lg bg-gold/10 border border-gold/30 flex items-center justify-center text-gold">
-              <Layers className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="font-display text-xs font-semibold text-pure">Tech Stack</div>
-              <div className="font-mono text-[9px] text-mist">Used Across Projects</div>
-            </div>
+      {/* 3. Pagination Dots & Complete CV Tech Stack Footer */}
+      <div className="space-y-3 pointer-events-auto">
+        <div className="flex items-center justify-center gap-2">
+          {filteredItems.map((it, idx) => (
+            <button
+              key={it.id}
+              type="button"
+              onClick={() => {
+                setLiveSimId(null)
+                setActiveIndex(idx)
+              }}
+              className={`h-2 rounded-full transition-all ${idx === safeIndex ? 'w-7 bg-gold shadow-gold-glow' : 'w-2 bg-gold/30 hover:bg-gold/60'
+                }`}
+            />
+          ))}
+        </div>
+
+        <div className="max-w-4xl mx-auto glass-panel rounded-2xl px-5 py-2.5 border border-gold/25 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <Layers className="w-4 h-4 text-gold" />
+            <span className="font-mono text-[10px] uppercase tracking-wider text-pure">
+              Production Stack Across Flagship Projects:
+            </span>
           </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
-            {TECH_STACK_DOCK.map((tech) => (
-              <div key={tech.name} className="flex items-center gap-1.5 group cursor-default">
-                <div
-                  className="w-6 h-6 rounded-md flex items-center justify-center font-mono text-[9px] font-semibold text-pure border border-gold/25 group-hover:border-gold transition-colors"
-                  style={{ backgroundColor: `${tech.color}30` }}
-                >
-                  {tech.badge}
-                </div>
-                <span className="font-mono text-[10px] text-mist group-hover:text-pure transition-colors">
-                  {tech.name}
-                </span>
-              </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {[
+              'Python',
+              'TensorFlow',
+              'Keras',
+              'Scikit-learn',
+              'OpenCV',
+              'face_recognition',
+              'BERTopic',
+              'LDA',
+              'spaCy',
+              'UMAP',
+              'HDBSCAN',
+              'FAISS',
+              'FastAPI',
+              'Flask',
+              'Streamlit',
+              'Plotly',
+              'SQLite',
+            ].map((tech) => (
+              <span
+                key={tech}
+                className="px-2 py-0.5 rounded bg-obsidian/90 border border-gold/20 font-mono text-[9.5px] text-mist"
+              >
+                {tech}
+              </span>
             ))}
           </div>
         </div>

@@ -1,35 +1,60 @@
-export interface ProjectCaseStudy {
-  id: 'disaster-nlp' | 'face-attendance' | 'agrodetect'
+export interface ProjectItem {
+  id: string
   index: string
   title: string
-  category: string
+  subtitle: string
+  period: string
+  category: 'NLP' | 'Computer Vision' | 'Deep Learning' | 'Full-Stack' | 'Experiments'
   featured?: boolean
   tagline: string
-  summary: string
-  metrics: string
-  tags: string[]
-  githubUrl: string
-  liveUrl: string
   problem: string
   objectives: string[]
-  architecture: string[]
   workflow: string[]
   features: string[]
   outcomes: string[]
-  stats?: { value: string; label: string }[]
+  tags: string[]
+  metrics: { value: string; label: string }[]
+  githubUrl: string
+}
+
+export interface CertificateItem {
+  id: string
+  title: string
+  issuer: string
+  date: string
+  category: 'Specialization' | 'AI & GenAI' | 'Software & CS' | 'Leadership'
+  badgeText: string
+  subCourses?: string[]
+  credentialId: string
+  verifyUrl: string
+  pdfFile?: string
+}
+
+export const PROFILE_DATA = {
+  name: 'Gorrela Sai Maneesh',
+  role: 'AI / ML Engineer',
+  subRoles: ['Software Developer', 'Computer Vision', 'NLP'],
+  email: 'ssai68352@gmail.com',
+  phone: '+91 6281433838',
+  linkedin: 'https://linkedin.com/in/sai-maneesh',
+  linkedinLabel: 'linkedin.com/in/sai-maneesh',
+  github: 'https://github.com/Saimaneesh13',
+  githubLabel: 'github.com/Saimaneesh13',
+  location: 'Punjab, India',
+  bio: 'I build intelligent systems that transform complex real-world problems into meaningful solutions, with a focus on Machine Learning, Computer Vision, and Natural Language Processing.',
 }
 
 export const PERSONAL_BRAND = {
   logo: 'M.',
-  name: 'Gorrela Sai Maneesh',
+  name: PROFILE_DATA.name,
   role: 'AI / ML ENGINEER · SOFTWARE DEVELOPER',
   headline: 'Intelligence. Engineered with precision.',
   subheadline: 'Building intelligent systems that turn complex problems into meaningful solutions.',
-  bio: 'Gorrela Sai Maneesh is an AI and Machine Learning engineer and software developer. He is a B.Tech Computer Science student at Lovely Professional University, and completed a Machine Learning internship at EduExpose, where he received the Best Award for outstanding, result-oriented performance. He builds systems in NLP, computer vision and deep learning, including an AI-based disaster intelligence system, a face recognition attendance system and a crop disease detector with over 90% accuracy.',
-  email: 'ssai68352@gmail.com',
-  github: 'https://github.com/Saimaneesh13',
-  linkedin: 'https://linkedin.com/in/sai-maneesh',
-  phone: '+91 6281433838',
+  bio: PROFILE_DATA.bio,
+  email: PROFILE_DATA.email,
+  github: PROFILE_DATA.github,
+  linkedin: PROFILE_DATA.linkedin,
+  phone: PROFILE_DATA.phone,
   availability: 'Available for AI/ML Engineering Roles & High-Impact Internships',
   proofBadges: [
     'BERTopic & Unsupervised NLP',
@@ -38,237 +63,291 @@ export const PERSONAL_BRAND = {
   ],
 }
 
-export const PROJECTS: ProjectCaseStudy[] = [
+export const INTERNSHIP_DATA = {
+  company: 'EduExpose',
+  role: 'Machine Learning Intern',
+  period: 'Dec 2025 – Feb 2026',
+  award: 'Best Internship Performance Award',
+  bullets: [
+    'Completed a 3-month applied Machine Learning internship covering the full model lifecycle: development, evaluation, and optimization on real-world datasets.',
+    'Implemented and compared supervised and unsupervised algorithms for predictive modeling and pattern discovery tasks.',
+    'Practiced feature engineering, cross-validation, and hyperparameter tuning to improve model performance using Python and standard ML frameworks.',
+  ],
+  skillsUsed: ['Python', 'Scikit-learn', 'Pandas', 'NumPy', 'Feature Engineering', 'Cross-Validation', 'Hyperparameter Tuning'],
+}
+
+export const EDUCATION_DATA = [
+  {
+    institution: 'Lovely Professional University',
+    degree: 'Bachelor of Technology – Computer Science and Engineering (AI & ML)',
+    location: 'Punjab, India',
+    period: 'Aug 2023 – Present',
+    highlight: 'Specialization in Artificial Intelligence & Machine Learning (Expected Graduation: 2027)',
+  },
+  {
+    institution: 'Narayana Junior College',
+    degree: 'Intermediate – PCM (Physics, Chemistry, Mathematics)',
+    location: 'Bhimavaram, Andhra Pradesh',
+    period: 'Apr 2021 – Mar 2023',
+    highlight: 'Strong foundation in Mathematics, Physics, and Analytical Problem Solving',
+  },
+]
+
+export const CERTIFICATES: CertificateItem[] = [
+  {
+    id: 'uccs-cpp-unreal',
+    title: 'C++ Programming for Unreal Game Development',
+    issuer: 'University of Colorado, Colorado Springs (Coursera)',
+    date: 'Aug 2026',
+    category: 'Specialization',
+    badgeText: '4-Course Specialization',
+    subCourses: [
+      'Introduction to C++ Programming and Unreal',
+      'More C++ Programming and Unreal',
+      'C++ Class Development',
+      'Intermediate Object-Oriented Programming for Unreal Games',
+    ],
+    credentialId: '6CKH9NBP3Y44',
+    verifyUrl: 'https://coursera.org/verify/specialization/6CKH9NBP3Y44',
+  },
+  {
+    id: 'uccs-comp-comm',
+    title: 'Computer Communications Specialization',
+    issuer: 'University of Colorado, Colorado Springs (Coursera)',
+    date: 'Nov 2024',
+    category: 'Specialization',
+    badgeText: '4-Course Specialization',
+    subCourses: [
+      'Fundamentals of Network Communication',
+      'Peer-to-Peer Protocols and Local Area Networks',
+      'Packet Switching Networks and Algorithms',
+      'TCP/IP and Advanced Topics',
+    ],
+    credentialId: '5R8NT46SNG9B',
+    verifyUrl: 'https://coursera.org/verify/specialization/5R8NT46SNG9B',
+  },
+  {
+    id: 'rice-leadership',
+    title: 'Interpersonal Communication for Engineering Leaders',
+    issuer: 'Rice University (Coursera)',
+    date: 'Apr 2026',
+    category: 'Leadership',
+    badgeText: 'Engineering Leadership',
+    credentialId: 'UJH6O27C31UN',
+    verifyUrl: 'https://coursera.org/verify/UJH6O27C31UN',
+  },
+  {
+    id: 'infosys-automata',
+    title: 'Computational Theory: Language Principle & Finite Automata Theory',
+    issuer: 'Infosys Springboard',
+    date: 'Aug 2025',
+    category: 'Software & CS',
+    badgeText: 'Core CS Theory',
+    credentialId: '1-7330e47a-95d0-4a8d-9c72-15ef019a783d',
+    verifyUrl: 'https://verify.onwingspan.com',
+  },
+  {
+    id: 'lpu-java-maestro',
+    title: 'Java Maestro: Hands-On Training on Developing GUI Applications',
+    issuer: 'Lovely Professional University (CPE)',
+    date: 'Aug 2025',
+    category: 'Software & CS',
+    badgeText: 'JavaFX / GUI Training',
+    credentialId: 'Cert No. 409887',
+    verifyUrl: 'https://www.lpu.in',
+  },
+  {
+    id: 'udemy-master-genai',
+    title: 'Master Generative AI & Generative AI Tools (ChatGPT & more)',
+    issuer: 'Udemy (14 Hours Intensive)',
+    date: 'Aug 2025',
+    category: 'AI & GenAI',
+    badgeText: 'Generative AI',
+    credentialId: 'UC-10bcfe4c-c8bf-486d-8cf2-a54f6d8d292a',
+    verifyUrl: 'https://ude.my/UC-10bcfe4c-c8bf-486d-8cf2-a54f6d8d292a',
+  },
+  {
+    id: 'udemy-nocode-genai',
+    title: 'Build Generative AI Apps and Solutions with No-Code Tools',
+    issuer: 'Udemy (5.5 Hours)',
+    date: 'Aug 2025',
+    category: 'AI & GenAI',
+    badgeText: 'GenAI Apps',
+    credentialId: 'UC-cb359704-b772-4602-b7c9-ae2f554b81d5',
+    verifyUrl: 'https://ude.my/UC-cb359704-b772-4602-b7c9-ae2f554b81d5',
+  },
+  {
+    id: 'udemy-chatgpt-essentials',
+    title: 'ChatGPT Made Easy: AI Essentials for Beginners',
+    issuer: 'Udemy',
+    date: 'Aug 2025',
+    category: 'AI & GenAI',
+    badgeText: 'AI Essentials',
+    credentialId: 'UC-770a75f9-d468-4079-81e9-f81c18afb742',
+    verifyUrl: 'https://ude.my/UC-770a75f9-d468-4079-81e9-f81c18afb742',
+  },
+  {
+    id: 'cu-network-fundamentals',
+    title: 'Fundamentals of Network Communication',
+    issuer: 'University of Colorado System (Coursera)',
+    date: 'Sep 2024',
+    category: 'Software & CS',
+    badgeText: 'TCP/IP & Networks',
+    credentialId: 'AD15N8E9TIPG',
+    verifyUrl: 'https://coursera.org/verify/AD15N8E9TIPG',
+  },
+]
+
+export const PROJECTS: ProjectItem[] = [
   {
     id: 'disaster-nlp',
     index: '01',
     title: 'AI-Based Disaster Intelligence System',
-    category: 'Unsupervised NLP & Crisis Triage',
+    subtitle: 'Unsupervised NLP Topic Discovery & Urgency Classification',
+    period: 'Apr 2026 – May 2026',
+    category: 'NLP',
     featured: true,
-    tagline: 'Unsupervised topic discovery and real-time urgency classification for crisis response.',
-    summary: 'Extracts actionable intelligence from noisy, unlabeled emergency feeds using transformer embeddings, UMAP dimensionality reduction, HDBSCAN clustering, and BERTopic.',
-    metrics: 'Zero-Shot Topic Discovery · Real-Time Urgency Triage',
-    tags: ['Unsupervised NLP', 'BERTopic', 'LDA', 'UMAP', 'HDBSCAN', 'Python', 'Plotly'],
-    githubUrl: 'https://github.com/Saimaneesh13',
-    liveUrl: '#case-study',
-    problem: 'During natural disasters, emergency response teams are overwhelmed by thousands of unstructured social media posts and distress messages. Manual triage is too slow, and supervised models fail when encountering unseen crisis types.',
+    tagline:
+      'Hybrid BERTopic + LDA crisis intelligence pipeline with Sentence-Transformers, UMAP, HDBSCAN, FAISS, FastAPI, and Streamlit.',
+    problem:
+      'Emergency response centers are flooded with unstructured crisis messages during disasters. Traditional keyword filters fail to discover emerging hazard categories or prioritize life-critical dispatches without pre-labeled training data.',
     objectives: [
-      'Discover evolving crisis themes automatically without pre-labeled training sets.',
-      'Compress high-dimensional semantic embeddings while preserving local cluster structure.',
-      'Classify distress reports into actionable urgency tiers (CRITICAL, HIGH, MODERATE).',
-    ],
-    architecture: [
-      'Data Ingestion',
-      'Text Preprocessing',
-      'Sentence Embeddings',
-      'UMAP Projection',
-      'HDBSCAN Clustering',
-      'BERTopic + Urgency Triage',
-      'Interactive Visualization',
+      'Discover latent disaster topics automatically from unstructured crisis feeds using a hybrid BERTopic + LDA pipeline.',
+      'Combine Sentence-Transformer semantic embeddings with UMAP dimensionality reduction, HDBSCAN density clustering, and FAISS vector search.',
+      'Expose real-time urgency classification via a FastAPI service and an interactive Streamlit + Plotly analytics dashboard.',
     ],
     workflow: [
-      'Ingest raw crisis streams and strip URLs, noise tokens, and duplicate retweets.',
-      'Generate dense semantic vectors using pre-trained transformer sentence embeddings.',
-      'Reduce embedding dimensionality via UMAP and group dense regions with HDBSCAN.',
-      'Extract coherent c-TF-IDF topic representations with BERTopic and score urgency.',
+      'Ingest and preprocess unstructured crisis text streams using Python, spaCy, and Pandas.',
+      'Generate dense semantic vectors via Sentence-Transformers and index with FAISS for rapid similarity lookup.',
+      'Reduce manifold dimensionality with UMAP and group noise-resilient clusters via HDBSCAN.',
+      'Extract interpretable disaster topics using hybrid BERTopic + LDA modeling and score report severity via the urgency engine.',
     ],
     features: [
-      'Dynamic topic modeling comparing BERTopic against baseline LDA.',
-      'Noise-aware density clustering via HDBSCAN that isolates outlier spam.',
-      'Interactive 2D UMAP cluster maps and urgency heatmaps built with Plotly.',
+      'Hybrid BERTopic + LDA Unsupervised Topic Discovery with UMAP & HDBSCAN.',
+      'Real-Time Urgency Intelligence Engine classifying reports into Critical, High, and Informational tiers.',
+      'Interactive Streamlit + Plotly visual analytics dashboard backed by a programmatic FastAPI inference service.',
     ],
     outcomes: [
-      'Successfully separated critical rescue requests from general news chatter without labeled supervision.',
-      'Demonstrated superior topic coherence scores on short crisis texts using BERTopic over LDA.',
+      'Processed 81,187+ unstructured disaster tweets into 20 coherent crisis topics without manual labels.',
+      'Enabled faster triage of high-impact emergency events with automated 3-tier severity prioritization.',
     ],
-    stats: [
-      { value: '81,187', label: 'Tweets Processed' },
+    tags: [
+      'Python',
+      'BERTopic',
+      'LDA',
+      'spaCy',
+      'Sentence-Transformers',
+      'UMAP',
+      'HDBSCAN',
+      'FAISS',
+      'Streamlit',
+      'FastAPI',
+      'Plotly',
+      'Pandas',
+    ],
+    metrics: [
+      { value: '81K+', label: 'Tweets Processed' },
       { value: '20', label: 'Disaster Topics' },
-      { value: '3 Tiers', label: 'Urgency Levels' },
-      { value: 'Real-time', label: 'Insights' },
+      { value: 'Real-time', label: 'Urgency Triage' },
     ],
+    githubUrl: 'https://github.com/Saimaneesh13',
   },
   {
     id: 'face-attendance',
     index: '02',
     title: 'Face Recognition Attendance System',
-    category: 'Computer Vision & Full-Stack Automation',
-    featured: false,
-    tagline: 'Real-time biometric face verification pipeline backed by Flask and SQLite.',
-    summary: 'Automates classroom and workplace attendance logging by detecting faces in live video streams, computing 128-D facial encodings, and writing verified timestamps to SQLite.',
-    metrics: 'Sub-100ms Frame Matching · Automated SQLite Audit Logs',
-    tags: ['OpenCV', 'Flask', 'SQLite', 'Python', 'Real-time Recognition'],
-    githubUrl: 'https://github.com/Saimaneesh13',
-    liveUrl: '#case-study',
-    problem: 'Manual roll calls and RFID cards are slow and prone to proxy attendance. Organizations need a contactless, real-time biometric verification pipeline that runs reliably on standard hardware.',
+    subtitle: 'Real-Time Computer Vision Attendance Automation',
+    period: 'Feb 2026 – Mar 2026',
+    category: 'Computer Vision',
+    featured: true,
+    tagline:
+      'Real-time webcam face detection and 128-D biometric encoding matcher built with Flask, OpenCV, face_recognition, SQLite, and Bootstrap 5.',
+    problem:
+      'Manual attendance logging is slow and vulnerable to proxy check-ins. Institutions need a reliable, automated biometric camera pipeline with persistent audit logs and live monitoring.',
     objectives: [
-      'Detect and align multiple faces in real-time webcam streams using OpenCV.',
-      'Match facial feature encodings against registered profiles with minimal latency.',
-      'Persist deduplicated attendance records with timestamps in a relational SQLite database.',
-    ],
-    architecture: [
-      'Video Capture (OpenCV)',
-      'Face Detection & Alignment',
-      '128-D Feature Encoding',
-      'Euclidean Distance Matcher',
-      'Flask Backend API',
-      'SQLite Attendance Ledger',
+      'Detect and match faces in real time from live webcam feeds using OpenCV and the face_recognition library.',
+      'Implement student registration with persisted 128-D face-encoding storage and automated SQLite logging.',
+      'Build a responsive Bootstrap 5 + Flask live dashboard for attendance monitoring and history review.',
     ],
     workflow: [
-      'Capture frames via OpenCV video stream and convert to normalized RGB.',
-      'Localize facial bounding boxes and extract 128-dimensional biometric embeddings.',
-      'Compare live vectors against stored embeddings within a strict tolerance threshold.',
-      'Trigger Flask endpoint to log verified user ID, confidence score, and timestamp into SQLite.',
+      'Capture live RGB video frames via OpenCV and optimize image-processing thresholds for lighting invariance.',
+      'Extract 128-D facial biometric encodings using the face_recognition library and NumPy vector operations.',
+      'Match live encodings against registered student profiles using Euclidean distance thresholds.',
+      'Log verified attendance records (name, ID, department, date, time, confidence score) into SQLite and stream to the Flask + Bootstrap 5 portal.',
     ],
     features: [
-      'Real-time bounding box overlay with live identity and confidence telemetry.',
-      'Automatic duplicate-entry prevention within configurable session windows.',
-      'Flask dashboard for exporting daily attendance reports in CSV/SQLite formats.',
+      'Student registration workflow with persisted 128-D biometric face-encoding storage.',
+      'Automated SQLite attendance ledger capturing Name, ID, Department, Date, Time, and Confidence Score.',
+      'Bootstrap 5 live administrative dashboard for real-time monitoring and historical audit review.',
     ],
     outcomes: [
-      'Achieved smooth real-time recognition on standard CPU webcams.',
-      'Eliminated manual attendance overhead with 100% automated SQLite persistence.',
+      'Eliminated manual roll-call overhead with real-time webcam identification and sub-100ms matching latency.',
+      'Improved attendance reliability through optimized image-processing and strict identification thresholds.',
     ],
-    stats: [
-      { value: '<85ms', label: 'Frame Match' },
-      { value: '128-D', label: 'Face Embeddings' },
-      { value: '99.2%', label: 'Verification Rate' },
-      { value: 'SQLite', label: 'Auto Audit Ledger' },
+    tags: [
+      'Python',
+      'Flask',
+      'OpenCV',
+      'face_recognition',
+      'NumPy',
+      'SQLite',
+      'Bootstrap 5',
     ],
+    metrics: [
+      { value: '128-D', label: 'Face Encoding' },
+      { value: 'SQLite', label: 'Automated Ledger' },
+      { value: 'Live', label: 'Bootstrap 5 Portal' },
+    ],
+    githubUrl: 'https://github.com/Saimaneesh13',
   },
   {
     id: 'agrodetect',
     index: '03',
     title: 'AgroDetect AI',
-    category: 'Deep Learning & Smart Agriculture',
-    featured: false,
-    tagline: 'Convolutional Neural Network for plant pathology detection served via FastAPI.',
-    summary: 'Diagnoses crop leaf diseases from field imagery with over 90% validation accuracy using a custom TensorFlow/Keras CNN architecture deployed behind an asynchronous FastAPI service.',
-    metrics: '90%+ Validation Accuracy · FastAPI Low-Latency Inference',
-    tags: ['CNN', 'TensorFlow', 'Keras', 'FastAPI', 'Python', 'NumPy'],
-    githubUrl: 'https://github.com/Saimaneesh13',
-    liveUrl: '#case-study',
-    problem: 'Crop diseases cause severe agricultural yield loss when identified late. Farmers often lack immediate access to plant pathologists for accurate early-stage visual diagnosis.',
+    subtitle: 'CNN-Based Crop Disease Detection System',
+    period: 'Jan 2026 – Feb 2026',
+    category: 'Deep Learning',
+    featured: true,
+    tagline:
+      'Deep TensorFlow/Keras Convolutional Neural Network achieving 90%+ foliar disease classification accuracy, served via FastAPI and Streamlit.',
+    problem:
+      'Crop diseases cause severe agricultural yield loss when diagnosed late. Farmers and agronomists need rapid, high-accuracy leaf pathology classification accessible via web and API endpoints.',
     objectives: [
-      'Train a deep Convolutional Neural Network capable of distinguishing healthy and diseased foliage.',
-      'Achieve over 90% classification accuracy across multiple plant pathology classes.',
-      'Expose the trained Keras model via a production-grade FastAPI REST endpoint.',
-    ],
-    architecture: [
-      'Leaf Image Input',
-      'Resize & Tensor Normalization',
-      'Conv2D + MaxPooling Blocks',
-      'Dense + Dropout Regularization',
-      'Softmax Probability Head',
-      'FastAPI JSON Response',
+      'Develop and train a multi-class Convolutional Neural Network (CNN) using TensorFlow and Keras achieving 90%+ accuracy.',
+      'Apply data preprocessing, augmentation, and feature-engineering pipelines with Scikit-learn and Pandas to prevent overfitting.',
+      'Expose model inference through a FastAPI backend paired with an interactive Streamlit interface for rapid testing.',
     ],
     workflow: [
-      'Apply image augmentation (rotations, flips, zoom) to prevent overfitting on leaf datasets.',
-      'Pass normalized 224x224 RGB tensors through stacked Conv2D, BatchNorm, and MaxPooling layers.',
-      'Compute class probabilities via Softmax and return top prediction with confidence.',
-      'Serve predictions through FastAPI with automated Swagger OpenAPI documentation.',
+      'Curate plant-leaf image datasets and apply OpenCV, Pandas, and Scikit-learn preprocessing & augmentation pipelines.',
+      'Train deep Conv2D, MaxPooling, BatchNormalization, and Dropout layers in TensorFlow/Keras.',
+      'Validate generalization performance across foliar disease classes to exceed 90%+ classification accuracy.',
+      'Serve the serialized Keras model behind an asynchronous FastAPI REST endpoint with a Streamlit frontend.',
     ],
     features: [
-      'Custom TensorFlow/Keras CNN architecture tuned for foliar lesion textures.',
-      ' High-throughput FastAPI inference endpoint with strict payload validation.',
-      'Actionable pathology output pairing disease classification with confidence metrics.',
+      'Custom TensorFlow/Keras CNN architecture with 90%+ validation accuracy on plant-leaf imagery.',
+      'Overfitting-resistant Scikit-learn + Pandas data augmentation and preprocessing pipeline.',
+      'Dual deployment architecture: FastAPI programmatic backend + Streamlit interactive diagnostic UI.',
     ],
     outcomes: [
-      'Surpassed 90%+ classification accuracy on held-out validation leaf imagery.',
-      'Delivered sub-second REST API inference responses ready for mobile or web integration.',
+      'Achieved 90%+ classification accuracy across healthy and diseased crop foliage categories.',
+      'Delivered instant, end-to-end pathology diagnosis from raw leaf upload to JSON confidence telemetry.',
     ],
-    stats: [
-      { value: '90%+', label: 'Validation Accuracy' },
-      { value: '38ms', label: 'FastAPI Latency' },
-      { value: '224×224', label: 'RGB Tensor Input' },
-      { value: 'Multi-class', label: 'Crop Pathology' },
+    tags: [
+      'Python',
+      'TensorFlow',
+      'Keras',
+      'Scikit-learn',
+      'OpenCV',
+      'FastAPI',
+      'Streamlit',
+      'Pandas',
+      'NumPy',
     ],
-  },
-]
-
-export const CREATIVE_EXPERIMENT = {
-  title: 'Golden Core Morph Engine',
-  category: 'Creative WebGL Experiment',
-  description: 'Custom GLSL curl-noise vertex shader and 24×24 spatial bucket mapper that transitions 26,000+ procedural neural core wire segments into a tear-free 3D wireframe portrait.',
-  tags: ['Three.js', 'GLSL Shaders', 'Spatial Hashing', 'UnrealBloom'],
-}
-
-export interface ExpertiseCategory {
-  title: string
-  description: string
-  skills: string[]
-  linkedProjectId: ProjectCaseStudy['id']
-  linkedProjectName: string
-}
-
-export const EXPERTISE_CATEGORIES: ExpertiseCategory[] = [
-  {
-    title: 'Programming',
-    description: 'Core languages for algorithmic problem solving, object-oriented systems, and relational querying.',
-    skills: ['Python', 'Java', 'SQL'],
-    linkedProjectId: 'face-attendance',
-    linkedProjectName: 'Face Recognition Attendance',
-  },
-  {
-    title: 'AI / ML',
-    description: 'End-to-end model training, deep neural network design, and statistical evaluation pipelines.',
-    skills: ['Scikit-learn', 'TensorFlow', 'Keras'],
-    linkedProjectId: 'agrodetect',
-    linkedProjectName: 'AgroDetect AI',
-  },
-  {
-    title: 'NLP',
-    description: 'Unsupervised topic modeling, semantic vector projection, and density-based clustering.',
-    skills: ['BERTopic', 'LDA', 'UMAP', 'HDBSCAN'],
-    linkedProjectId: 'disaster-nlp',
-    linkedProjectName: 'Disaster Intelligence System',
-  },
-  {
-    title: 'Computer Vision',
-    description: 'Real-time video stream processing, spatial filtering, and biometric feature extraction.',
-    skills: ['OpenCV'],
-    linkedProjectId: 'face-attendance',
-    linkedProjectName: 'Face Recognition Attendance',
-  },
-  {
-    title: 'Backend',
-    description: 'High-performance asynchronous REST APIs and model-serving microservices.',
-    skills: ['Flask', 'FastAPI', 'REST APIs'],
-    linkedProjectId: 'agrodetect',
-    linkedProjectName: 'AgroDetect AI',
-  },
-  {
-    title: 'Data & Visualization',
-    description: 'Numerical computing, dataframe engineering, and interactive analytical dashboards.',
-    skills: ['Pandas', 'NumPy', 'Plotly', 'Streamlit'],
-    linkedProjectId: 'disaster-nlp',
-    linkedProjectName: 'Disaster Intelligence System',
-  },
-]
-
-export const TIMELINE = [
-  {
-    year: '2023',
-    title: 'Started B.Tech in Computer Science & Engineering',
-    organization: 'Lovely Professional University',
-    detail: 'Focused on core computer science, data structures, algorithms, and artificial intelligence foundations.',
-  },
-  {
-    year: '2025–26',
-    title: 'Machine Learning Internship · Best Performance Award',
-    organization: 'EduExpose',
-    detail: 'Completed intensive ML engineering internship and received the Best Award for outstanding, result-oriented performance.',
-  },
-  {
-    year: '2026',
-    title: 'Engineered Production AI/ML Systems',
-    organization: 'Research & Portfolio Projects',
-    detail: 'Built the AI-Based Disaster Intelligence System (BERTopic/UMAP), AgroDetect AI (90%+ CNN), and Face Recognition Attendance System.',
-  },
-  {
-    year: '2027',
-    title: 'Expected B.Tech CSE Graduation',
-    organization: 'Lovely Professional University',
-    detail: 'Specializing in scalable Machine Learning, NLP, and Computer Vision architectures.',
+    metrics: [
+      { value: '90%+', label: 'CNN Accuracy' },
+      { value: 'FastAPI', label: 'Inference Backend' },
+      { value: 'Streamlit', label: 'Diagnostic UI' },
+    ],
+    githubUrl: 'https://github.com/Saimaneesh13',
   },
 ]
