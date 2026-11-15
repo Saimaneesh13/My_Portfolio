@@ -1,445 +1,816 @@
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Cpu,
-  FileText,
-  Camera,
   Code2,
-  Layers,
-  BarChart3,
-  Rocket,
-  Box,
-  Server,
-  Settings,
   BrainCircuit,
+  Camera,
+  FileText,
+  Server,
+  Users,
+  CheckCircle2,
+  ArrowUpRight,
+  Cpu,
+  Terminal,
+  ShieldCheck,
+  ExternalLink,
+  GitBranch,
 } from 'lucide-react'
 import { useSceneStore } from '../../store/useSceneStore'
 
-const RIGHT_TECH_GROUPS = [
+interface DomainSpec {
+  id: string
+  num: string
+  shortLabel: string
+  title: string
+  subtitle: string
+  icon: typeof BrainCircuit
+  orbitPosition: string
+  summary: string
+  capabilities: string[]
+  stack: string[]
+  proofTitle: string
+  proofMetric: string
+  projectId: 'agrodetect' | 'disaster-nlp' | 'face-attendance'
+  liveUrl: string
+}
+
+const CORE_CS_AND_TOOLS = [
+  'OOP',
+  'Data Structures',
+  'TCP/IP Networking',
+  'Finite Automata',
+  'Git & GitHub',
+  'VS Code',
+  'Jupyter',
+]
+
+const ALL_STACK_MATRIX = [
   {
-    category: 'Programming & GUI',
-    icon: Code2,
+    group: 'Languages & Core CS',
     items: [
-      { label: 'Py', bg: '#3776AB', title: 'Python' },
-      { label: 'Jv', bg: '#E76F00', title: 'Java & JavaFX' },
-      { label: 'C++', bg: '#00599C', title: 'C++ (Unreal Certified)' },
-      { label: 'SQL', bg: '#00758F', title: 'SQL & SQLite' },
-      { label: 'HTML/CSS', bg: '#E34F26', title: 'HTML5, CSS3 & Bootstrap 5' },
+      { code: 'Py', name: 'Python', color: '#38BDF8' },
+      { code: 'Jv', name: 'Java', color: '#FB923C' },
+      { code: 'C++', name: 'C++', color: '#60A5FA' },
+      { code: 'SQL', name: 'SQL / SQLite', color: '#34D399' },
+      { code: 'CS', name: 'OOP, DSA & TCP/IP', color: '#A78BFA' },
     ],
   },
   {
-    category: 'AI, ML & NLP',
-    icon: BrainCircuit,
+    group: 'AI, ML, NLP & Vision',
     items: [
-      { label: 'sk', bg: '#F7931E', title: 'Scikit-learn' },
-      { label: 'TF', bg: '#FF6F00', title: 'TensorFlow' },
-      { label: 'K', bg: '#D00000', title: 'Keras' },
-      { label: 'CV', bg: '#5C3EE8', title: 'OpenCV & face_recognition' },
-      { label: 'NLP', bg: '#059669', title: 'BERTopic, LDA, spaCy, UMAP, HDBSCAN, FAISS' },
+      { code: 'TF', name: 'TensorFlow & Keras', color: '#F97316' },
+      { code: 'sk', name: 'Scikit-learn', color: '#FBBF24' },
+      { code: 'CV', name: 'OpenCV & Face Enc.', color: '#818CF8' },
+      { code: 'NLP', name: 'BERTopic, LDA & spaCy', color: '#10B981' },
+      { code: 'Vec', name: 'UMAP, HDBSCAN & FAISS', color: '#EAB767' },
     ],
   },
   {
-    category: 'Backend & Desktop Frameworks',
-    icon: Server,
+    group: 'Backend, Data & UI',
     items: [
-      { label: 'FastAPI', bg: '#009688', title: 'FastAPI' },
-      { label: 'Flask', bg: '#334155', title: 'Flask' },
-      { label: 'REST', bg: '#475569', title: 'REST APIs' },
-      { label: 'Tk', bg: '#2563EB', title: 'Tkinter' },
-      { label: 'JvFX', bg: '#B45309', title: 'JavaFX GUI' },
+      { code: 'API', name: 'FastAPI & Flask', color: '#2DD4BF' },
+      { code: 'St', name: 'Streamlit & Plotly', color: '#FB7185' },
+      { code: 'Data', name: 'Pandas & NumPy', color: '#38BDF8' },
+      { code: 'GUI', name: 'JavaFX, Tkinter & BS5', color: '#F59E0B' },
     ],
   },
   {
-    category: 'Data & Visualization',
-    icon: BarChart3,
+    group: 'Soft Skills & Leadership',
     items: [
-      { label: 'Pd', bg: '#150458', title: 'Pandas' },
-      { label: 'Np', bg: '#013243', title: 'NumPy' },
-      { label: 'St', bg: '#FF4B4B', title: 'Streamlit' },
-      { label: 'Pl', bg: '#3F4F75', title: 'Plotly' },
-      { label: 'SQLite', bg: '#0284C7', title: 'SQLite' },
-    ],
-  },
-  {
-    category: 'Core CS, Tools & Leadership',
-    icon: Settings,
-    items: [
-      { label: 'OOP/DSA', bg: '#7C3AED', title: 'OOP & Data Structures' },
-      { label: 'TCP/IP', bg: '#0284C7', title: 'Computer Networking (TCP/IP)' },
-      { label: 'Git/GH', bg: '#F05032', title: 'Git, GitHub, VS Code, Jupyter' },
-      { label: 'Lead', bg: '#B45309', title: 'Leadership, Problem-Solving & Project Mgmt' },
+      { code: '★', name: 'Leadership', color: '#EAB767' },
+      { code: '★', name: 'Problem-Solving', color: '#EAB767' },
+      { code: '★', name: 'Communication', color: '#EAB767' },
+      { code: '★', name: 'Project Mgmt & Teamwork', color: '#EAB767' },
     ],
   },
 ]
 
-const BOTTOM_CARDS = [
-  {
-    id: 'programming',
-    title: 'Programming & Core CS',
-    icon: Code2,
-    description: 'Object-Oriented Programming, Data Structures, TCP/IP Networking, Automata Theory, and GUI apps.',
-    tags: ['Python', 'Java', 'C++', 'SQL', 'OOP & DSA', 'TCP/IP'],
-    projectTarget: 'face-attendance' as const,
-  },
+const DOMAINS: DomainSpec[] = [
   {
     id: 'ai-ml',
-    title: 'AI / Machine Learning',
+    num: '01',
+    shortLabel: 'AI / ML',
+    title: 'AI & Machine Learning',
+    subtitle: 'Deep CNNs, Supervised & Unsupervised Lifecycle',
     icon: BrainCircuit,
-    description: 'Supervised & unsupervised modeling, feature engineering, cross-validation, and deep CNN architectures.',
-    tags: ['Scikit-learn', 'TensorFlow', 'Keras', 'FastAPI', 'Streamlit'],
-    projectTarget: 'agrodetect' as const,
-  },
-  {
-    id: 'cv',
-    title: 'Computer Vision',
-    icon: Camera,
-    description: 'Real-time webcam face detection, 128-D biometric encoding matching, and plant-leaf image pipelines.',
-    tags: ['OpenCV', 'face_recognition', 'Flask', 'SQLite', 'Bootstrap 5'],
-    projectTarget: 'face-attendance' as const,
+    orbitPosition: 'top-1 left-1/2 -translate-x-1/2',
+    summary:
+      'End-to-end model development, feature engineering, cross-validation, and hyperparameter tuning on real-world datasets.',
+    capabilities: [
+      'Deep Convolutional Neural Networks (Conv2D, MaxPooling, BatchNormalization, Dropout) achieving 90%+ validation accuracy.',
+      'Supervised & unsupervised algorithm comparison, overfitting prevention, and rigorous model evaluation.',
+      'Backed by a 3-month applied ML Internship at EduExpose (Best Performance Award).',
+    ],
+    stack: [
+      'TensorFlow',
+      'Keras',
+      'Scikit-learn',
+      'Feature Engineering',
+      'Cross-Validation',
+      'Hyperparameter Tuning',
+      'Model Evaluation',
+    ],
+    proofTitle: 'Applied in: AgroDetect AI (CNN)',
+    proofMetric: '90%+ Validation Accuracy',
+    projectId: 'agrodetect',
+    liveUrl: 'https://agrodetectai.streamlit.app/',
   },
   {
     id: 'nlp',
-    title: 'NLP & Vector Search',
+    num: '02',
+    shortLabel: 'NLP',
+    title: 'NLP & Vector Intelligence',
+    subtitle: 'Unsupervised Topic Modeling & Semantic Search',
     icon: FileText,
-    description: 'Hybrid topic discovery, transformer embeddings, manifold reduction, density clustering, and FAISS indexing.',
-    tags: ['BERTopic', 'LDA', 'spaCy', 'UMAP', 'HDBSCAN', 'FAISS'],
+    orbitPosition: 'top-[17%] left-2 sm:left-4',
+    summary:
+      'Hybrid neural topic discovery, transformer embeddings, manifold dimensionality reduction, and density-based crisis clustering.',
+    capabilities: [
+      'Hybrid BERTopic + LDA topic discovery over 81,187+ unstructured disaster communications without manual labels.',
+      'Dense semantic vector encoding with Sentence-Transformers, spaCy preprocessing, and FAISS similarity indexing.',
+      'Noise-resilient manifold reduction and clustering using UMAP and HDBSCAN with real-time urgency triage.',
+    ],
+    stack: [
+      'BERTopic',
+      'LDA',
+      'Sentence-Transformers',
+      'spaCy',
+      'UMAP',
+      'HDBSCAN',
+      'FAISS',
+      'Generative AI',
+    ],
+    proofTitle: 'Applied in: Disaster Intelligence System',
+    proofMetric: '81K+ Tweets · 20 Topics',
+    projectId: 'disaster-nlp',
+    liveUrl: 'https://aegis-command.streamlit.app/',
+  },
+  {
+    id: 'cv',
+    num: '03',
+    shortLabel: 'Computer Vision',
+    title: 'Computer Vision & Biometrics',
+    subtitle: 'Real-Time Video Processing & 128-D Face Encoding',
+    icon: Camera,
+    orbitPosition: 'top-[17%] right-2 sm:right-4',
+    summary:
+      'Low-latency webcam stream processing, facial landmark localization, 128-D biometric verification, and foliar image pipelines.',
+    capabilities: [
+      'Real-time multi-face detection and 128-dimensional biometric encoding matching via OpenCV and face_recognition.',
+      'Lighting-invariant image thresholding, RGB frame normalization, and automated confidence score logging.',
+      'Plant-leaf pathology image augmentation and preprocessing pipelines for agricultural disease detection.',
+    ],
+    stack: [
+      'OpenCV',
+      'face_recognition',
+      '128-D Biometric Encoding',
+      'Image Augmentation',
+      'Haar / HOG Landmarks',
+      'NumPy',
+    ],
+    proofTitle: 'Applied in: Face Recognition Attendance',
+    proofMetric: 'Real-Time 128-D Matching',
+    projectId: 'face-attendance',
+    liveUrl: 'https://facerecognitionattendance-9rc8.onrender.com/',
+  },
+  {
+    id: 'programming',
+    num: '04',
+    shortLabel: 'Programming & CS',
+    title: 'Programming & Core CS',
+    subtitle: 'Algorithms, OOP, TCP/IP Networking & Automata',
+    icon: Code2,
+    orbitPosition: 'bottom-[21%] left-1 sm:left-3',
+    summary:
+      'Strong computer science fundamentals spanning Object-Oriented Programming, Data Structures, TCP/IP Networking, and Automata Theory.',
+    capabilities: [
+      '4-Course Coursera Specializations in Computer Communications (TCP/IP) and C++ Programming for Unreal (UCCS).',
+      'Certified in Computational Theory & Finite Automata (Infosys Springboard) and Java GUI Development (LPU).',
+      'Clean, modular, object-oriented architecture across Python, Java, C++, and relational SQL databases.',
+    ],
+    stack: [
+      'Python',
+      'Java',
+      'C++',
+      'SQL',
+      'HTML5 & CSS3',
+      'OOP & Data Structures',
+      'TCP/IP Networking',
+      'Finite Automata',
+    ],
+    proofTitle: '2 UCCS Coursera Specializations',
+    proofMetric: '8 Courses + Infosys & LPU',
+    projectId: 'face-attendance',
+    liveUrl: 'https://coursera.org/verify/specialization/5R8NT46SNG9B',
+  },
+  {
+    id: 'backend',
+    num: '05',
+    shortLabel: 'Backend & Data',
+    title: 'Backend, Data & Analytics',
+    subtitle: 'FastAPI, Flask, Streamlit, Plotly & SQLite',
+    icon: Server,
+    orbitPosition: 'bottom-[21%] right-1 sm:right-3',
+    summary:
+      'Production ML model serving behind FastAPI and Flask REST endpoints, persistent SQLite ledgers, and interactive Streamlit/Plotly dashboards.',
+    capabilities: [
+      'Asynchronous FastAPI and Flask microservices serving real-time CNN, OpenCV, and BERTopic inference.',
+      'Interactive Streamlit + Plotly visual analytics dashboards backed by Pandas, NumPy, and SQLite.',
+      'Cross-platform desktop GUI application development using JavaFX and Python Tkinter.',
+    ],
+    stack: [
+      'FastAPI',
+      'Flask',
+      'REST APIs',
+      'Pandas & NumPy',
+      'Streamlit & Plotly',
+      'SQLite',
+      'JavaFX & Tkinter',
+      'Git & GitHub',
+    ],
+    proofTitle: 'Applied in: 3 Live Cloud Deployments',
+    proofMetric: 'FastAPI + Flask + Streamlit',
+    projectId: 'agrodetect',
+    liveUrl: 'https://agrodetectai.streamlit.app/',
+  },
+  {
+    id: 'soft-skills',
+    num: '06',
+    shortLabel: 'Soft Skills & Lead',
+    title: 'Soft Skills & Engineering Leadership',
+    subtitle: 'Interpersonal Communication, Project Management & Teamwork',
+    icon: Users,
+    orbitPosition: 'bottom-1 left-1/2 -translate-x-1/2',
+    summary:
+      'Result-oriented engineering leadership, collaborative teamwork, and structured problem-solving certified by Rice University and recognized at EduExpose.',
+    capabilities: [
+      'Certified in Interpersonal Communication for Engineering Leaders by Rice University (Coursera, Apr 2026).',
+      'Awarded the Best Internship Performance Award at EduExpose for sincere, dedicated, and result-oriented execution.',
+      'End-to-end project management, creative problem-solving, and clear technical communication across multidisciplinary teams.',
+    ],
+    stack: [
+      'Leadership',
+      'Problem-Solving',
+      'Communication',
+      'Project Management',
+      'Creativity',
+      'Teamwork',
+    ],
+    proofTitle: 'Rice University Leadership Certified',
+    proofMetric: 'Verify: coursera.org/verify/UJH6O27C31UN',
+    projectId: 'disaster-nlp',
+    liveUrl: 'https://coursera.org/verify/UJH6O27C31UN',
+  },
+]
+
+const BOTTOM_PROOF_CARDS = [
+  {
+    num: '01',
+    domainId: 'programming',
+    icon: Code2,
+    title: 'Programming & Core CS',
+    subtitle: 'Languages, OOP, DSA & TCP/IP',
+    telemetryLabel: 'SYSTEMS & ALGORITHMS',
+    telemetryPct: '95%',
+    summary:
+      'Algorithmic problem-solving and systems foundations backed by 2 UCCS Specializations & Infosys Automata certification.',
+    stack: ['Python', 'Java', 'C++', 'SQL', 'OOP & DSA', 'TCP/IP'],
+    metric: '2 Specializations (8 Courses)',
+    projectTarget: 'face-attendance' as const,
+  },
+  {
+    num: '02',
+    domainId: 'ai-ml',
+    icon: BrainCircuit,
+    title: 'AI, ML & Vision',
+    subtitle: 'Deep CNNs & 128-D Biometrics',
+    telemetryLabel: 'MODEL VALIDATION ACCURACY',
+    telemetryPct: '92%+',
+    summary:
+      'Full-lifecycle model training, OpenCV face recognition, and CNN leaf diagnostics achieving 90%+ validation accuracy.',
+    stack: ['TensorFlow', 'Keras', 'Scikit-learn', 'OpenCV', 'face_recognition'],
+    metric: '90%+ CNN Accuracy · Best Intern Award',
+    projectTarget: 'agrodetect' as const,
+  },
+  {
+    num: '03',
+    domainId: 'nlp',
+    icon: FileText,
+    title: 'NLP, Backend & Data',
+    subtitle: 'BERTopic, FastAPI & Streamlit',
+    telemetryLabel: 'UNSUPERVISED PIPELINE SCALE',
+    telemetryPct: '81.1K',
+    summary:
+      'Hybrid topic modeling and FAISS vector search deployed behind FastAPI, Flask, SQLite, and Streamlit + Plotly dashboards.',
+    stack: ['BERTopic', 'spaCy', 'UMAP', 'HDBSCAN', 'FAISS', 'FastAPI', 'Streamlit'],
+    metric: '81,187+ Crisis Tweets Clustered',
+    projectTarget: 'disaster-nlp' as const,
+  },
+  {
+    num: '04',
+    domainId: 'soft-skills',
+    icon: Users,
+    title: 'Soft Skills & Leadership',
+    subtitle: 'Communication & Project Mgmt',
+    telemetryLabel: 'ENGINEERING LEADERSHIP',
+    telemetryPct: '100%',
+    summary:
+      'Engineering leadership, collaborative teamwork, and structured problem-solving certified by Rice University & EduExpose.',
+    stack: [
+      'Leadership',
+      'Problem-Solving',
+      'Communication',
+      'Project Mgmt',
+      'Creativity',
+      'Teamwork',
+    ],
+    metric: 'Rice Univ. Leadership + Best Award',
     projectTarget: 'disaster-nlp' as const,
   },
 ]
 
-// Custom Golden Artwork Banner inside each of the 4 bottom cards (matching image_7c5e37.jpg)
-function CardArtwork({ id }: { id: string }) {
-  if (id === 'programming') {
-    return (
-      <div className="relative h-24 w-full rounded-xl bg-[#070b13]/90 border border-gold/25 overflow-hidden flex items-center justify-center">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'radial-gradient(circle at 50% 60%, rgba(234,183,103,0.28) 0%, transparent 70%)',
-          }}
-        />
-        <svg className="w-full h-full" viewBox="0 0 260 96">
-          {/* Perspective grid & code screens */}
-          <polygon
-            points="35,18 95,12 88,72 28,78"
-            fill="rgba(234,183,103,0.06)"
-            stroke="rgba(234,183,103,0.35)"
-            strokeWidth="1"
-          />
-          <polygon
-            points="165,12 225,18 232,78 172,72"
-            fill="rgba(234,183,103,0.06)"
-            stroke="rgba(234,183,103,0.35)"
-            strokeWidth="1"
-          />
-          <rect
-            x="92"
-            y="16"
-            width="76"
-            height="58"
-            rx="6"
-            fill="rgba(17,24,39,0.9)"
-            stroke="#EAB767"
-            strokeWidth="1.6"
-          />
-          <text
-            x="130"
-            y="53"
-            textAnchor="middle"
-            fill="#F7D9A0"
-            fontFamily="JetBrains Mono, monospace"
-            fontWeight="bold"
-            fontSize="24"
-          >
-            &lt;/&gt;
-          </text>
-        </svg>
-      </div>
-    )
-  }
-
-  if (id === 'ai-ml') {
-    return (
-      <div className="relative h-24 w-full rounded-xl bg-[#070b13]/90 border border-gold/25 overflow-hidden flex items-center justify-center">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'radial-gradient(circle at 50% 55%, rgba(234,183,103,0.28) 0%, transparent 72%)',
-          }}
-        />
-        <svg className="w-full h-full" viewBox="0 0 260 96">
-          <path
-            d="M10,74 Q45,65 75,36 T135,28 T195,52 T250,30"
-            fill="none"
-            stroke="#EAB767"
-            strokeWidth="2"
-          />
-          <path
-            d="M10,80 Q55,30 95,58 T165,22 T250,64"
-            fill="none"
-            stroke="rgba(247,217,160,0.65)"
-            strokeWidth="1.4"
-            strokeDasharray="3 3"
-          />
-          {[
-            [75, 36], [135, 28], [165, 22], [195, 52],
-          ].map(([cx, cy], i) => (
-            <circle key={i} cx={cx} cy={cy} r="3.5" fill="#F7D9A0" />
-          ))}
-        </svg>
-      </div>
-    )
-  }
-
-  if (id === 'cv') {
-    return (
-      <div className="relative h-24 w-full rounded-xl bg-[#070b13]/90 border border-gold/25 overflow-hidden flex items-center justify-center">
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'radial-gradient(circle at 50% 50%, rgba(234,183,103,0.3) 0%, transparent 70%)',
-          }}
-        />
-        <svg className="w-full h-full" viewBox="0 0 260 96">
-          <path d="M72,26 L56,26 L56,42" fill="none" stroke="#EAB767" strokeWidth="2" />
-          <path d="M188,26 L204,26 L204,42" fill="none" stroke="#EAB767" strokeWidth="2" />
-          <path d="M72,74 L56,74 L56,58" fill="none" stroke="#EAB767" strokeWidth="2" />
-          <path d="M188,74 L204,74 L204,58" fill="none" stroke="#EAB767" strokeWidth="2" />
-          <circle cx="130" cy="50" r="28" fill="rgba(17,24,39,0.9)" stroke="#EAB767" strokeWidth="1.8" />
-          <circle cx="130" cy="50" r="18" fill="none" stroke="rgba(247,217,160,0.55)" strokeWidth="1.2" strokeDasharray="4 3" />
-          <circle cx="130" cy="50" r="8" fill="rgba(234,183,103,0.45)" stroke="#F7D9A0" strokeWidth="1.5" />
-          <circle cx="133" cy="47" r="2.5" fill="#FFFFFF" />
-        </svg>
-      </div>
-    )
-  }
-
-  return (
-    <div className="relative h-24 w-full rounded-xl bg-[#070b13]/90 border border-gold/25 overflow-hidden flex items-center justify-center">
-      <div
-        className="absolute inset-0"
-        style={{
-          background: 'radial-gradient(circle at 50% 50%, rgba(234,183,103,0.28) 0%, transparent 70%)',
-        }}
-      />
-      <svg className="w-full h-full" viewBox="0 0 260 96">
-        <g stroke="rgba(234,183,103,0.35)" strokeWidth="1">
-          <line x1="48" y1="28" x2="96" y2="48" />
-          <line x1="56" y1="68" x2="96" y2="48" />
-          <line x1="212" y1="26" x2="164" y2="48" />
-          <line x1="204" y1="70" x2="164" y2="48" />
-        </g>
-        {[
-          [48, 28], [56, 68], [212, 26], [204, 70], [72, 22], [188, 74],
-        ].map(([cx, cy], i) => (
-          <circle key={i} cx={cx} cy={cy} r="3" fill="#EAB767" />
-        ))}
-        <rect
-          x="94"
-          y="30"
-          width="72"
-          height="36"
-          rx="8"
-          fill="rgba(17,24,39,0.92)"
-          stroke="#EAB767"
-          strokeWidth="1.6"
-        />
-        <text
-          x="130"
-          y="53"
-          textAnchor="middle"
-          fill="#F5F5F5"
-          fontFamily="Space Grotesk, sans-serif"
-          fontWeight="bold"
-          fontSize="16"
-          letterSpacing="1"
-        >
-          NLP
-        </text>
-      </svg>
-    </div>
-  )
-}
-
 export default function ExpertiseView() {
   const { setActiveCaseStudy } = useSceneStore()
+  const [activeDomainId, setActiveDomainId] = useState<string>('ai-ml')
+  const [rightPanelMode, setRightPanelMode] = useState<'inspector' | 'matrix'>('inspector')
+  const [direction, setDirection] = useState<1 | -1>(1)
+  const wheelCooldownRef = useRef<number>(0)
+
+  const activeIndex = Math.max(
+    0,
+    DOMAINS.findIndex((d) => d.id === activeDomainId)
+  )
+  const activeDomain = DOMAINS[activeIndex] || DOMAINS[0]
+
+  const selectDomain = useCallback(
+    (id: string) => {
+      const nextIdx = DOMAINS.findIndex((d) => d.id === id)
+      if (nextIdx === -1) return
+      if (id !== activeDomainId) {
+        setDirection(nextIdx > activeIndex ? 1 : -1)
+        setActiveDomainId(id)
+      }
+      setRightPanelMode('inspector')
+    },
+    [activeDomainId, activeIndex]
+  )
+
+  useEffect(() => {
+    const stepDomain = (delta: 1 | -1) => {
+      const now = Date.now()
+      if (now - wheelCooldownRef.current < 480) return
+      wheelCooldownRef.current = now
+      setDirection(delta)
+      setRightPanelMode('inspector')
+      setActiveDomainId((curr) => {
+        const idx = DOMAINS.findIndex((d) => d.id === curr)
+        const next = (idx + delta + DOMAINS.length) % DOMAINS.length
+        return DOMAINS[next].id
+      })
+    }
+
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaY) < 20) return
+      stepDomain(e.deltaY > 0 ? 1 : -1)
+    }
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        stepDomain(1)
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault()
+        stepDomain(-1)
+      }
+    }
+
+    window.addEventListener('wheel', onWheel, { passive: true })
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('wheel', onWheel)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [])
 
   return (
-    <div className="h-screen max-w-[1380px] mx-auto px-4 sm:px-8 pt-20 pb-6 flex flex-col justify-between overflow-hidden pointer-events-none select-none">
+    <div className="h-screen max-w-[1380px] mx-auto px-5 sm:px-10 pt-[76px] pb-5 flex flex-col justify-between overflow-hidden pointer-events-none select-none">
       {/* ============================================================
-          TOP SECTION: LEFT METRICS + CENTER 3D BRAIN + RIGHT TECH STACK
+          TOP SECTION: LEFT TELEMETRY + 3D BRAIN WITH ORBIT RINGS + RIGHT PANEL
          ============================================================ */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center flex-1 min-h-0">
-        {/* LEFT COLUMN (3 Cols): Title & 4 Vertical Counters */}
-        <div className="lg:col-span-3 space-y-4 pointer-events-auto">
-          <div>
-            <div className="font-mono text-[10px] uppercase tracking-[2px] text-gold">
-              // EXPERTISE
-            </div>
-            <h1 className="font-display text-3xl sm:text-[40px] font-bold tracking-tight text-pure leading-[1.06] mt-1">
-              Technical
-              <span className="block text-gold">Capabilities</span>
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        {/* ----------------------------------------------------------
+            1. LEFT COLUMN (3 Cols): HEADER, METRICS & CORE CS / TOOLS
+           ---------------------------------------------------------- */}
+        <div className="lg:col-span-3 flex flex-col justify-center space-y-3 pointer-events-auto pb-2">
+          <div className="space-y-1">
+            {/* <div className="font-mono text-[10px] uppercase tracking-[2px] text-gold">
+              04 // TECHNICAL &amp; PROFESSIONAL
+            </div> */}
+            <h1 className="font-display text-3xl sm:text-[38px] font-bold text-pure tracking-tight leading-[1.06]">
+              Technical <br />
+              <span className="text-gold">Capabilities</span>
             </h1>
-            <p className="text-xs text-mist mt-2 leading-relaxed max-w-[260px]">
-              Tools, frameworks and domains I work with to build intelligent, real-world solutions.
-            </p>
           </div>
 
-          <div className="space-y-2.5 pt-1">
+          {/* 3 Compact Telemetry Counters */}
+          <div className="space-y-2 pt-1">
             {[
-              { icon: Code2, bold: '6 Core', sub: 'Domains' },
-              { icon: Layers, bold: '12+', sub: 'Technologies' },
-              { icon: Rocket, bold: '3', sub: 'Deployments' },
-              { icon: Box, bold: 'End-to-End', sub: 'Development' },
-            ].map((stat, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-obsidian/90 border border-gold/30 flex items-center justify-center text-gold shrink-0 shadow-gold-glow">
-                  <stat.icon className="w-3.5 h-3.5" />
-                </div>
-                <div>
-                  <div className="font-display text-xs sm:text-sm font-bold text-pure leading-none">
-                    {stat.bold}
-                  </div>
-                  <div className="font-sans text-[11px] text-mist mt-0.5">{stat.sub}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CENTER COLUMN (6 Cols): 3D WebGL Brain Anchor + 6 Floating Domain Pills */}
-        <div
-          id="brain-stage-anchor"
-          className="lg:col-span-6 relative h-[340px] sm:h-[370px] flex items-center justify-center pointer-events-auto"
-        >
-          {/* Top Center Pill: AI / ML — Positioned cleanly above the brain crown */}
-          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
-            <div className="px-4 py-1.5 rounded-full bg-[#0b101d]/90 border border-gold/55 shadow-gold-glow flex items-center gap-2 text-xs font-medium text-pure">
-              <Cpu className="w-3.5 h-3.5 text-gold" />
-              <span>AI / ML</span>
-            </div>
-          </div>
-
-          {/* Upper Left Pill: NLP */}
-          <div className="absolute top-14 left-4 sm:left-8 z-20">
-            <div className="px-4 py-1.5 rounded-full bg-[#0b101d]/90 border border-gold/45 shadow-gold-glow flex items-center gap-2 text-xs font-medium text-pure">
-              <FileText className="w-3.5 h-3.5 text-gold" />
-              <span>NLP</span>
-            </div>
-          </div>
-
-          {/* Upper Right Pill: Computer Vision */}
-          <div className="absolute top-14 right-2 sm:right-6 z-20">
-            <div className="px-4 py-1.5 rounded-full bg-[#0b101d]/90 border border-gold/45 shadow-gold-glow flex items-center gap-2 text-xs font-medium text-pure">
-              <Camera className="w-3.5 h-3.5 text-gold" />
-              <span>Computer Vision</span>
-            </div>
-          </div>
-
-          {/* Lower Left Pill: Programming */}
-          <div className="absolute bottom-16 left-2 sm:left-6 z-20">
-            <div className="px-4 py-1.5 rounded-full bg-[#0b101d]/90 border border-gold/45 shadow-gold-glow flex items-center gap-2 text-xs font-medium text-pure">
-              <span className="font-mono text-xs text-gold">&lt;/&gt;</span>
-              <span>Programming</span>
-            </div>
-          </div>
-
-          {/* Lower Right Pill: Backend */}
-          <div className="absolute bottom-16 right-4 sm:right-8 z-20">
-            <div className="px-4 py-1.5 rounded-full bg-[#0b101d]/90 border border-gold/45 shadow-gold-glow flex items-center gap-2 text-xs font-medium text-pure">
-              <Layers className="w-3.5 h-3.5 text-gold" />
-              <span>Backend</span>
-            </div>
-          </div>
-
-          {/* Bottom Pedestal Pill: Data & Visualization */}
-          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-20">
-            <div className="px-5 py-1.5 rounded-full bg-[#0b101d]/95 border border-gold/60 shadow-[0_0_25px_rgba(234,183,103,0.35)] flex items-center gap-2 text-xs font-medium text-pure">
-              <BarChart3 className="w-3.5 h-3.5 text-gold" />
-              <span>Data & Visualization</span>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN (3 Cols): Categorized Tech Stack Panel */}
-        <div className="lg:col-span-3 glass-panel rounded-2xl p-4 border border-gold/45 shadow-[0_0_40px_rgba(234,183,103,0.14)] space-y-2.5 pointer-events-auto">
-          <div className="flex items-center justify-between border-b border-gold/20 pb-2">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-gold" />
-              <span className="font-display text-sm font-semibold text-pure">Tech Stack</span>
-            </div>
-            <div className="flex items-center gap-1.5 font-mono text-[9px] text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>ACTIVE</span>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {RIGHT_TECH_GROUPS.map((grp) => (
+              {
+                icon: Cpu,
+                val: '20+ Tech Stack',
+                sub: 'Python, Java, C++, TF, Keras, OpenCV, FAISS',
+              },
+              {
+                icon: Terminal,
+                val: '3 Live Systems',
+                sub: 'FastAPI, Flask & Streamlit Cloud Apps',
+              },
+              {
+                icon: ShieldCheck,
+                val: '12 Verified Certs',
+                sub: 'Best ML Intern Award + 2 Specializations',
+              },
+            ].map((item, i) => (
               <div
-                key={grp.category}
-                className="p-2 rounded-xl bg-[#090d16]/85 border border-gold/15 flex items-center gap-3"
+                key={i}
+                className="p-2 rounded-xl bg-[#0b111e]/85 border border-gold/20 flex items-center gap-2.5"
               >
                 <div className="w-7 h-7 rounded-lg bg-gold/10 border border-gold/30 flex items-center justify-center text-gold shrink-0">
-                  <grp.icon className="w-3.5 h-3.5" />
+                  <item.icon className="w-3.5 h-3.5" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-sans text-[10px] text-mist font-medium leading-none mb-1.5">
-                    {grp.category}
+                <div className="min-w-0">
+                  <div className="font-display text-xs font-bold text-pure leading-none">
+                    {item.val}
                   </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {grp.items.map((it) => (
-                      <span
-                        key={it.title}
-                        title={it.title}
-                        className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold text-pure border border-white/15 shadow-sm"
-                        style={{ backgroundColor: `${it.bg}CC` }}
-                      >
-                        {it.label}
-                      </span>
-                    ))}
+                  <div className="font-sans text-[9.5px] text-mist truncate mt-0.5">
+                    {item.sub}
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
 
-      {/* ============================================================
-          BOTTOM ROW: 4 GLOWING DOMAIN CARDS WITH HOLOGRAPHIC ARTWORK
-         ============================================================ */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-3 pointer-events-auto">
-        {BOTTOM_CARDS.map((card) => (
+          {/* Core CS & Dev Tools Strip (Compact so it never touches the bottom row) */}
           <div
-            key={card.id}
-            onClick={() => setActiveCaseStudy(card.projectTarget)}
-            className="glass-panel glass-panel-hover rounded-2xl p-4 border border-gold/35 cursor-pointer flex flex-col justify-between space-y-3 group"
+            onClick={() => selectDomain('programming')}
+            className="p-2.5 rounded-2xl bg-[#0b111e]/90 border border-gold/25 hover:border-gold/55 transition-all cursor-pointer space-y-1.5"
           >
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <card.icon className="w-4 h-4 text-gold" />
-                <h2 className="font-display text-sm sm:text-base font-semibold text-pure group-hover:text-gold transition-colors">
-                  {card.title}
-                </h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider text-gold font-bold">
+                <GitBranch className="w-3 h-3" />
+                <span>Core CS &amp; Dev Workflow</span>
               </div>
-              <p className="text-[11px] text-mist leading-relaxed line-clamp-2">
-                {card.description}
-              </p>
+              <span className="font-mono text-[8px] text-gold bg-gold/10 border border-gold/30 px-1.5 py-0.5 rounded">
+                UCCS &amp; Infosys
+              </span>
             </div>
 
-            <CardArtwork id={card.id} />
-
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
-              {card.tags.map((tag) => (
+            <div className="flex flex-wrap gap-1">
+              {CORE_CS_AND_TOOLS.map((tool) => (
                 <span
-                  key={tag}
-                  className="px-2.5 py-0.5 rounded-md bg-obsidian/90 border border-gold/25 font-mono text-[9.5px] text-pure"
+                  key={tool}
+                  className="px-2 py-0.5 rounded-md bg-space/90 border border-gold/25 font-mono text-[8.5px] text-pure/90"
                 >
-                  {tag}
+                  {tool}
                 </span>
               ))}
             </div>
           </div>
-        ))}
+        </div>
+
+        {/* ----------------------------------------------------------
+            2. CENTER COLUMN (5 Cols): 3D BRAIN + GOLDEN ORBITAL HUD RINGS
+           ---------------------------------------------------------- */}
+        <div
+          id="brain-stage-anchor"
+          className="lg:col-span-5 relative h-[350px] sm:h-[385px] flex items-center justify-center pointer-events-auto"
+        >
+          {/* Decorative Golden Orbital Rings & Neural HUD Reticle Behind/Around the Brain */}
+          <svg
+            viewBox="0 0 500 380"
+            className="absolute inset-0 w-full h-full pointer-events-none opacity-65"
+            fill="none"
+          >
+            {/* Outer Tilted Orbital Ellipse Connecting the 6 Pills */}
+            <ellipse
+              cx="250"
+              cy="190"
+              rx="215"
+              ry="142"
+              stroke="#EAB767"
+              strokeWidth="1"
+              strokeDasharray="5 7"
+              strokeOpacity="0.45"
+            />
+            {/* Inner Tilted Orbital Track */}
+            <ellipse
+              cx="250"
+              cy="190"
+              rx="172"
+              ry="108"
+              stroke="#EAB767"
+              strokeWidth="1"
+              strokeOpacity="0.22"
+              transform="rotate(-8 250 190)"
+            />
+            {/* Base Pedestal Ring Under the Brainstem (Like image_0fead9.jpg!) */}
+            <ellipse
+              cx="250"
+              cy="325"
+              rx="115"
+              ry="18"
+              stroke="#EAB767"
+              strokeWidth="1.2"
+              strokeDasharray="3 5"
+              strokeOpacity="0.5"
+            />
+            <ellipse
+              cx="250"
+              cy="325"
+              rx="68"
+              ry="10"
+              stroke="#F7D9A0"
+              strokeWidth="1"
+              strokeOpacity="0.35"
+            />
+            {/* Glowing Orbital Waypoint Dots */}
+            <circle cx="42" cy="145" r="3" fill="#EAB767" fillOpacity="0.8" />
+            <circle cx="458" cy="145" r="3" fill="#EAB767" fillOpacity="0.8" />
+            <circle cx="65" cy="260" r="2.5" fill="#F7D9A0" fillOpacity="0.7" />
+            <circle cx="435" cy="260" r="2.5" fill="#F7D9A0" fillOpacity="0.7" />
+          </svg>
+
+          {/* 6 Interactive Orbital Domain Pills */}
+          {DOMAINS.map((dom) => {
+            const isSelected = dom.id === activeDomain.id
+            const IconComp = dom.icon
+            return (
+              <button
+                key={dom.id}
+                type="button"
+                onClick={() => selectDomain(dom.id)}
+                className={`absolute ${dom.orbitPosition} z-20 px-3.5 py-1.5 rounded-full font-mono text-[10px] border backdrop-blur-md flex items-center gap-1.5 transition-all duration-300 ${isSelected
+                  ? 'bg-gold text-[#070b13] border-gold font-bold shadow-[0_0_25px_rgba(234,183,103,0.65)] scale-105'
+                  : 'bg-[#090d16]/90 text-pure/90 border-gold/35 hover:border-gold hover:text-gold shadow-lg'
+                  }`}
+              >
+                <IconComp className="w-3.5 h-3.5 shrink-0" />
+                <span>{dom.shortLabel}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* ----------------------------------------------------------
+            3. RIGHT COLUMN (4 Cols): DUAL-MODE INSPECTOR + FULL STACK MATRIX
+           ---------------------------------------------------------- */}
+        <div className="lg:col-span-4 h-[385px] pointer-events-auto">
+          <div className="h-full glass-panel rounded-2xl p-4 sm:p-5 border border-gold/35 bg-[#0b111e]/90 shadow-[0_20px_60px_rgba(0,0,0,0.75)] flex flex-col justify-between overflow-hidden">
+            {/* Top Bar with Mode Toggle: Deep Inspector vs. All Stack Matrix */}
+            <div className="flex items-center justify-between border-b border-gold/20 pb-2.5 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="font-mono text-[9.5px] uppercase tracking-wider text-gold font-semibold">
+                  {rightPanelMode === 'inspector'
+                    ? `INSPECTOR // ${activeDomain.num} OF 06`
+                    : 'COMPLETE TECH & SKILL MATRIX'}
+                </span>
+              </div>
+
+              <div className="inline-flex rounded-lg bg-space/90 p-0.5 border border-gold/25">
+                <button
+                  type="button"
+                  onClick={() => setRightPanelMode('inspector')}
+                  className={`px-2 py-0.5 rounded-md font-mono text-[9px] transition-all ${rightPanelMode === 'inspector'
+                    ? 'bg-gold text-space font-bold'
+                    : 'text-mist hover:text-pure'
+                    }`}
+                >
+                  Inspector
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRightPanelMode('matrix')}
+                  className={`px-2 py-0.5 rounded-md font-mono text-[9px] transition-all ${rightPanelMode === 'matrix'
+                    ? 'bg-gold text-space font-bold'
+                    : 'text-mist hover:text-pure'
+                    }`}
+                >
+                  All Stack (24)
+                </button>
+              </div>
+            </div>
+
+            {/* Body: Either Deep Domain Inspector OR Full At-a-Glance Tech Matrix */}
+            <div className="flex-1 min-h-0 relative overflow-hidden py-2">
+              <AnimatePresence mode="wait" custom={direction}>
+                {rightPanelMode === 'inspector' ? (
+                  <motion.div
+                    key={`inspector-${activeDomain.id}`}
+                    initial={{ opacity: 0, y: direction > 0 ? 22 : -22 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: direction > 0 ? -22 : 22 }}
+                    transition={{ duration: 0.26, ease: [0.22, 1, 0.36, 1] }}
+                    className="h-full flex flex-col justify-between"
+                  >
+                    <div className="space-y-1">
+                      <div className="font-mono text-[10px] text-gold uppercase">
+                        {activeDomain.subtitle}
+                      </div>
+                      <h2 className="font-display text-xl sm:text-2xl font-bold text-pure leading-tight">
+                        {activeDomain.title}
+                      </h2>
+                    </div>
+
+                    <ul className="space-y-2 text-[11.5px] text-pure/90 leading-snug">
+                      {activeDomain.capabilities.map((cap, idx) => (
+                        <li key={idx} className="flex items-start gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
+                          <span>{cap}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    <div className="space-y-1.5 pt-1">
+                      <div className="font-mono text-[9.5px] uppercase tracking-wider text-mist">
+                        {activeDomain.id === 'soft-skills'
+                          ? 'Core Interpersonal & Leadership Competencies:'
+                          : 'Verified Domain Stack:'}
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {activeDomain.stack.map((tech) => (
+                          <span
+                            key={tech}
+                            className="px-2.5 py-1 rounded-lg bg-space/90 border border-gold/30 font-mono text-[10px] text-gold font-medium"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="full-matrix"
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.97 }}
+                    transition={{ duration: 0.24 }}
+                    className="h-full flex flex-col justify-between space-y-2 overflow-y-auto pr-1"
+                  >
+                    {ALL_STACK_MATRIX.map((grp) => (
+                      <div
+                        key={grp.group}
+                        className="p-2 rounded-xl bg-space/75 border border-gold/20 space-y-1.5"
+                      >
+                        <div className="font-mono text-[9px] uppercase tracking-wider text-gold font-semibold">
+                          {grp.group}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {grp.items.map((it) => (
+                            <span
+                              key={it.name}
+                              className="px-2 py-0.5 rounded bg-[#0b111e] border border-white/10 font-mono text-[9.5px] text-pure flex items-center gap-1.5"
+                            >
+                              <span
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{ backgroundColor: it.color }}
+                              />
+                              <span>{it.name}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Footer Proof Link */}
+            <div className="pt-2.5 border-t border-gold/20 flex items-center justify-between gap-2 shrink-0">
+              <div className="min-w-0">
+                <div className="font-mono text-[9.5px] text-gold truncate font-semibold">
+                  {activeDomain.proofTitle}
+                </div>
+                <div className="font-sans text-[10px] text-mist truncate">
+                  {activeDomain.proofMetric}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveCaseStudy(activeDomain.projectId)}
+                  className="px-3 py-1.5 rounded-xl bg-gold/15 hover:bg-gold hover:text-space border border-gold/45 font-mono text-[10px] font-semibold text-gold flex items-center gap-1 transition-colors"
+                >
+                  <span>Case Study</span>
+                  <ArrowUpRight className="w-3 h-3" />
+                </button>
+                <a
+                  href={activeDomain.liveUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="p-1.5 rounded-xl bg-obsidian border border-gold/25 hover:border-gold text-gold transition-colors"
+                  title="Verify Live Proof"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================
+          BOTTOM SECTION: 4 PILLAR CARDS WITH ICON BADGES & TELEMETRY BARS
+         ============================================================ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-1 pointer-events-auto shrink-0">
+        {BOTTOM_PROOF_CARDS.map((card) => {
+          const isSelected = activeDomainId === card.domainId
+          const CardIcon = card.icon
+          return (
+            <div
+              key={card.domainId}
+              onClick={() => selectDomain(card.domainId)}
+              className={`glass-panel rounded-2xl p-3.5 flex flex-col justify-between cursor-pointer transition-all duration-300 ${isSelected
+                ? 'border-2 border-gold bg-[#111a2e]/95 shadow-[0_12px_35px_rgba(234,183,103,0.2)]'
+                : 'border border-gold/20 bg-[#0b111e]/85 hover:border-gold/50'
+                }`}
+            >
+              <div className="space-y-2">
+                {/* Card Header with Icon Badge + Inspect Button */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div
+                      className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 transition-colors ${isSelected
+                        ? 'bg-gold text-space border-gold shadow-gold-glow'
+                        : 'bg-gold/10 text-gold border-gold/30'
+                        }`}
+                    >
+                      <CardIcon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-mono text-[9.5px] text-gold font-bold truncate">
+                        {card.num} // {card.subtitle}
+                      </div>
+                      <h3 className="font-display text-sm sm:text-base font-bold text-pure truncate">
+                        {card.title}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setActiveCaseStudy(card.projectTarget)
+                    }}
+                    className="font-mono text-[9.5px] text-mist hover:text-gold flex items-center gap-0.5 shrink-0"
+                  >
+                    <span>Inspect</span>
+                    <ArrowUpRight className="w-3 h-3" />
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-mist leading-relaxed line-clamp-2">
+                  {card.summary}
+                </p>
+
+                {/* Visual Architecture Telemetry Bar (Gives Visual Punch Without Clutter) */}
+                <div className="pt-1 space-y-1">
+                  <div className="flex items-center justify-between font-mono text-[8.5px]">
+                    <span className="text-mist uppercase">{card.telemetryLabel}</span>
+                    <span className="text-gold font-bold">{card.telemetryPct}</span>
+                  </div>
+                  <div className="w-full h-1.5 rounded-full bg-space/90 overflow-hidden border border-gold/20">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#C5A46D] via-[#EAB767] to-[#F7D9A0]"
+                      style={{ width: card.telemetryPct.includes('%') ? card.telemetryPct.replace('+', '') : '92%' }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2.5 mt-2 border-t border-gold/15">
+                <div className="flex flex-wrap gap-1">
+                  {card.stack.map((tag) => (
+                    <span
+                      key={tag}
+                      className="px-2 py-0.5 rounded bg-space/90 border border-gold/25 font-mono text-[9px] text-pure/90"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] font-mono text-gold pt-0.5">
+                  <span className="truncate">★ {card.metric}</span>
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )

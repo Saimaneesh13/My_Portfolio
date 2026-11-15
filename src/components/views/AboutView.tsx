@@ -26,32 +26,28 @@ type AboutLeftTab = 'overview' | 'internship' | 'certificates'
 
 const TAB_ORDER: AboutLeftTab[] = ['overview', 'internship', 'certificates']
 
-const VERTICAL_NAV_ITEMS: {
+const HORIZONTAL_NAV_ITEMS: {
   id: AboutLeftTab
   num: string
-  shortLabel: string
-  fullTitle: string
+  label: string
   icon: typeof GraduationCap
 }[] = [
     {
       id: 'overview',
       num: '01',
-      shortLabel: 'Overview',
-      fullTitle: '01 // Overview & Education',
+      label: 'Overview',
       icon: GraduationCap,
     },
     {
       id: 'internship',
       num: '02',
-      shortLabel: 'Internship',
-      fullTitle: '02 // ML Internship (EduExpose)',
+      label: 'Internship',
       icon: Briefcase,
     },
     {
       id: 'certificates',
       num: '03',
-      shortLabel: 'Vault (9)',
-      fullTitle: '03 // Certifications Vault (9)',
+      label: 'Vault (12)',
       icon: ShieldCheck,
     },
   ]
@@ -71,11 +67,11 @@ const TECH_PILLS = [
   { name: 'Streamlit & Plotly', icon: '👑' },
 ]
 
-// Full-column directional vertical fade-up / fade-down variants
+// Smooth directional vertical fade-up / fade-down variants
 const verticalFadeVariants = {
   enter: (direction: number) => ({
     opacity: 0,
-    y: direction > 0 ? 40 : -40,
+    y: direction > 0 ? 36 : -36,
     filter: 'blur(4px)',
   }),
   center: {
@@ -85,7 +81,7 @@ const verticalFadeVariants = {
   },
   exit: (direction: number) => ({
     opacity: 0,
-    y: direction > 0 ? -40 : 40,
+    y: direction > 0 ? -36 : 36,
     filter: 'blur(4px)',
   }),
 }
@@ -98,18 +94,15 @@ export default function AboutView() {
   const wheelCooldownRef = useRef<number>(0)
   const touchStartYRef = useRef<number | null>(null)
 
-  const switchTab = useCallback(
-    (nextTab: AboutLeftTab) => {
-      setTabState(([currTab, currDir]) => {
-        if (nextTab === currTab) return [currTab, currDir]
-        const currIdx = TAB_ORDER.indexOf(currTab)
-        const nextIdx = TAB_ORDER.indexOf(nextTab)
-        const dir = nextIdx > currIdx ? 1 : -1
-        return [nextTab, dir]
-      })
-    },
-    []
-  )
+  const switchTab = useCallback((nextTab: AboutLeftTab) => {
+    setTabState(([currTab, currDir]) => {
+      if (nextTab === currTab) return [currTab, currDir]
+      const currIdx = TAB_ORDER.indexOf(currTab)
+      const nextIdx = TAB_ORDER.indexOf(nextTab)
+      const dir = nextIdx > currIdx ? 1 : -1
+      return [nextTab, dir]
+    })
+  }, [])
 
   const stepTabByDirection = useCallback((delta: 1 | -1) => {
     const now = Date.now()
@@ -127,12 +120,11 @@ export default function AboutView() {
   // Global anywhere-on-screen Mouse Wheel, Touch Swipe & Up/Down Arrow Key listener
   useEffect(() => {
     const onGlobalWheel = (e: WheelEvent) => {
-      // Do not switch tabs if fullscreen CV modal is open and scrolling
       if (isFullscreen) return
 
-      // If cursor is inside the scrollable certificates list, let it scroll internally first,
-      // and automatically hand off to tab-switching when at the top or bottom edge!
-      const scrollBox = (e.target as HTMLElement | null)?.closest('.cert-scroll-box') as HTMLElement | null
+      const scrollBox = (e.target as HTMLElement | null)?.closest(
+        '.cert-scroll-box'
+      ) as HTMLElement | null
       if (scrollBox) {
         const atTop = scrollBox.scrollTop <= 2
         const atBottom =
@@ -150,7 +142,13 @@ export default function AboutView() {
     }
 
     const onGlobalKeyDown = (e: KeyboardEvent) => {
-      if (isFullscreen) return
+      if (isFullscreen) {
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setIsFullscreen(false)
+        }
+        return
+      }
       if (e.key === 'ArrowDown' || e.key === 'PageDown') {
         e.preventDefault()
         stepTabByDirection(1)
@@ -194,55 +192,57 @@ export default function AboutView() {
       : CERTIFICATES.filter((c) => c.category === certFilter)
 
   return (
-    <div className="h-screen max-w-[1380px] mx-auto px-4 sm:px-8 pt-20 pb-10 flex items-center overflow-hidden pointer-events-none select-none">
-      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+    <div className="h-screen max-w-[1360px] mx-auto px-6 sm:px-10 pt-20 pb-10 flex items-center overflow-hidden pointer-events-none select-none">
+      {/* ============================================================
+          FULLSCREEN BACKDROP OVERLAY (CLICK ANYWHERE OUTSIDE TO UNZOOM)
+         ============================================================ */}
+      {isFullscreen && (
+        <div
+          onClick={() => setIsFullscreen(false)}
+          className="fixed inset-0 z-[55] bg-space/80 backdrop-blur-md pointer-events-auto cursor-zoom-out"
+          title="Click anywhere outside to exit fullscreen"
+        />
+      )}
+
+      <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
         {/* ============================================================
-            LEFT COLUMN: FAR-LEFT VERTICAL RAIL + FULL-HEIGHT FADE STAGE
+            LEFT COLUMN: FULL-WIDTH + CLEAN HORIZONTAL 01 / 02 / 03 BAR
            ============================================================ */}
-        <div className="lg:col-span-6 flex items-center gap-4 sm:gap-5 h-[550px] pointer-events-auto">
-          {/* 1. VERTICAL SIDE RAIL FOR 01 / 02 / 03 BUTTONS */}
-          <div className="flex flex-col items-center justify-center gap-3 py-2 shrink-0">
-            <div className="w-[1px] h-8 bg-gradient-to-b from-transparent to-gold/35" />
-
-            {VERTICAL_NAV_ITEMS.map((item) => {
-              const active = leftTab === item.id
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => switchTab(item.id)}
-                  title={item.fullTitle}
-                  className={`relative group w-14 py-3.5 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all duration-300 ${active
-                    ? 'bg-gold/20 border-gold text-gold shadow-[0_0_25px_rgba(234,183,103,0.3)] scale-105'
-                    : 'bg-obsidian/75 border-gold/20 text-mist hover:text-pure hover:border-gold/50'
-                    }`}
-                >
-                  {active && (
-                    <motion.span
-                      layoutId="about-vertical-active-pill"
-                      className="absolute -left-[2px] top-3 bottom-3 w-1 rounded-r-full bg-gold shadow-[0_0_10px_#EAB767]"
-                    />
-                  )}
-
-                  <span className="font-mono text-xs font-bold leading-none">
-                    {item.num}
-                  </span>
-                  <item.icon className="w-3.5 h-3.5 opacity-90" />
-                  <span className="font-mono text-[8.5px] uppercase tracking-wider leading-none mt-0.5">
-                    {item.shortLabel}
-                  </span>
-                </button>
-              )
-            })}
-
-            <div className="w-[1px] h-8 bg-gradient-to-t from-transparent to-gold/35" />
+        <div className="lg:col-span-6 flex flex-col justify-between h-[580px] pointer-events-auto">
+          {/* 1. Top Eyebrow Row */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pb-1.5 border-b border-gold/15 shrink-0">
+            <div className="inline-flex items-center p-1 rounded-xl bg-obsidian/90 border border-gold/25 shadow-inner">
+              {HORIZONTAL_NAV_ITEMS.map((item) => {
+                const active = leftTab === item.id
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => switchTab(item.id)}
+                    className={`relative px-3 py-1 rounded-lg font-mono text-[10.5px] flex items-center gap-1.5 transition-colors duration-200 ${active ? 'text-space font-bold' : 'text-mist hover:text-pure'
+                      }`}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="about-horiz-pill"
+                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                        className="absolute inset-0 rounded-lg bg-gradient-to-r from-[#F7D9A0] via-[#EAB767] to-[#C5A46D] shadow-gold-glow"
+                      />
+                    )}
+                    <span className="relative z-10 opacity-80">{item.num}</span>
+                    <item.icon className="relative z-10 w-3 h-3" />
+                    <span className="relative z-10">{item.label}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
-          {/* 2. FULL-HEIGHT (550px) DIRECTIONAL FADE STAGE — NAME FADES WITH TAB! */}
-          <div className="flex-1 min-w-0 h-[550px] relative overflow-hidden">
+          {/* 2. Full-Width Directional Fade Up / Fade Down Stage */}
+          <div className="flex-1 min-h-0 relative overflow-hidden pt-1.5 pb-1">
             <AnimatePresence mode="wait" custom={direction}>
               {/* ========================================================
-                  STAGE 01: OVERVIEW (NAME + BIO + STACK + 2 EDUCATIONS)
+                  STAGE 01: OVERVIEW (PROPERLY SPACED — ZERO BOTTOM CLIPPING)
                  ======================================================== */}
               {leftTab === 'overview' && (
                 <motion.div
@@ -252,38 +252,35 @@ export default function AboutView() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                  className="h-full flex flex-col justify-between py-1"
+                  transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full flex flex-col justify-between pb-1"
                 >
-                  {/* Top Identity Header */}
-                  <div className="space-y-1.5">
-                    <div className="font-mono text-[10.5px] uppercase tracking-[2px] text-gold">
-                      05 // ABOUT, EXPERIENCE &amp; CREDENTIALS
-                    </div>
-                    <h1 className="font-display text-3xl sm:text-[42px] font-bold tracking-tight text-pure leading-[1.06]">
+                  {/* Name & Bio */}
+                  <div className="space-y-0.5">
+                    <h1 className="font-display text-3xl sm:text-[40px] font-bold tracking-tight text-pure leading-[1.05]">
                       {PROFILE_DATA.name}
                     </h1>
                     <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                      <span className="font-display text-base sm:text-lg font-semibold text-gold">
+                      <span className="font-display text-sm sm:text-base font-semibold text-gold">
                         {PROFILE_DATA.role}
                       </span>
                       <span className="text-gold/50">•</span>
-                      <span className="font-sans text-xs font-medium text-pure/90">
+                      <span className="font-sans text-xs sm:text-sm font-medium text-pure/90">
                         {PROFILE_DATA.subRoles.join(' • ')}
                       </span>
                     </div>
-                    <p className="text-xs text-mist leading-relaxed pt-1 max-w-xl">
+                    <p className="text-xs text-mist leading-relaxed pt-0.5 max-w-xl">
                       {PROFILE_DATA.bio}
                     </p>
                   </div>
 
                   {/* 4 Clickable Counter Metrics */}
-                  <div className="grid grid-cols-4 gap-2.5 py-2 border-y border-gold/15">
+                  <div className="grid grid-cols-4 gap-3 py-1.5 border-y border-gold/15">
                     {[
                       { icon: Code2, val: '3', label: 'Flagship Projects', tab: 'overview' as const },
                       { icon: Layers, val: '18+', label: 'Technologies', tab: 'overview' as const },
                       { icon: Trophy, val: '1', label: 'Best Intern Award', tab: 'internship' as const },
-                      { icon: Award, val: '9', label: 'Certificates (2 Spec.)', tab: 'certificates' as const },
+                      { icon: Award, val: '12', label: 'Verified Credentials', tab: 'certificates' as const },
                     ].map((item, i) => (
                       <button
                         key={i}
@@ -293,7 +290,7 @@ export default function AboutView() {
                       >
                         <item.icon className="w-4 h-4 text-gold shrink-0 group-hover:scale-110 transition-transform" />
                         <div>
-                          <div className="font-display text-base sm:text-lg font-bold text-pure leading-none group-hover:text-gold transition-colors">
+                          <div className="font-display text-sm sm:text-base font-bold text-pure leading-none group-hover:text-gold transition-colors">
                             {item.val}
                           </div>
                           <div className="font-sans text-[10px] text-mist mt-0.5">{item.label}</div>
@@ -302,9 +299,9 @@ export default function AboutView() {
                     ))}
                   </div>
 
-                  {/* Technical Expertise Pills */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 font-display text-xs sm:text-sm font-semibold text-pure">
+                  {/* Core Stack & Frameworks */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 font-display text-xs font-semibold text-pure">
                       <span className="text-gold font-mono">&lt;/&gt;</span>
                       <span>Core Stack &amp; Frameworks</span>
                     </div>
@@ -312,7 +309,7 @@ export default function AboutView() {
                       {TECH_PILLS.map((t) => (
                         <div
                           key={t.name}
-                          className="px-2.5 py-1 rounded-lg bg-[#111827]/90 border border-gold/20 flex items-center gap-1.5 text-[11px] font-medium text-pure"
+                          className="px-2.5 py-0.5 rounded-lg bg-[#111827]/90 border border-gold/20 flex items-center gap-1.5 text-[11px] font-medium text-pure"
                         >
                           <span>{t.icon}</span>
                           <span>{t.name}</span>
@@ -321,29 +318,29 @@ export default function AboutView() {
                     </div>
                   </div>
 
-                  {/* Bottom Split: ONLY 2 Education Items (LPU & Narayana) | Verified Highlights */}
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 pt-1">
-                    {/* Education (Strictly LPU & Narayana Junior College) */}
-                    <div className="sm:col-span-6 space-y-2.5">
-                      <div className="flex items-center gap-2 font-display text-xs sm:text-sm font-semibold text-pure">
-                        <GraduationCap className="w-4 h-4 text-gold" />
+                  {/* Bottom Split: Education | Verified Highlights */}
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 pt-0.5">
+                    {/* Education */}
+                    <div className="sm:col-span-6 space-y-2">
+                      <div className="flex items-center gap-2 font-display text-xs font-semibold text-pure">
+                        <GraduationCap className="w-3.5 h-3.5 text-gold" />
                         <span>Education</span>
                       </div>
 
-                      <div className="relative pl-4 border-l border-gold/45 space-y-4">
+                      <div className="relative pl-4 border-l border-gold/45 space-y-2.5">
                         {EDUCATION_DATA.map((edu, i) => (
                           <div key={i} className="relative text-xs">
-                            <span className="absolute -left-[20px] top-1 w-2.5 h-2.5 rounded-full bg-gold shadow-[0_0_8px_#EAB767]" />
-                            <div className="font-mono text-[10px] font-bold text-gold leading-none">
+                            <span className="absolute -left-[20px] top-1 w-2 h-2 rounded-full bg-gold shadow-[0_0_8px_#EAB767]" />
+                            <div className="font-mono text-[9.5px] font-bold text-gold leading-none">
                               {edu.period}
                             </div>
-                            <div className="text-pure font-semibold leading-snug mt-1">
+                            <div className="text-pure font-semibold leading-snug mt-0.5">
                               {edu.institution}
                             </div>
-                            <div className="text-[11px] text-pure/85 leading-snug">
+                            <div className="text-[10.5px] text-pure/85 leading-snug">
                               {edu.degree}
                             </div>
-                            <div className="text-[10px] text-mist flex items-center gap-1 mt-0.5">
+                            <div className="text-[9.5px] text-mist flex items-center gap-1 mt-0.5">
                               <MapPin className="w-2.5 h-2.5 text-gold" />
                               <span>{edu.location}</span>
                             </div>
@@ -353,23 +350,23 @@ export default function AboutView() {
                     </div>
 
                     {/* Verified Highlights */}
-                    <div className="sm:col-span-6 sm:pl-5 sm:border-l border-gold/15 space-y-2.5">
-                      <div className="flex items-center gap-2 font-display text-xs sm:text-sm font-semibold text-pure">
-                        <Trophy className="w-4 h-4 text-gold" />
+                    <div className="sm:col-span-6 sm:pl-5 sm:border-l border-gold/15 space-y-2">
+                      <div className="flex items-center gap-2 font-display text-xs font-semibold text-pure">
+                        <Trophy className="w-3.5 h-3.5 text-gold" />
                         <span>Verified Highlights</span>
                       </div>
 
-                      <div className="space-y-2.5 text-[11px]">
+                      <div className="space-y-1.5 text-[11.5px]">
                         <div
                           onClick={() => switchTab('internship')}
-                          className="flex items-start gap-2.5 cursor-pointer group"
+                          className="flex items-start gap-2 cursor-pointer group"
                         >
                           <Award className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
                           <div>
-                            <div className="font-semibold text-pure group-hover:text-gold transition-colors">
+                            <div className="font-semibold text-pure group-hover:text-gold transition-colors leading-tight">
                               Best Performance Award
                             </div>
-                            <div className="text-[10px] text-mist">
+                            <div className="text-[10.5px] text-mist leading-tight mt-0.5">
                               3-Month ML Internship at EduExpose →
                             </div>
                           </div>
@@ -377,14 +374,14 @@ export default function AboutView() {
 
                         <div
                           onClick={() => switchTab('certificates')}
-                          className="flex items-start gap-2.5 cursor-pointer group"
+                          className="flex items-start gap-2 cursor-pointer group"
                         >
                           <Layers className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
                           <div>
-                            <div className="font-semibold text-pure group-hover:text-gold transition-colors">
+                            <div className="font-semibold text-pure group-hover:text-gold transition-colors leading-tight">
                               2 Coursera Specializations (8 Courses)
                             </div>
-                            <div className="text-[10px] text-mist">
+                            <div className="text-[10.5px] text-mist leading-tight mt-0.5">
                               Computer Comms &amp; C++ Unreal – UCCS →
                             </div>
                           </div>
@@ -392,26 +389,26 @@ export default function AboutView() {
 
                         <div
                           onClick={() => switchTab('certificates')}
-                          className="flex items-start gap-2.5 cursor-pointer group"
+                          className="flex items-start gap-2 cursor-pointer group"
                         >
                           <Sparkles className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
                           <div>
-                            <div className="font-semibold text-pure group-hover:text-gold transition-colors">
-                              9 Verified Industry Certificates
+                            <div className="font-semibold text-pure group-hover:text-gold transition-colors leading-tight">
+                              12 Verified Credentials
                             </div>
-                            <div className="text-[10px] text-mist">
-                              Rice Univ, Infosys, LPU Java GUI &amp; Udemy GenAI →
+                            <div className="text-[10.5px] text-mist leading-tight mt-0.5">
+                              EduExpose, Rice Univ, Infosys, LPU &amp; Udemy →
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-start gap-2.5">
+                        <div className="flex items-start gap-2">
                           <Code2 className="w-3.5 h-3.5 text-gold shrink-0 mt-0.5" />
                           <div>
-                            <div className="font-semibold text-pure">
+                            <div className="font-semibold text-pure leading-tight">
                               3 End-to-End AI/ML Systems
                             </div>
-                            <div className="text-[10px] text-mist">
+                            <div className="text-[10.5px] text-mist leading-tight mt-0.5">
                               Disaster NLP, Face CV &amp; AgroDetect (90%+ CNN)
                             </div>
                           </div>
@@ -433,62 +430,56 @@ export default function AboutView() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                  className="h-full flex flex-col justify-between py-1"
+                  transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full flex flex-col justify-between"
                 >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[10.5px] uppercase tracking-[2px] text-gold">
-                        05.02 // INDUSTRY EXPERIENCE SPOTLIGHT
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => switchTab('overview')}
-                        className="font-mono text-[10px] text-mist hover:text-gold transition-colors"
-                      >
-                        ← Back to Overview
-                      </button>
-                    </div>
-                    <h2 className="font-display text-2xl sm:text-3xl font-bold text-pure">
-                      {INTERNSHIP_DATA.role}
-                    </h2>
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <span className="font-display text-lg font-semibold text-gold">
-                        {INTERNSHIP_DATA.company}
-                      </span>
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h2 className="font-display text-2xl sm:text-3xl font-bold text-pure">
+                        {INTERNSHIP_DATA.role}
+                      </h2>
                       <span className="px-3 py-0.5 rounded-full bg-gold/15 border border-gold/40 font-mono text-[10.5px] text-gold">
                         {INTERNSHIP_DATA.period}
                       </span>
                     </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="font-display text-base font-bold text-gold">
+                        {INTERNSHIP_DATA.company}
+                      </span>
+                      <span className="text-gold/40">•</span>
+                      <span className="font-mono text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded">
+                        ✓ {INTERNSHIP_DATA.accreditation}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Best Performance Award Banner */}
-                  <div className="glass-panel rounded-2xl p-4 border border-gold/50 bg-gold/10 flex items-center gap-3.5 shadow-gold-glow">
-                    <div className="w-11 h-11 rounded-xl bg-gold/20 border border-gold flex items-center justify-center text-gold shrink-0">
-                      <Trophy className="w-5 h-5" />
+                  {/* Best Award + Official Citation Quote */}
+                  <div className="glass-panel rounded-2xl p-4 border border-gold/50 bg-gold/10 space-y-1.5 shadow-gold-glow">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Trophy className="w-4 h-4 text-gold shrink-0" />
+                        <span className="font-display text-xs sm:text-sm font-bold text-pure">
+                          {INTERNSHIP_DATA.award}
+                        </span>
+                      </div>
+                      <span className="font-mono text-[9.5px] text-gold">
+                        Issued: {INTERNSHIP_DATA.issuedDate}
+                      </span>
                     </div>
-                    <div>
-                      <div className="font-mono text-[9.5px] uppercase tracking-wider text-gold">
-                        HONOR &amp; RECOGNITION
-                      </div>
-                      <div className="font-display text-sm sm:text-base font-bold text-pure">
-                        {INTERNSHIP_DATA.award}
-                      </div>
-                      <div className="text-[11px] text-mist">
-                        Awarded for outstanding, result-oriented engineering performance across the 3-month ML internship.
-                      </div>
-                    </div>
+                    <p className="text-[11.5px] italic text-pure/90 leading-snug pl-6">
+                      {INTERNSHIP_DATA.quote}
+                    </p>
                   </div>
 
                   {/* Full Internship Lifecycle Bullets */}
-                  <div className="glass-panel rounded-2xl p-5 border border-gold/30 space-y-3">
-                    <div className="font-mono text-[10px] uppercase tracking-wider text-gold">
+                  <div className="glass-panel rounded-2xl p-4 border border-gold/30 space-y-2.5">
+                    <div className="font-mono text-[9.5px] uppercase tracking-wider text-gold">
                       KEY ENGINEERING CONTRIBUTIONS &amp; MODEL LIFECYCLE
                     </div>
-                    <ul className="space-y-3 text-xs sm:text-[13px] text-pure/95 leading-relaxed">
+                    <ul className="space-y-2 text-xs text-pure/95 leading-snug">
                       {INTERNSHIP_DATA.bullets.map((b, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <span className="px-2 py-0.5 rounded bg-gold/15 border border-gold/35 font-mono text-[10px] font-bold text-gold shrink-0 mt-0.5">
+                        <li key={i} className="flex items-start gap-2.5">
+                          <span className="px-1.5 py-0.5 rounded bg-gold/15 border border-gold/35 font-mono text-[9px] font-bold text-gold shrink-0 mt-0.5">
                             0{i + 1}
                           </span>
                           <span>{b}</span>
@@ -497,25 +488,41 @@ export default function AboutView() {
                     </ul>
                   </div>
 
-                  {/* Skills & Frameworks Applied */}
-                  <div className="glass-panel rounded-2xl p-4 border border-gold/25 flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-[10px] text-gold uppercase mr-1">
-                      Applied Internship Stack:
-                    </span>
-                    {INTERNSHIP_DATA.skillsUsed.map((sk) => (
-                      <span
-                        key={sk}
-                        className="px-2.5 py-1 rounded-lg bg-obsidian border border-gold/25 font-mono text-[10px] text-pure"
-                      >
-                        {sk}
-                      </span>
-                    ))}
+                  {/* 3 Official EduExpose Certificates */}
+                  <div className="space-y-1.5">
+                    <div className="font-mono text-[9.5px] uppercase tracking-wider text-gold">
+                      3 OFFICIAL EDUEXPOSE CERTIFICATES AWARDED (FEB 28, 2026)
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {INTERNSHIP_DATA.certificates.map((c, idx) => (
+                        <a
+                          key={idx}
+                          href={c.fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="glass-panel p-3 rounded-xl border border-gold/35 hover:border-gold group flex flex-col justify-between transition-all"
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="font-mono text-[8.5px] text-gold bg-gold/15 px-1.5 py-0.5 rounded border border-gold/30">
+                              {c.badge}
+                            </span>
+                            <ExternalLink className="w-3 h-3 text-mist group-hover:text-gold" />
+                          </div>
+                          <div className="font-display text-xs font-bold text-pure group-hover:text-gold mt-1.5 leading-tight">
+                            {c.title}
+                          </div>
+                          <div className="font-mono text-[8.5px] text-mist mt-0.5">
+                            AICTE · ISO 9001:2015
+                          </div>
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 </motion.div>
               )}
 
               {/* ========================================================
-                  STAGE 03: FULL-HEIGHT CERTIFICATIONS VAULT (ALL 9 CLEAR)
+                  STAGE 03: FULL-HEIGHT CERTIFICATIONS VAULT (12 VERIFIED)
                  ======================================================== */}
               {leftTab === 'certificates' && (
                 <motion.div
@@ -525,49 +532,38 @@ export default function AboutView() {
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-                  className="h-full flex flex-col justify-between py-1 space-y-3"
+                  transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+                  className="h-full flex flex-col justify-between space-y-3"
                 >
-                  {/* Top Vault Header + Category Filters */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-[10.5px] uppercase tracking-[2px] text-gold">
-                        05.03 // VERIFIED CERTIFICATIONS &amp; SPECIALIZATIONS
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => switchTab('overview')}
-                        className="font-mono text-[10px] text-mist hover:text-gold transition-colors"
-                      >
-                        ← Back to Overview
-                      </button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h2 className="font-display text-2xl font-bold text-pure">
-                        Credentials Vault ({filteredCerts.length} of 9)
-                      </h2>
-                      <div className="flex flex-wrap gap-1">
-                        {['All', 'Specialization', 'AI & GenAI', 'Software & CS', 'Leadership'].map(
-                          (cat) => (
-                            <button
-                              key={cat}
-                              type="button"
-                              onClick={() => setCertFilter(cat)}
-                              className={`px-2.5 py-1 rounded-lg font-mono text-[9.5px] transition-all ${certFilter === cat
-                                ? 'bg-gold text-space font-bold shadow-gold-glow'
-                                : 'bg-obsidian/85 text-mist hover:text-pure border border-gold/20'
-                                }`}
-                            >
-                              {cat}
-                            </button>
-                          )
-                        )}
-                      </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h2 className="font-display text-xl sm:text-2xl font-bold text-pure">
+                      Credentials Vault
+                    </h2>
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        'All',
+                        'Internship & Training',
+                        'Specialization',
+                        'AI & GenAI',
+                        'Software & CS',
+                        'Leadership',
+                      ].map((cat) => (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setCertFilter(cat)}
+                          className={`px-2.5 py-0.5 rounded-lg font-mono text-[9.5px] transition-all ${certFilter === cat
+                            ? 'bg-gold text-space font-bold shadow-gold-glow'
+                            : 'bg-obsidian/85 text-mist hover:text-pure border border-gold/20'
+                            }`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Full-Height Scrollable Certificate Cards (Spans 450px height clearly!) */}
+                  {/* Full-Width Scrollable Certificate Cards */}
                   <div className="cert-scroll-box flex-1 overflow-y-auto space-y-2.5 pr-1.5">
                     {filteredCerts.map((cert) => (
                       <div
@@ -639,6 +635,7 @@ export default function AboutView() {
                 }
               }}
               className="absolute -top-7 right-0 z-30 p-1.5 rounded-lg text-mist hover:text-gold transition-colors"
+              title={isFullscreen ? 'Minimize CV' : 'Zoom CV'}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -666,13 +663,32 @@ export default function AboutView() {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5, ease: 'easeInOut' }}
                   onClick={() => {
-                    if (!isFullscreen) setCvPaperOpen(false)
+                    if (isFullscreen) {
+                      setIsFullscreen(false)
+                    } else {
+                      setCvPaperOpen(false)
+                    }
                   }}
                   className={`${isFullscreen
-                    ? 'fixed inset-6 z-50 max-w-3xl mx-auto overflow-y-auto p-8'
-                    : 'absolute inset-0 px-5 py-4 cursor-pointer'
-                    } bg-white text-[#111827] rounded-[4px] shadow-[0_20px_70px_rgba(0,0,0,0.85),0_0_40px_rgba(234,183,103,0.18)] flex flex-col justify-between overflow-hidden`}
+                    ? 'fixed top-20 bottom-6 left-4 right-4 z-[60] max-w-3xl mx-auto overflow-y-auto p-8 cursor-zoom-out'
+                    : 'absolute inset-0 px-5 py-4 cursor-pointer overflow-hidden'
+                    } bg-white text-[#111827] rounded-[4px] shadow-[0_20px_70px_rgba(0,0,0,0.85),0_0_40px_rgba(234,183,103,0.18)] flex flex-col justify-between`}
                 >
+                  {/* Floating Minimize Button When Zoomed */}
+                  {isFullscreen && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIsFullscreen(false)
+                      }}
+                      className="sticky top-0 self-end -mt-4 -mr-4 mb-2 z-50 px-3 py-1.5 rounded-lg bg-[#0b111e] text-gold border border-gold/40 font-mono text-[10px] font-bold flex items-center gap-1.5 shadow-lg hover:bg-gold hover:text-[#070b13] transition-colors"
+                    >
+                      <Minimize2 className="w-3.5 h-3.5" />
+                      <span>Minimize (ESC)</span>
+                    </button>
+                  )}
+
                   {/* Top Header */}
                   <div>
                     <h2 className="font-sans text-[17.5px] font-bold text-[#1e3a8a] leading-tight">
@@ -739,7 +755,7 @@ export default function AboutView() {
                       INTERNSHIP
                     </div>
                     <div className="flex items-center justify-between text-[8.6px] font-bold text-gray-900">
-                      <span>EduExpose | Machine Learning Intern</span>
+                      <span>EduExpose | Machine Learning Intern (AICTE · ISO 9001:2015)</span>
                       <span className="text-[8.2px] font-semibold text-gray-800">Dec 2025 – Feb 2026</span>
                     </div>
                     <ul className="list-disc list-inside text-[8.1px] text-gray-800 leading-[1.24] space-y-0.5 mt-0.5">
@@ -758,7 +774,7 @@ export default function AboutView() {
                       <div>
                         <div className="flex justify-between gap-2">
                           <span className="truncate">
-                            <strong>• AI-Based Disaster Intelligence System:</strong> Unsupervised NLP &amp; Urgency | GitHub
+                            • <strong>AI-Based Disaster Intelligence System:</strong> Unsupervised NLP &amp; Urgency | GitHub
                           </span>
                           <span className="font-semibold text-gray-800 shrink-0">Apr 2026 – May 2026</span>
                         </div>
@@ -769,7 +785,7 @@ export default function AboutView() {
                       <div>
                         <div className="flex justify-between gap-2">
                           <span className="truncate">
-                            <strong>• Face Recognition Attendance System:</strong> Real-Time CV Automation | GitHub
+                            • <strong>Face Recognition Attendance System:</strong> Real-Time CV Automation | GitHub
                           </span>
                           <span className="font-semibold text-gray-800 shrink-0">Feb 2026 – Mar 2026</span>
                         </div>
@@ -780,7 +796,7 @@ export default function AboutView() {
                       <div>
                         <div className="flex justify-between gap-2">
                           <span className="truncate">
-                            <strong>• AgroDetect AI:</strong> CNN-Based Crop Disease Detection (90%+ Acc.) | GitHub
+                            • <strong>AgroDetect AI:</strong> CNN-Based Crop Disease Detection (90%+ Acc.) | GitHub
                           </span>
                           <span className="font-semibold text-gray-800 shrink-0">Jan 2026 – Feb 2026</span>
                         </div>
@@ -797,7 +813,7 @@ export default function AboutView() {
                       ACHIEVEMENTS
                     </div>
                     <ul className="list-disc list-inside text-[8.1px] text-gray-800 leading-[1.24] space-y-0.5">
-                      <li>Received the Best Award for outstanding, result-oriented performance during the ML internship at EduExpose.</li>
+                      <li>Received the Best Award across Internship, Training &amp; Participation during the ML internship at EduExpose.</li>
                       <li>Completed 2 Coursera Specializations (8 courses total) from the University of Colorado, Colorado Springs.</li>
                       <li>Designed, built, and publicly maintain 3 end-to-end AI/ML and computer-vision projects on GitHub.</li>
                     </ul>
@@ -806,7 +822,7 @@ export default function AboutView() {
                   {/* 5. CERTIFICATIONS */}
                   <div>
                     <div className="font-sans text-[9.5px] font-bold uppercase tracking-wide text-[#1e3a8a] border-b border-gray-300 pb-0.5 mb-0.5">
-                      CERTIFICATIONS &amp; SPECIALIZATIONS (9 VERIFIED)
+                      CERTIFICATIONS &amp; SPECIALIZATIONS (12 VERIFIED)
                     </div>
                     <div className="space-y-0.5 text-[8px] leading-[1.22] text-gray-800">
                       <div className="flex justify-between gap-2">
@@ -822,8 +838,8 @@ export default function AboutView() {
                         <span className="font-semibold text-gray-900 shrink-0">Apr 2026</span>
                       </div>
                       <div className="flex justify-between gap-2">
-                        <span className="truncate">• Computational Theory &amp; Finite Automata – Infosys | Java Maestro GUI – LPU | 3 GenAI Certs – Udemy</span>
-                        <span className="font-semibold text-gray-900 shrink-0">Aug 2025</span>
+                        <span className="truncate">• Automata Theory – Infosys | Java Maestro GUI – LPU | 3 GenAI – Udemy | 3 ML Certs – EduExpose</span>
+                        <span className="font-semibold text-gray-900 shrink-0">2025 – 2026</span>
                       </div>
                     </div>
                   </div>

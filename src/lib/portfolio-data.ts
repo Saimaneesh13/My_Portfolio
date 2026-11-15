@@ -4,7 +4,7 @@ export interface ProjectItem {
   title: string
   subtitle: string
   period: string
-  category: 'NLP' | 'Computer Vision' | 'Deep Learning' | 'Full-Stack' | 'Experiments'
+  category: 'NLP' | 'Computer Vision' | 'Deep Learning' | 'Full-Stack'
   featured?: boolean
   tagline: string
   problem: string
@@ -15,6 +15,7 @@ export interface ProjectItem {
   tags: string[]
   metrics: { value: string; label: string }[]
   githubUrl: string
+  liveUrl: string
 }
 
 export interface CertificateItem {
@@ -22,12 +23,11 @@ export interface CertificateItem {
   title: string
   issuer: string
   date: string
-  category: 'Specialization' | 'AI & GenAI' | 'Software & CS' | 'Leadership'
+  category: 'Specialization' | 'Internship & Training' | 'AI & GenAI' | 'Software & CS' | 'Leadership'
   badgeText: string
   subCourses?: string[]
   credentialId: string
   verifyUrl: string
-  pdfFile?: string
 }
 
 export const PROFILE_DATA = {
@@ -65,15 +65,48 @@ export const PERSONAL_BRAND = {
 
 export const INTERNSHIP_DATA = {
   company: 'EduExpose',
+  accreditation: 'AICTE Certified · ISO 9001:2015 Company',
   role: 'Machine Learning Intern',
-  period: 'Dec 2025 – Feb 2026',
-  award: 'Best Internship Performance Award',
+  period: 'Dec 15, 2025 – Feb 15, 2026',
+  issuedDate: 'Feb 28, 2026',
+  award: 'Best Internship & Training Performance Award',
+  quote:
+    '"Found sincere, hardworking, dedicated and result oriented... strong commitment to learning with a commendable understanding of the Machine Learning program."',
   bullets: [
-    'Completed a 3-month applied Machine Learning internship covering the full model lifecycle: development, evaluation, and optimization on real-world datasets.',
+    'Completed an intensive applied Machine Learning internship and training program (Dec 15, 2025 – Feb 15, 2026) covering the full model lifecycle: development, evaluation, and optimization on real-world datasets.',
     'Implemented and compared supervised and unsupervised algorithms for predictive modeling and pattern discovery tasks.',
     'Practiced feature engineering, cross-validation, and hyperparameter tuning to improve model performance using Python and standard ML frameworks.',
   ],
-  skillsUsed: ['Python', 'Scikit-learn', 'Pandas', 'NumPy', 'Feature Engineering', 'Cross-Validation', 'Hyperparameter Tuning'],
+  certificates: [
+    {
+      title: 'Certificate of Internship',
+      badge: '★ Best Award',
+      date: 'Feb 28, 2026',
+      fileUrl: '/certificates/Internship_certificate.pdf',
+    },
+    {
+      title: 'Certificate of Training',
+      badge: '★ Best Award',
+      date: 'Feb 28, 2026',
+      fileUrl: '/certificates/Training_certificate.pdf',
+    },
+    {
+      title: 'Certificate of Participation',
+      badge: '★ Best Award',
+      date: 'Feb 28, 2026',
+      fileUrl: '/certificates/Participation_certificate.pdf',
+    },
+  ],
+  skillsUsed: [
+    'Python',
+    'Scikit-learn',
+    'Pandas',
+    'NumPy',
+    'Supervised & Unsupervised ML',
+    'Feature Engineering',
+    'Cross-Validation',
+    'Hyperparameter Tuning',
+  ],
 }
 
 export const EDUCATION_DATA = [
@@ -94,6 +127,48 @@ export const EDUCATION_DATA = [
 ]
 
 export const CERTIFICATES: CertificateItem[] = [
+  {
+    id: 'eduexpose-ml-internship',
+    title: 'Certificate of Internship — Machine Learning (Best Award)',
+    issuer: 'EduExpose (AICTE Certified · ISO 9001:2015)',
+    date: 'Feb 2026',
+    category: 'Internship & Training',
+    badgeText: '★ Best Award · Internship',
+    subCourses: [
+      'Program Period: Dec 15, 2025 – Feb 15, 2026',
+      'Recognized as Sincere, Hardworking, Dedicated & Result-Oriented',
+    ],
+    credentialId: 'AICTE / ISO 9001:2015 Verified (Issued Feb 28, 2026)',
+    verifyUrl: '/certificates/Internship_certificate.pdf',
+  },
+  {
+    id: 'eduexpose-ml-training',
+    title: 'Certificate of Training — Machine Learning (Best Award)',
+    issuer: 'EduExpose (AICTE Certified · ISO 9001:2015)',
+    date: 'Feb 2026',
+    category: 'Internship & Training',
+    badgeText: '★ Best Award · Training',
+    subCourses: [
+      'Program Period: Dec 15, 2025 – Feb 15, 2026',
+      'Commendable Understanding of Applied Machine Learning',
+    ],
+    credentialId: 'AICTE / ISO 9001:2015 Verified (Issued Feb 28, 2026)',
+    verifyUrl: '/certificates/Training_certificate.pdf',
+  },
+  {
+    id: 'eduexpose-ml-participation',
+    title: 'Certificate of Participation — Machine Learning (Best Award)',
+    issuer: 'EduExpose (AICTE Certified · ISO 9001:2015)',
+    date: 'Feb 2026',
+    category: 'Internship & Training',
+    badgeText: '★ Best Award · Participation',
+    subCourses: [
+      'Program Period: Dec 15, 2025 – Feb 15, 2026',
+      'Recognized as Sincere, Hardworking, Dedicated & Result-Oriented',
+    ],
+    credentialId: 'AICTE / ISO 9001:2015 Verified (Issued Feb 28, 2026)',
+    verifyUrl: '/certificates/Participation_certificate.pdf',
+  },
   {
     id: 'uccs-cpp-unreal',
     title: 'C++ Programming for Unreal Game Development',
@@ -251,6 +326,7 @@ export const PROJECTS: ProjectItem[] = [
       { value: 'Real-time', label: 'Urgency Triage' },
     ],
     githubUrl: 'https://github.com/Saimaneesh13',
+    liveUrl: 'https://aegis-command.streamlit.app/',
   },
   {
     id: 'face-attendance',
@@ -299,6 +375,7 @@ export const PROJECTS: ProjectItem[] = [
       { value: 'Live', label: 'Bootstrap 5 Portal' },
     ],
     githubUrl: 'https://github.com/Saimaneesh13',
+    liveUrl: 'https://facerecognitionattendance-9rc8.onrender.com/',
   },
   {
     id: 'agrodetect',
@@ -349,5 +426,6 @@ export const PROJECTS: ProjectItem[] = [
       { value: 'Streamlit', label: 'Diagnostic UI' },
     ],
     githubUrl: 'https://github.com/Saimaneesh13',
+    liveUrl: 'https://agrodetectai.streamlit.app/',
   },
 ]

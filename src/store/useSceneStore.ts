@@ -20,6 +20,7 @@ export interface SceneStore {
   setManualProgress: (val: number | null) => void
   setActiveCaseStudy: (id: string) => void
   toggleInspect3D: () => void
+  toggleCorePortrait: () => void
   setCustomImage: (src: string) => void
 }
 
@@ -74,6 +75,14 @@ export const useSceneStore = create<SceneStore>((set) => ({
     })
   },
   toggleInspect3D: () => set((state) => ({ isCanvasDimmed: !state.isCanvasDimmed })),
+  toggleCorePortrait: () =>
+    set((state) => ({
+      targetProgress: state.targetProgress > 0.5 ? 0 : 1,
+      targetCvProgress: 0,
+      targetBrainProgress: 0,
+      manualProgress: null,
+      isCanvasDimmed: false,
+    })),
   setCustomImage: (customImageSrc) =>
     set({
       customImageSrc,
